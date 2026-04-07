@@ -1,0 +1,406 @@
+/* ========================================
+   V5 FLASHCARD — REFINED, IMMERSIVE, ADDICTIVE
+   ======================================== */
+
+.container {
+  height: calc(100vh - var(--nav-height));
+  display: flex;
+  flex-direction: column;
+  background: var(--background);
+  color: var(--foreground);
+  overflow: hidden;
+}
+
+/* ── HEADER BAR ─────────────────────────── */
+.header {
+  padding: 0 1.5rem;
+  height: 58px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(var(--surface-rgb), 0.92);
+  backdrop-filter: blur(12px);
+  flex-shrink: 0;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.48rem 0.85rem;
+  border-radius: 9px;
+  border: 1.5px solid var(--border);
+  background: var(--surface-hover);
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.backBtn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateX(-2px);
+}
+
+.backLabel {
+  display: inline; /* hidden on mobile via media query */
+}
+
+
+.titleGroup {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;  /* allow flexbox shrink */
+}
+
+.deckTitle {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--foreground);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.deckSubtitle {
+  font-size: 0.72rem;
+  opacity: 0.5;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.progressContainer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.progressText {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--foreground);
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.progressBar {
+  height: 8px;
+  background: var(--border);
+  border-radius: 999px;
+  width: 160px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--success));
+  border-radius: 999px;
+  transition: width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* ── MAIN AREA ──────────────────────────────── */
+.mainArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 2rem;
+  gap: 1.75rem;
+  min-height: 0;
+}
+
+/* ── CARD SCENE ─────────────────────────────── */
+.scene {
+  width: 100%;
+  max-width: 580px;
+  height: 300px;
+  perspective: 1400px;
+  flex-shrink: 0;
+}
+
+.card {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transition: transform 0.55s cubic-bezier(0.2, 0.85, 0.35, 1);
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+
+.card.isFlipped {
+  transform: rotateY(180deg);
+}
+
+.cardFace {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem;
+  text-align: center;
+  transition: box-shadow 0.2s;
+}
+
+/* FRONT — clean white with subtle glow ring on hover */
+.cardFront {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.04), 0 0 0 0 rgba(37, 99, 235, 0);
+  transition: box-shadow 0.3s;
+}
+.cardFront:hover {
+  box-shadow: 0 12px 40px rgba(0,0,0,0.06), 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.cardQuestion {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.25;
+  background: linear-gradient(145deg, var(--foreground) 40%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* BACK — accent tinted */
+.cardBack {
+  transform: rotateY(180deg);
+  background: var(--surface);
+  border: 2px solid var(--primary-light);
+  box-shadow: 0 8px 30px rgba(37, 99, 235, 0.06);
+}
+html.dark .cardBack {
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.1);
+}
+
+.cardAnswer {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: var(--foreground);
+  opacity: 0.35;
+  position: absolute;
+  bottom: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* ── EVALUATION CONTROLS ────────────────────── */
+.controls {
+  display: flex;
+  gap: 0.75rem;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+  transform: translateY(8px);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.controls.visible {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.evalBtn {
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 100px;
+  box-shadow: 0 3px 0 var(--border);
+  cursor: pointer;
+}
+.evalBtn:hover  { transform: translateY(2px); box-shadow: 0 1px 0 var(--border); }
+.evalBtn:active { transform: translateY(3px); box-shadow: none; }
+
+.evalDesc {
+  font-size: 0.65rem;
+  opacity: 0.5;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btnFail   { border-bottom-color: var(--danger);  box-shadow: 0 3px 0 var(--danger); }
+.btnFail:hover   { background: rgba(239, 68, 68, 0.05); }
+.btnFail:active  { box-shadow: none; }
+
+.btnHard   { border-bottom-color: var(--warning); box-shadow: 0 3px 0 var(--warning); }
+.btnHard:hover   { background: rgba(245, 158, 11, 0.05); }
+.btnHard:active  { box-shadow: none; }
+
+.btnGood   { border-bottom-color: var(--info);    box-shadow: 0 3px 0 var(--info); }
+.btnGood:hover   { background: rgba(59, 130, 246, 0.05); }
+.btnGood:active  { box-shadow: none; }
+
+.btnPerfect { border-bottom-color: var(--success); box-shadow: 0 3px 0 var(--success); }
+.btnPerfect:hover  { background: rgba(16, 185, 129, 0.05); }
+.btnPerfect:active { box-shadow: none; }
+
+/* ── COMPLETED ──────────────────────────────── */
+.completeContainer {
+  text-align: center;
+  background: var(--surface);
+  padding: 4rem;
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+  max-width: 500px;
+  width: 100%;
+}
+
+.completeTitle {
+  font-size: 2rem;
+  margin-block: 1rem;
+  font-weight: 900;
+  color: var(--primary);
+  letter-spacing: -0.5px;
+}
+
+/* ══════════════════════════════════════════════
+   FLASHCARD MOBILE RESPONSIVE ≤ 768px
+   ══════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  /* Compact single row: circle-back | title area (flex:1) | progress pill */
+  .header {
+    padding: 0 1rem;
+    gap: 0.65rem;
+    height: 54px;
+    flex-wrap: nowrap;
+  }
+
+  /* Icon-only circle back button */
+  .backBtn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    justify-content: center;
+    gap: 0;
+    flex-shrink: 0;
+  }
+
+  .backLabel {
+    display: none;
+  }
+
+  /* titleGroup already has flex:1 + overflow:hidden — just shrink font */
+  .deckTitle {
+    font-size: 0.875rem;
+  }
+
+  .deckSubtitle {
+    font-size: 0.68rem;
+  }
+
+  /* Compact progress on right */
+  .progressContainer {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.2rem;
+    flex-shrink: 0;
+  }
+
+  .progressText {
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+
+  .progressBar {
+    width: 72px;
+    height: 5px;
+  }
+
+  .mainArea {
+    padding: 1rem;
+    gap: 1.25rem;
+  }
+
+  /* Flashcard shrinks to fit mobile screen */
+  .scene {
+    max-width: 100%;
+    height: 240px;
+  }
+
+  .cardFace {
+    padding: 1.5rem;
+    border-radius: 16px;
+  }
+
+  .cardQuestion {
+    font-size: 1.35rem;
+    line-height: 1.3;
+  }
+
+  .cardAnswer {
+    font-size: 1.35rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .hint {
+    font-size: 0.72rem;
+    bottom: 1rem;
+  }
+
+  /* Evaluation buttons: 2×2 grid on mobile */
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    width: 100%;
+  }
+
+  .evalBtn {
+    min-width: unset;
+    padding: 0.75rem 0.6rem;
+    font-size: 0.85rem;
+  }
+
+  .completeContainer {
+    padding: 2rem 1.25rem;
+    border-radius: 18px;
+  }
+
+  .completeTitle {
+    font-size: 1.5rem;
+  }
+}
+
