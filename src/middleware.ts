@@ -1,6 +1,10 @@
 // src/middleware.ts — Route protection
 // Runs on every request BEFORE the page renders (Edge runtime)
-import { auth } from '@/lib/auth';
+import NextAuth from 'next-auth';
+import { authConfig } from '@/lib/auth.config';
+
+const { auth } = NextAuth(authConfig);
+
 import { NextResponse } from 'next/server';
 
 // Routes that require authentication
