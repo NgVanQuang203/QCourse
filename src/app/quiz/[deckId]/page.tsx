@@ -6,7 +6,8 @@ import { mockCards, mockDecks } from '@/lib/mockData';
 import styles from './quiz.module.css';
 import {
   ArrowLeft, Clock, CheckCircle2, XCircle,
-  Send, Trophy, RotateCcw, Home, Check, X, Flag
+  Send, Trophy, RotateCcw, Home, Check, X, Flag,
+  BookOpen, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -41,6 +42,7 @@ export default function QuizMode() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
   const [highlightedIdx, setHighlightedIdx] = useState<number | null>(null);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   useEffect(() => {
     if (isSubmitted || timeLeft <= 0) return;
@@ -66,8 +68,73 @@ export default function QuizMode() {
     }
   };
 
-  if (!deck) return <div style={{ padding: '2rem' }}>Bộ bài không tồn tại</div>;
-  if (quizCards.length === 0) return <div style={{ padding: '2rem' }}>Bộ bài chưa có câu hỏi</div>;
+  // Back button: confirm exit if quiz is in progress
+  const handleBack = () => {
+    if (!isSubmitted && Object.keys(answers).length > 0) {
+      setShowExitConfirm(true);
+    } else {
+      router.push('/library/quiz');
+    }
+  };
+
+  if (!deck) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - var(--nav-height))' }}>
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>❌</div>
+        <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>Bộ bài không tồn tại</div>
+      </div>
+    </div>
+  );
+
+  // ── BEAUTIFUL EMPTY STATE ──
+  if (quizCards.length === 0) {
+    return (
+      <div className={styles.pageWrapper}>
+        <div className={styles.quizHeader}>
+          <button className={styles.backBtn} onClick={() => router.push('/library/quiz')}>
+            <ArrowLeft size={16} />
+            <span className={styles.backLabel}>Quay lại</span>
+          </button>
+          <div className={styles.quizHeaderCenter}>
+            <div className={styles.quizHeaderTitle}>{deck.name}</div>
+          </div>
+        </div>
+
+        <div className={styles.emptyState}>
+          <div className={styles.emptyOrb} />
+          <motion.div
+            className={styles.emptyContent}
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className={styles.emptyIconWrap}>
+              <BookOpen size={40} strokeWidth={1.5} />
+            </div>
+            <h2 className={styles.emptyTitle}>Bộ bài chưa có câu hỏi</h2>
+            <p className={styles.emptyDesc}>
+              Bộ bài <strong>"{deck.name}"</strong> hiện chưa có thẻ nào được thêm vào.
+              Hãy thêm thẻ vào bộ bài để bắt đầu làm trắc nghiệm.
+            </p>
+            <div className={styles.emptyActions}>
+              <button
+                className={styles.emptyBtnPrimary}
+                onClick={() => router.push('/library/quiz')}
+              >
+                <ArrowLeft size={15} /> Quay lại thư viện
+              </button>
+              <button
+                className={styles.emptyBtnSecondary}
+                onClick={() => router.push('/')}
+              >
+                <Home size={15} /> Trang chủ
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
 
   const formatTime = (s: number) =>
     `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
@@ -99,7 +166,7 @@ export default function QuizMode() {
     <div className={styles.pageWrapper}>
       {/* ── TOP HEADER BAR ── */}
       <div className={styles.quizHeader}>
-        <button className={styles.backBtn} onClick={() => router.push('/library/quiz')}>
+        <button className={styles.backBtn} onClick={handleBack}>
           <ArrowLeft size={16} />
           <span className={styles.backLabel}>Quay lại</span>
         </button>
@@ -247,6 +314,47 @@ export default function QuizMode() {
           </div>
         </aside>
       </div>
+
+      {/* ── EXIT CONFIRM MODAL ── */}
+      <AnimatePresence>
+        {showExitConfirm && (
+          <motion.div
+            className={styles.modalOverlay}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={e => { if (e.target === e.currentTarget) setShowExitConfirm(false); }}
+          >
+            <motion.div
+              className={styles.confirmCard}
+              initial={{ scale: 0.88, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.88, y: 20 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+            >
+              <div className={styles.confirmIcon}>
+                <AlertTriangle size={28} />
+              </div>
+              <h3 className={styles.confirmTitle}>Bạn muốn thoát bài thi?</h3>
+              <p className={styles.confirmDesc}>
+                Tiến độ làm bài sẽ bị mất. Bạn đã trả lời <strong>{answeredCount}/{quizCards.length}</strong> câu hỏi.
+              </p>
+              <div className={styles.confirmBtns}>
+                <button
+                  className={styles.confirmBtnCancel}
+                  onClick={() => setShowExitConfirm(false)}
+                >
+                  Tiếp tục làm bài
+                </button>
+                <button
+                  className={styles.confirmBtnExit}
+                  onClick={() => router.push('/library/quiz')}
+                >
+                  <ArrowLeft size={14} /> Thoát bài thi
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── RESULT MODAL ── */}
       <AnimatePresence>

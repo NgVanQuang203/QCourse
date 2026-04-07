@@ -558,6 +558,185 @@
 }
 .modalBtnPrimary:hover { transform: translateY(2px); box-shadow: 0 1px 0 var(--primary-hover); }
 
+/* ── EMPTY STATE ─────────────────────────────────── */
+.emptyState {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.emptyOrb {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -58%);
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.emptyContent {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 460px;
+}
+
+.emptyIconWrap {
+  width: 88px;
+  height: 88px;
+  border-radius: 24px;
+  background: var(--primary-light);
+  border: 2px solid rgba(88, 166, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.75rem;
+  color: var(--primary);
+}
+
+.emptyTitle {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  margin-bottom: 0.85rem;
+  color: var(--foreground);
+}
+
+.emptyDesc {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  opacity: 0.6;
+  margin-bottom: 2.25rem;
+}
+
+.emptyActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.emptyBtnPrimary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.75rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 4px 0 var(--primary-hover);
+}
+
+.emptyBtnPrimary:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--primary-hover); }
+
+.emptyBtnSecondary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.75rem;
+  background: var(--surface);
+  color: var(--foreground);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.emptyBtnSecondary:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ── EXIT CONFIRM MODAL ──────────────────────────── */
+.confirmCard {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 24px;
+  padding: 2.5rem 2rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+}
+
+.confirmIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: rgba(210, 153, 34, 0.12);
+  border: 2px solid rgba(210, 153, 34, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+  color: var(--warning);
+}
+
+.confirmTitle {
+  font-size: 1.18rem;
+  font-weight: 900;
+  margin-bottom: 0.65rem;
+  color: var(--foreground);
+}
+
+.confirmDesc {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  opacity: 0.6;
+  margin-bottom: 1.75rem;
+}
+
+.confirmBtns {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.confirmBtnCancel {
+  flex: 1;
+  padding: 0.85rem;
+  border-radius: 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 3px 0 var(--primary-hover);
+}
+
+.confirmBtnCancel:hover { transform: translateY(-1px); }
+
+.confirmBtnExit {
+  flex: 1;
+  padding: 0.85rem;
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--danger);
+  border: 1.5px solid rgba(248, 81, 73, 0.4);
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: all 0.15s;
+}
+
+.confirmBtnExit:hover { background: rgba(248, 81, 73, 0.08); border-color: var(--danger); }
+
 /* ══════════════════════════════════════════════
    MOBILE ≤ 768px — Bottom nav bar paradigm
    ══════════════════════════════════════════════ */
