@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { signIn } from 'next-auth/react';
 import styles from '../auth.module.css';
 
 export default function LoginPage() {
@@ -23,9 +24,10 @@ export default function LoginPage() {
   };
 
   const handleGoogle = () => {
-    // TODO: signIn('google')
-    router.push('/');
+    setLoading(true);
+    signIn('google', { callbackUrl: '/' });
   };
+
 
   return (
     <div className={styles.page}>
