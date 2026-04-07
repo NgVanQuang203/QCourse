@@ -4,7 +4,9 @@
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function AuthErrorPage() {
+import { Suspense } from 'react';
+
+function AuthErrorContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
 
@@ -33,3 +35,12 @@ export default function AuthErrorPage() {
     </div>
   );
 }
+
+export default function AuthErrorPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '8rem', textAlign: 'center' }}>Đang tải trạng thái lỗi...</div>}>
+      <AuthErrorContent />
+    </Suspense>
+  );
+}
+
