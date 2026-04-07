@@ -1,0 +1,508 @@
+/* EditDeckModal.module.css */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(6px);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 720px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.22);
+  animation: slideUp 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.5rem 1.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--foreground);
+  letter-spacing: -0.3px;
+  margin-bottom: 0.2rem;
+}
+
+.subtitle {
+  font-size: 0.8rem;
+  opacity: 0.45;
+  font-weight: 600;
+}
+
+.closeBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface-hover);
+  color: var(--foreground);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.closeBtn:hover { border-color: var(--danger); color: var(--danger); }
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  padding: 0.75rem 1.75rem 0;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.tab {
+  padding: 0.6rem 1.1rem;
+  border-radius: 10px 10px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--foreground);
+  opacity: 0.55;
+  transition: all 0.15s;
+  position: relative;
+  bottom: -1px;
+}
+
+.tab:hover:not(:disabled) { opacity: 0.85; background: var(--surface-hover); }
+.tab:disabled { cursor: not-allowed; opacity: 0.25; }
+
+.tabActive {
+  opacity: 1 !important;
+  background: var(--surface) !important;
+  border-color: var(--border);
+  border-bottom-color: var(--surface) !important;
+  color: var(--primary) !important;
+}
+
+/* ── BODY ── */
+.body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.section {
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.savedAlert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  background: rgba(16,185,129,0.1);
+  border: 1px solid rgba(16,185,129,0.3);
+  border-radius: 10px;
+  color: var(--success);
+  font-weight: 700;
+  font-size: 0.82rem;
+  margin-bottom: 1rem;
+  animation: fadeSlideIn 0.25s ease;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.formGroup {
+  margin-bottom: 1.1rem;
+}
+
+.label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--foreground);
+  opacity: 0.6;
+  margin-bottom: 0.4rem;
+}
+
+.input {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border-radius: 11px;
+  border: 1.5px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.input:focus { outline: none; border-color: var(--primary); }
+
+.textarea {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border-radius: 11px;
+  border: 1.5px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+  line-height: 1.55;
+}
+
+.textarea:focus { outline: none; border-color: var(--primary); }
+
+/* ── COLOR PICKER ── */
+.colorGrid {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.colorItem {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.colorActive {
+  border-color: var(--foreground);
+  transform: scale(1.12);
+}
+
+/* ── FORM ACTIONS ── */
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+}
+
+.btnCancel {
+  padding: 0.65rem 1.25rem;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--surface-hover);
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btnSave {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1.35rem;
+  border-radius: 10px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 3px 0 var(--primary-hover);
+}
+
+.btnSave:hover { transform: translateY(-1px); box-shadow: 0 5px 0 var(--primary-hover); }
+.btnSave:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--primary-hover); }
+.btnSave:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.btnGhost {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.btnGhost:hover { background: var(--surface-hover); }
+
+/* ── ADD CARD ── */
+.addCardBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.2rem;
+  border-radius: 12px;
+  border: 2px dashed var(--border);
+  background: transparent;
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  width: 100%;
+  justify-content: center;
+  transition: all 0.15s;
+  margin-bottom: 1rem;
+}
+
+.addCardBtn:hover { border-color: var(--primary); background: var(--primary-light); }
+
+/* ── NEW CARD FORM ── */
+.newCardForm {
+  background: var(--primary-light);
+  border: 1.5px solid var(--primary);
+  border-radius: 14px;
+  padding: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.cardFormGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.smallLabel {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--foreground);
+  opacity: 0.5;
+  margin-bottom: 0.3rem;
+}
+
+.cardInput {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+  line-height: 1.5;
+}
+
+.cardInput:focus { outline: none; border-color: var(--primary); }
+
+.newCardActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* ── CARD LIST ── */
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.emptyCards {
+  text-align: center;
+  padding: 2.5rem;
+  opacity: 0.4;
+}
+
+.emptyCards p {
+  margin-top: 0.75rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.cardItem {
+  background: var(--surface-hover);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.cardItemEditing {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.cardViewRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+}
+
+.cardNum {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: var(--foreground);
+  opacity: 0.5;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.cardTexts {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardFront {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--foreground);
+  line-height: 1.4;
+  margin-bottom: 0.2rem;
+}
+
+.cardBack {
+  font-size: 0.78rem;
+  opacity: 0.45;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardActions {
+  display: flex;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.iconBtnSm {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  opacity: 0.5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.iconBtnSm:hover { opacity: 1; border-color: var(--primary); }
+.iconDanger:hover { border-color: var(--danger) !important; color: var(--danger) !important; }
+
+/* ── OPTIONS grid (quiz mode) ── */
+.cardEditForm {
+  padding: 1rem;
+}
+
+.optionsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.optionRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.optionMark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  font-weight: 800;
+  font-size: 0.78rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.12s;
+}
+
+.optionCorrect {
+  background: var(--success) !important;
+  color: white !important;
+  border-color: var(--success) !important;
+}
+
+.optionInput {
+  flex: 1;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.optionInput:focus { outline: none; border-color: var(--primary); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .modal { border-radius: 18px; margin: 0; max-height: 95vh; }
+  .cardFormGrid { grid-template-columns: 1fr; }
+  .optionsGrid { grid-template-columns: 1fr; }
+}

@@ -338,6 +338,143 @@
   background: rgba(239, 68, 68, 0.08);
 }
 
+/* ── STREAK CHIP ──────────────────────────────────────────────── */
+.streakChip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.7rem 0.3rem 0.5rem;
+  border-radius: 999px;
+  background: var(--surface-hover);
+  border: 1.5px solid var(--border);
+  cursor: default;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.streakChip:hover {
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15);
+}
+
+/* 3+ days streak: glow */
+.streakFire {
+  border-color: #7c3aed;
+  background: rgba(124, 58, 237, 0.08);
+}
+
+/* 7+ days: animated pulse */
+.streakHot {
+  border-color: #6d28d9;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(56, 189, 248, 0.08));
+  animation: streakPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes streakPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.3); }
+  50%       { box-shadow: 0 0 0 6px rgba(124, 58, 237, 0); }
+}
+
+.streakIcon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.streakNum {
+  font-size: 0.85rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #a78bfa, #38bdf8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.3px;
+  line-height: 1;
+  padding: 1px 0;
+}
+
+.streakTooltip {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(var(--surface-rgb), 0.97);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.65rem 1rem;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+  z-index: 200;
+  animation: popIn 0.15s ease;
+  pointer-events: none;
+}
+
+.tooltipTitle {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: var(--foreground);
+  margin-bottom: 0.2rem;
+}
+
+.tooltipSub {
+  font-size: 0.75rem;
+  opacity: 0.55;
+  font-weight: 600;
+}
+
+/* ── AVATAR BUTTON ────────────────────────────────────────────── */
+.avatarBtn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.18s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  letter-spacing: 0.5px;
+}
+
+.avatarBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+  border-color: rgba(255,255,255,0.4);
+}
+
+/* ── DROPDOWN UPDATED ─────────────────────────────────────────── */
+.dropdownHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem 0.75rem;
+}
+
+.dropdownAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.dropdownDivider {
+  height: 1px;
+  background: var(--border);
+  margin: 0.3rem 0.6rem;
+}
+
 /* ── RESPONSIVE ─────────────────────────────── */
 @media (max-width: 768px) {
   .container {
@@ -355,7 +492,8 @@
 
   /* Hide desktop account/theme icons */
   .navActions .accountWrapper,
-  .navActions .themeBtn {
+  .navActions .themeBtn,
+  .navActions .streakChip {
     display: none;
   }
 

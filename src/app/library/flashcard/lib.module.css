@@ -1,0 +1,121 @@
+/* lib.module.css — shared library page styles */
+
+.actionBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  gap: 1rem;
+}
+
+.deckCount {
+  font-size: 0.82rem;
+  font-weight: 700;
+  opacity: 0.45;
+}
+
+.actionGroup {
+  display: flex;
+  gap: 0.65rem;
+}
+
+.btnImport {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 11px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btnImport:hover { border-color: var(--primary); color: var(--primary); }
+
+.btnCreate {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 11px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 3px 0 var(--primary-hover);
+}
+
+.btnCreate:hover { transform: translateY(-1px); box-shadow: 0 5px 0 var(--primary-hover); }
+.btnCreate:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--primary-hover); }
+
+/* ── KEBAB MENU ─── */
+.menuWrap {
+  position: relative;
+}
+
+.menuBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--foreground);
+  opacity: 0.4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.menuBtn:hover { opacity: 1; background: var(--surface-hover); border-color: var(--border); }
+
+.menuDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 170px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 50;
+  animation: popDown 0.15s cubic-bezier(0.16,1,0.3,1);
+}
+
+@keyframes popDown {
+  from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.12s;
+  width: 100%;
+  text-align: left;
+}
+
+.menuItem:hover { background: var(--surface-hover); }
+.menuDanger { color: var(--danger) !important; }
+.menuDanger:hover { background: rgba(239,68,68,0.08) !important; }

@@ -1,0 +1,262 @@
+/* EditQuizModal.module.css — quiz-specific styles */
+
+.wideModal {
+  max-width: 780px !important;
+}
+
+/* ── QUESTION FORM ───────────────────────────────────────────── */
+.qForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.qFormGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.qLabel {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--foreground);
+  opacity: 0.55;
+}
+
+.qTextarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 11px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+  line-height: 1.55;
+}
+
+.qTextarea:focus { outline: none; border-color: var(--primary); }
+
+/* ── OPTIONS GRID ───────────────────────────────────────────── */
+.optionsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.optionRow {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.optionBadge {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--surface-hover);
+  color: var(--foreground);
+  font-weight: 900;
+  font-size: 0.78rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.optionBadge:hover { border-color: var(--success); color: var(--success); }
+
+.optionCorrect {
+  background: var(--success) !important;
+  border-color: var(--success) !important;
+  color: white !important;
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.2);
+}
+
+.optionInput {
+  flex: 1;
+  padding: 0.55rem 0.75rem;
+  border-radius: 9px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  transition: border-color 0.15s;
+  min-width: 0;
+}
+
+.optionInput:focus { outline: none; border-color: var(--primary); }
+
+/* ── HINT ────────────────────────────────────────────────────── */
+.qHint {
+  font-size: 0.72rem;
+  color: var(--foreground);
+  opacity: 0.4;
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  background: var(--surface-hover);
+  border-left: 3px solid var(--success);
+}
+
+/* ── FORM ACTIONS ────────────────────────────────────────────── */
+.qActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.btnGhost {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 1rem;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.btnGhost:hover { background: var(--surface-hover); }
+
+.btnSave {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 1.25rem;
+  border-radius: 9px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  font-weight: 800;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 3px 0 var(--primary-hover);
+}
+
+.btnSave:hover { transform: translateY(-1px); box-shadow: 0 5px 0 var(--primary-hover); }
+.btnSave:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ── NEW QUESTION WRAPPER ────────────────────────────────────── */
+.newQWrap {
+  background: var(--primary-light);
+  border: 1.5px solid var(--primary);
+  border-radius: 14px;
+  padding: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+/* ── OPTION PREVIEW (list view) ─────────────────────────────── */
+.optionPreview {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.3rem;
+}
+
+.optPrev {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  opacity: 0.55;
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.optPrevCorrect {
+  background: rgba(16,185,129,0.12) !important;
+  border-color: rgba(16,185,129,0.4) !important;
+  color: var(--success) !important;
+  opacity: 1 !important;
+  font-weight: 800;
+}
+
+/* ── TIME SETTING ────────────────────────────────────────────── */
+.timeRow { margin-bottom: 1rem; }
+
+.timeInputRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.timeBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--surface-hover);
+  color: var(--foreground);
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+  flex-shrink: 0;
+}
+
+.timeBtn:hover { border-color: var(--primary); color: var(--primary); }
+
+.timeDisplay {
+  min-width: 52px;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.timePre {
+  font-size: 0.75rem;
+  opacity: 0.4;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.timePreset {
+  padding: 0.3rem 0.65rem;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--surface-hover);
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.timePreset:hover { border-color: var(--primary); }
+.timePresetActive {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: white !important;
+}
+
+/* ── RESPONSIVE ─────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .optionsGrid { grid-template-columns: 1fr; }
+  .timeInputRow { gap: 0.35rem; }
+}

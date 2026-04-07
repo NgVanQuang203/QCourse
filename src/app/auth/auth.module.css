@@ -1,0 +1,523 @@
+/* ============================================================
+   AUTH PAGES — Q-Card (Login + Register)
+   Shared CSS module
+   ============================================================ */
+
+/* ── PAGE LAYOUT ─────────────────────────────────────────────── */
+.page {
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--background);
+}
+
+/* ── LEFT BRAND PANEL ────────────────────────────────────────── */
+.brand {
+  position: relative;
+  background: linear-gradient(145deg, #0f0c29, #302b63, #24243e);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+}
+
+/* Animated gradient blobs */
+.blob1 {
+  position: absolute;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99,102,241,0.35), transparent 70%);
+  top: -60px;
+  left: -80px;
+  animation: blobFloat 7s ease-in-out infinite;
+}
+
+.blob2 {
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(167,139,250,0.25), transparent 70%);
+  bottom: -40px;
+  right: -60px;
+  animation: blobFloat 9s ease-in-out infinite 2s;
+}
+
+@keyframes blobFloat {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(16px,-20px) scale(1.05); }
+  66% { transform: translate(-10px,12px) scale(0.95); }
+}
+
+.brandInner {
+  position: relative;
+  max-width: 380px;
+  animation: fadeSlideUp 0.6s ease both;
+}
+
+@keyframes fadeSlideUp {
+  from { opacity:0; transform: translateY(24px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 2rem;
+}
+
+.logoIcon { font-size: 2rem; }
+
+.logoText {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: white;
+  letter-spacing: -0.5px;
+}
+
+.brandTitle {
+  font-size: 2.1rem;
+  font-weight: 900;
+  color: white;
+  line-height: 1.2;
+  letter-spacing: -0.8px;
+  margin-bottom: 1rem;
+}
+
+.brandDesc {
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.65;
+  margin-bottom: 2rem;
+}
+
+.brandDesc strong { color: rgba(255,255,255,0.9); }
+
+.brandFeatures {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.brandFeatureItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: rgba(255,255,255,0.75);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.brandFeatureIcon {
+  width: 32px;
+  height: 32px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* Social proof */
+.socialProof {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.avatarStack {
+  display: flex;
+  align-items: center;
+}
+
+.stackAvatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.3);
+  flex-shrink: 0;
+  transition: margin 0.2s;
+}
+
+.socialProofText {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.65);
+  font-weight: 600;
+}
+
+.socialProofText strong { color: rgba(255,255,255,0.9); }
+
+/* ── RIGHT FORM PANEL ────────────────────────────────────────── */
+.panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 2rem;
+  background: var(--background);
+  overflow-y: auto;
+}
+
+.formCard {
+  width: 100%;
+  max-width: 400px;
+  animation: fadeSlideUp 0.55s ease 0.1s both;
+}
+
+.formHeader {
+  margin-bottom: 1.75rem;
+}
+
+.formTitle {
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: var(--foreground);
+  letter-spacing: -0.6px;
+  margin-bottom: 0.4rem;
+}
+
+.formSubtitle {
+  font-size: 0.87rem;
+  color: var(--foreground);
+  opacity: 0.5;
+  font-weight: 600;
+}
+
+.switchLink {
+  color: var(--primary);
+  font-weight: 800;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.switchLink:hover { opacity: 0.7; }
+
+/* ── GOOGLE BUTTON ───────────────────────────────────────────── */
+.googleBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  border-radius: 13px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.googleBtn:hover {
+  border-color: rgba(66,133,244,0.5);
+  box-shadow: 0 4px 16px rgba(66,133,244,0.15);
+  background: var(--surface-hover);
+  transform: translateY(-1px);
+}
+
+.googleBtn:active { transform: translateY(0); }
+
+/* ── DIVIDER ─────────────────────────────────────────────────── */
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 1.25rem 0;
+  color: var(--foreground);
+  opacity: 0.3;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: calc(50% - 55px);
+  height: 1px;
+  background: var(--border);
+}
+
+.divider::before { left: 0; }
+.divider::after  { right: 0; }
+
+/* ── ERROR ALERT ─────────────────────────────────────────────── */
+.errorAlert {
+  padding: 0.75rem 1rem;
+  background: rgba(239,68,68,0.08);
+  border: 1.5px solid rgba(239,68,68,0.25);
+  border-radius: 11px;
+  color: var(--danger);
+  font-size: 0.84rem;
+  font-weight: 700;
+  margin-bottom: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%,60% { transform: translateX(-5px); }
+  40%,80% { transform: translateX(5px); }
+}
+
+/* ── FORM ────────────────────────────────────────────────────── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--foreground);
+  opacity: 0.65;
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.forgotLink {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-decoration: none;
+  opacity: 0.75;
+  transition: opacity 0.15s;
+}
+
+.forgotLink:hover { opacity: 1; }
+
+.inputWrap {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  overflow: hidden;
+}
+
+.inputWrap:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+}
+
+.inputError {
+  border-color: var(--danger) !important;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.1) !important;
+}
+
+.inputIcon {
+  padding: 0 0.75rem 0 1rem;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.input {
+  flex: 1;
+  padding: 0.8rem 0.75rem 0.8rem 0;
+  border: none;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  outline: none;
+}
+
+.input::placeholder { opacity: 0.35; font-weight: 500; }
+.input:-webkit-autofill { box-shadow: 0 0 0 30px var(--surface) inset; -webkit-text-fill-color: var(--foreground); }
+
+.pwToggle {
+  padding: 0 0.85rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.55;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.pwToggle:hover { opacity: 1; }
+
+.fieldError {
+  font-size: 0.73rem;
+  color: var(--danger);
+  font-weight: 700;
+}
+
+/* ── STRENGTH BAR ────────────────────────────────────────────── */
+.strengthRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.35rem;
+}
+
+.strengthBar {
+  display: flex;
+  gap: 3px;
+  flex: 1;
+}
+
+.strengthSeg {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border);
+  transition: background 0.25s;
+}
+
+.str1 { background: #ef4444; }
+.str2 { background: #f59e0b; }
+.str3 { background: #3b82f6; }
+.str4 { background: #10b981; }
+
+.strengthLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  opacity: 0.45;
+  white-space: nowrap;
+  color: var(--foreground);
+}
+
+/* ── SUBMIT BUTTON ───────────────────────────────────────────── */
+.submitBtn {
+  width: 100%;
+  padding: 0.95rem;
+  border-radius: 13px;
+  border: none;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: white;
+  font-weight: 800;
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 0 rgba(99,102,241,0.4), 0 8px 24px rgba(99,102,241,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  letter-spacing: 0.2px;
+}
+
+.submitBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 rgba(99,102,241,0.4), 0 12px 32px rgba(99,102,241,0.3);
+}
+
+.submitBtn:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 2px 0 rgba(99,102,241,0.4);
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.loading {
+  background: linear-gradient(135deg, #818cf8, #c084fc) !important;
+}
+
+/* Loading spinner */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255,255,255,0.35);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── CHECKBOX / TERMS ────────────────────────────────────────── */
+.checkRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--foreground);
+  opacity: 0.7;
+  cursor: pointer;
+  line-height: 1.55;
+}
+
+.check {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.tos {
+  font-size: 0.74rem;
+  opacity: 0.38;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 1.25rem;
+  line-height: 1.55;
+  color: var(--foreground);
+}
+
+.tosLink {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+/* ── RESPONSIVE ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .page {
+    grid-template-columns: 1fr;
+  }
+
+  .brand {
+    padding: 2.5rem 1.5rem;
+    min-height: auto;
+  }
+
+  .brandTitle { font-size: 1.6rem; }
+  .brandFeatures { display: none; }
+
+  .panel {
+    padding: 2rem 1.25rem;
+  }
+
+  .formCard {
+    max-width: 100%;
+  }
+}

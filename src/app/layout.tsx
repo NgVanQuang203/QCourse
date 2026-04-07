@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { SessionProvider } from "@/components/SessionProvider";
 import "./globals.css";
+
 
 const font = Be_Vietnam_Pro({
   variable: "--font-sans",
@@ -25,12 +27,15 @@ export default function RootLayout({
     <html lang="vi" suppressHydrationWarning className={`${font.variable}`}>
       <body>
         <ThemeProvider>
-          <Navbar />
-          {/* Offset fixed navbar */}
-          <div style={{ paddingTop: 'var(--nav-height)' }}>
-            {children}
-          </div>
+          <SessionProvider>
+            <Navbar />
+            {/* Offset fixed navbar */}
+            <div style={{ paddingTop: 'var(--nav-height)' }}>
+              {children}
+            </div>
+          </SessionProvider>
         </ThemeProvider>
+
       </body>
     </html>
   );

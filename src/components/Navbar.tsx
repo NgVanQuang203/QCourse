@@ -1,65 +1,81 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { LogOut, Info } from 'lucide-react';
+import { LogOut, User, Settings } from 'lucide-react';
 import styles from './navbar.module.css';
 import { useEffect, useState } from 'react';
+import { useStore } from '@/lib/store';
+
+// ── Custom Streak Icon (Lightning bolt — unique to Q-Card) ──
+function StreakIcon({ streak }: { streak: number }) {
+  const [showTip, setShowTip] = useState(false);
+  const hot = streak >= 7;
+  const fire = streak >= 3;
+
+  return (
+    <div
+      className={`${styles.streakChip} ${hot ? styles.streakHot : fire ? styles.streakFire : ''}`}
+      onMouseEnter={() => setShowTip(true)}
+      onMouseLeave={() => setShowTip(false)}
+    >
+      <svg className={styles.streakIcon} viewBox="0 0 24 24" fill="none">
+        <defs>
+          <linearGradient id="bolt-grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#a78bfa" />
+            <stop offset="100%" stopColor="#38bdf8" />
+          </linearGradient>
+        </defs>
+        <path
+          d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z"
+          fill="url(#bolt-grad)"
+          stroke="none"
+        />
+      </svg>
+      <span className={styles.streakNum}>{streak}</span>
+
+      {showTip && (
+        <div className={styles.streakTooltip}>
+          <div className={styles.tooltipTitle}>⚡ Streak {streak} ngày</div>
+          <div className={styles.tooltipSub}>
+            {streak === 0 ? 'Học hôm nay để bắt đầu streak!' :
+             streak < 3 ? 'Tiếp tục duy trì nhịp học!' :
+             streak < 7 ? '🔥 Đang có đà tốt!' :
+             '🏆 Streak siêu khủng! Tiếp tục đi!'}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { streak, profile } = useStore();
 
   useEffect(() => setMounted(true), []);
-
-  // Close mobile menu on route change
   useEffect(() => setIsMobileOpen(false), [pathname]);
-
-  // Prevent body scroll when mobile menu open
   useEffect(() => {
     document.body.style.overflow = isMobileOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [isMobileOpen]);
 
-  // ── Theme toggle with circular reveal animation ──────────────────
   const toggleTheme = (e?: React.MouseEvent) => {
     const nextTheme = resolvedTheme === 'dark' ? 'light' : 'dark';
-
-    // View Transitions API — only if supported
-    if (!document.startViewTransition || !e) {
-      setTheme(nextTheme);
-      return;
-    }
-
-    // Get click origin for the ripple center
-    const x = e.clientX;
-    const y = e.clientY;
-    const endRadius = Math.hypot(
-      Math.max(x, window.innerWidth - x),
-      Math.max(y, window.innerHeight - y)
-    );
-
-    const transition = document.startViewTransition(() => {
-      setTheme(nextTheme);
-    });
-
+    if (!document.startViewTransition || !e) { setTheme(nextTheme); return; }
+    const x = e.clientX, y = e.clientY;
+    const endRadius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+    const transition = document.startViewTransition(() => setTheme(nextTheme));
     transition.ready.then(() => {
-      // Animate the new view expanding from the click point
-      const clipPath = [
-        `circle(0px at ${x}px ${y}px)`,
-        `circle(${endRadius}px at ${x}px ${y}px)`,
-      ];
       document.documentElement.animate(
-        { clipPath },
-        {
-          duration: 450,
-          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-          pseudoElement: '::view-transition-new(root)',
-        }
+        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`] },
+        { duration: 450, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', pseudoElement: '::view-transition-new(root)' }
       );
     });
   };
@@ -75,6 +91,9 @@ export default function Navbar() {
     return item.match?.some(m => pathname.startsWith(m)) ?? false;
   };
 
+  // Get initials for avatar
+  const initials = profile.displayName.slice(0, 2).toUpperCase();
+
   return (
     <>
       <nav className={styles.navbar}>
@@ -84,8 +103,6 @@ export default function Navbar() {
               <span style={{ fontSize: '1.6rem' }}>🎓</span>
               Q-Card
             </Link>
-
-            {/* Desktop links */}
             <div className={styles.links}>
               {navItems.map((item) => (
                 <Link
@@ -100,36 +117,50 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Desktop right actions */}
           <div className={styles.navActions}>
+            {/* Streak chip */}
+            {mounted && <StreakIcon streak={streak} />}
+
+            {/* Theme toggle */}
             {mounted && (
               <button
                 className={`${styles.iconBtn} ${styles.themeBtn}`}
                 onClick={(e) => toggleTheme(e)}
-                title="Chuyển giao diện Sáng / Tối"
+                title="Chuyển giao diện"
               >
                 {resolvedTheme === 'dark' ? '🌞' : '🌙'}
               </button>
             )}
 
+            {/* Account dropdown */}
             <div
               className={styles.accountWrapper}
               onMouseEnter={() => setIsDropdownOpen(true)}
               onMouseLeave={() => setIsDropdownOpen(false)}
             >
-              <button className={styles.iconBtn} title="Tài khoản">
-                🦊
+              <button className={styles.avatarBtn} title="Tài khoản" style={{ background: profile.avatarColor }}>
+                {initials}
               </button>
 
               {isDropdownOpen && (
                 <div className={styles.dropdown}>
                   <div className={styles.dropdownHeader}>
-                    <div className={styles.dropdownUsername}>Người dùng</div>
-                    <div className={styles.dropdownEmail}>user@qcard.vn</div>
+                    <div className={styles.dropdownAvatar} style={{ background: profile.avatarColor }}>
+                      {initials}
+                    </div>
+                    <div>
+                      <div className={styles.dropdownUsername}>{profile.displayName}</div>
+                      <div className={styles.dropdownEmail}>@{profile.nickname}</div>
+                    </div>
                   </div>
-                  <div className={styles.dropdownItem}>
-                    <Info size={16} /> Thông tin tài khoản
+                  <div className={styles.dropdownDivider} />
+                  <div className={styles.dropdownItem} onClick={() => { router.push('/profile'); setIsDropdownOpen(false); }}>
+                    <User size={16} /> Trang cá nhân
                   </div>
+                  <div className={styles.dropdownItem} onClick={() => { router.push('/profile?tab=settings'); setIsDropdownOpen(false); }}>
+                    <Settings size={16} /> Cài đặt
+                  </div>
+                  <div className={styles.dropdownDivider} />
                   <div className={`${styles.dropdownItem} ${styles.dangerItem}`}>
                     <LogOut size={16} /> Đăng xuất
                   </div>
@@ -143,15 +174,13 @@ export default function Navbar() {
               onClick={() => setIsMobileOpen(!isMobileOpen)}
               aria-label="Menu"
             >
-              <span />
-              <span />
-              <span />
+              <span /><span /><span />
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Mobile fullscreen drawer */}
+      {/* Mobile drawer */}
       <div className={`${styles.mobileMenu} ${isMobileOpen ? styles.open : ''}`}>
         {navItems.map((item) => (
           <Link
@@ -163,9 +192,11 @@ export default function Navbar() {
             {item.label}
           </Link>
         ))}
-
+        <Link href="/profile" className={`${styles.mobileLink} ${pathname === '/profile' ? styles.active : ''}`}>
+          <span className={styles.mobileLinkIcon}>👤</span>
+          Trang cá nhân
+        </Link>
         <div className={styles.mobileDivider} />
-
         <div className={styles.mobileBottom}>
           {mounted && (
             <button className={styles.mobileThemeBtn} onClick={(e) => { toggleTheme(e); setIsMobileOpen(false); }}>
@@ -173,13 +204,8 @@ export default function Navbar() {
               {resolvedTheme === 'dark' ? 'Chế độ Sáng' : 'Chế độ Tối'}
             </button>
           )}
-          <button className={styles.mobileThemeBtn} style={{ color: 'var(--foreground)' }}>
-            <span style={{ fontSize: '1.5rem' }}>🦊</span>
-            Tài khoản của tôi
-          </button>
           <button className={styles.mobileThemeBtn} style={{ color: 'var(--danger)' }}>
-            <span style={{ fontSize: '1.5rem' }}>🚪</span>
-            Đăng xuất
+            <span style={{ fontSize: '1.5rem' }}>🚪</span> Đăng xuất
           </button>
         </div>
       </div>
