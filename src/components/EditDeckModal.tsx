@@ -49,7 +49,7 @@ export default function EditDeckModal({ deckId, mode, onClose }: Props) {
   const handleSaveDeck = async () => {
     if (!deckForm.name.trim()) return;
     if (isNew && !currentDeckId) {
-      const newId = await addDeck({ ...deckForm, folderId: undefined });
+      const newId = await addDeck({ ...deckForm, folderId: undefined, type: 'FLASHCARD' });
       if (newId) {
         setCurrentDeckId(newId);
         setActiveSection('cards');

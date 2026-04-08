@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from '@/app/page.module.css';
+import loadingStyles from '@/app/loading.module.css';
 import libStyles from '../flashcard/lib.module.css';
 import { useStore } from '@/lib/store';
 import { ChevronLeft, ChevronRight, Plus, Upload, MoreVertical, Edit2, Trash2 } from 'lucide-react';
@@ -19,9 +20,10 @@ export default function QuizLibrary() {
   const [importDeck, setImportDeck] = useState<string | null>(null);
 
   const { decks, isLoading, deleteDeck } = useStore();
+  const quizDecks = decks.filter(d => d.type === 'QUIZ');
 
-  const totalPages = Math.ceil(decks.length / PAGE_SIZE);
-  const paged = decks.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.ceil(quizDecks.length / PAGE_SIZE);
+  const paged = quizDecks.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleDelete = (deckId: string) => {
     if (confirm('Xoá bộ bài này?')) { deleteDeck(deckId); setMenuOpenId(null); }
@@ -29,9 +31,14 @@ export default function QuizLibrary() {
 
   if (isLoading) {
     return (
-      <div className={styles.loadingContainer}>
-        <div className={styles.loader}></div>
-        <p>Đang chuẩn bị đề thi...</p>
+      <div className={loadingStyles.skeletonContainer}>
+        <div className={loadingStyles.skeletonHero} />
+        <div className={loadingStyles.skeletonBar} />
+        <div className={loadingStyles.skeletonGrid}>
+          <div className={loadingStyles.skeletonCard} />
+          <div className={loadingStyles.skeletonCard} />
+          <div className={loadingStyles.skeletonCard} />
+        </div>
       </div>
     );
   }
@@ -51,7 +58,7 @@ export default function QuizLibrary() {
 
       {/* Action bar */}
       <div className={libStyles.actionBar}>
-        <span className={libStyles.deckCount}>{decks.length} đề thi</span>
+        <span className={libStyles.deckCount}>{quizDecks.length} đề thi</span>
         <div className={libStyles.actionGroup}>
           <button className={libStyles.btnImport} onClick={() => setImportDeck('__pick')}>
             <Upload size={15} /> Import
@@ -130,7 +137,7 @@ export default function QuizLibrary() {
         <EditQuizModal deckId={editDeck === 'new' ? null : editDeck} onClose={() => setEditDeck(null)} />
       )}
       {importDeck !== null && (
-        <ImportQuizModal deckId={importDeck === '__pick' ? null : importDeck} allDecks={decks} onClose={() => setImportDeck(null)} />
+        <ImportQuizModal deckId={importDeck === '__pick' ? null : importDeck} allDecks={quizDecks} onClose={() => setImportDeck(null)} />
       )}
     </main>
   );

@@ -16,6 +16,8 @@ export interface Deck {
   name: string;
   description: string;
   color: string;
+  timeLimitSec?: number;
+  type?: 'FLASHCARD' | 'QUIZ';
 }
 
 export interface Folder {

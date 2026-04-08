@@ -3,6 +3,7 @@ import { Be_Vietnam_Pro } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SessionProvider } from "@/components/SessionProvider";
+import { StoreProvider } from "@/lib/store";
 import "./globals.css";
 
 
@@ -28,11 +29,13 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <SessionProvider>
-            <Navbar />
-            {/* Offset fixed navbar */}
-            <div style={{ paddingTop: 'var(--nav-height)' }}>
-              {children}
-            </div>
+            <StoreProvider>
+              <Navbar />
+              {/* Offset fixed navbar */}
+              <div style={{ paddingTop: 'var(--nav-height)' }}>
+                {children}
+              </div>
+            </StoreProvider>
           </SessionProvider>
         </ThemeProvider>
 
@@ -40,3 +43,4 @@ export default function RootLayout({
     </html>
   );
 }
+

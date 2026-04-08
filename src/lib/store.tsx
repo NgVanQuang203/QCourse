@@ -1,9 +1,10 @@
 // ─────────────────────────────────────────────────────────────
-//  Q-Card Store — Database Sync Version
+//  Q-Card Store — Shared Context Version
+//  All components share the SAME state via React Context.
 // ─────────────────────────────────────────────────────────────
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useSession } from 'next-auth/react';
 import { Deck, Card } from './mockData';
 import { SM2Data, sm2InitialData } from './sm2';
@@ -40,6 +41,20 @@ export interface StoreState {
   isLoading: boolean;
 }
 
+export interface StoreActions {
+  updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
+  addDeck: (deck: Omit<Deck, 'id'>) => Promise<string | undefined>;
+  updateDeck: (id: string, changes: Partial<Deck>) => Promise<void>;
+  deleteDeck: (id: string) => Promise<void>;
+  addCard: (card: Omit<Card, 'id' | 'sm2Data'>) => Promise<void>;
+  updateCard: (id: string, changes: Partial<Card>) => Promise<void>;
+  deleteCard: (id: string) => Promise<void>;
+  importCards: (deckId: string, cards: Partial<Card>[]) => Promise<number>;
+  logActivity: (minutesStudied: number, cardsStudied: number, deckId: string) => Promise<void>;
+  fetchDeckCards: (deckId: string) => Promise<Card[] | undefined>;
+  refreshStats: () => Promise<void>;
+}
+
 const INITIAL_STATE: StoreState = {
   decks: [],
   cards: [],
@@ -50,9 +65,13 @@ const INITIAL_STATE: StoreState = {
   isLoading: true,
 };
 
-// ── Hook ─────────────────────────────────────────────────────
+// ── Context ─────────────────────────────────────────────────────
 
-export function useStore() {
+const StoreContext = createContext<(StoreState & StoreActions) | null>(null);
+
+// ── Provider ────────────────────────────────────────────────────
+
+export function StoreProvider({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession();
   const [state, setState] = useState<StoreState>(INITIAL_STATE);
 
@@ -80,7 +99,7 @@ export function useStore() {
 
       setState({
         decks: decksData.decks || [],
-        cards: [], // Cards loaded on demand or per deck
+        cards: [],
         profile: profileData.user || null,
         activity: activityData.activity || [],
         streak: activityData.streak || 0,
@@ -99,21 +118,25 @@ export function useStore() {
 
   // ── Helper: Refresh counts/activity ──────────────────────────
   const refreshStats = useCallback(async () => {
-    const [decksRes, activityRes] = await Promise.all([
-      fetch('/api/decks'),
-      fetch('/api/activity')
-    ]);
-    const [decksData, activityData] = await Promise.all([
-      decksRes.json(),
-      activityRes.json()
-    ]);
-    setState(s => ({
-      ...s,
-      decks: decksData.decks || [],
-      activity: activityData.activity || [],
-      streak: activityData.streak || 0,
-      maxStreak: activityData.maxStreak || 0,
-    }));
+    try {
+      const [decksRes, activityRes] = await Promise.all([
+        fetch('/api/decks'),
+        fetch('/api/activity')
+      ]);
+      const [decksData, activityData] = await Promise.all([
+        decksRes.json(),
+        activityRes.json()
+      ]);
+      setState(s => ({
+        ...s,
+        decks: decksData.decks || [],
+        activity: activityData.activity || [],
+        streak: activityData.streak || 0,
+        maxStreak: activityData.maxStreak || 0,
+      }));
+    } catch (e) {
+      console.error('refreshStats failed:', e);
+    }
   }, []);
 
   // ── Profile ──────────────────────────────────────────────
@@ -134,16 +157,22 @@ export function useStore() {
   }, []);
 
   // ── Decks ────────────────────────────────────────────────
-  const addDeck = useCallback(async (deck: Omit<Deck, 'id'>) => {
+  const addDeck = useCallback(async (deck: Omit<Deck, 'id'>): Promise<string | undefined> => {
     try {
       const res = await fetch('/api/decks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(deck),
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        console.error('Add deck failed:', res.status, errData);
+        return;
+      }
       const data = await res.json();
       if (data.deck) {
-        setState(s => ({ ...s, decks: [data.deck, ...s.decks] }));
+        // Add to local state immediately so all consumers see it
+        setState(s => ({ ...s, decks: [{ ...data.deck, _count: { cards: 0 }, dueCount: 0, masteredCount: 0 }, ...s.decks] }));
         return data.deck.id;
       }
     } catch (error) {
@@ -186,7 +215,7 @@ export function useStore() {
   }, []);
 
   // ── Cards ────────────────────────────────────────────────
-  const fetchDeckCards = useCallback(async (deckId: string) => {
+  const fetchDeckCards = useCallback(async (deckId: string): Promise<Card[] | undefined> => {
     try {
       const res = await fetch(`/api/decks/${deckId}`);
       const data = await res.json();
@@ -218,9 +247,13 @@ export function useStore() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(card),
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        console.error('Add card failed:', res.status, errData);
+        return;
+      }
       const data = await res.json();
       if (data.count) {
-        // Since it's bulk or single, we re-fetch deck cards to be sure
         await fetchDeckCards(card.deckId);
       }
     } catch (error) {
@@ -259,7 +292,7 @@ export function useStore() {
   }, []);
 
   // ── Import cards ─────────────────────────────────────────
-  const importCards = useCallback(async (deckId: string, cards: Partial<Card>[]) => {
+  const importCards = useCallback(async (deckId: string, cards: Partial<Card>[]): Promise<number> => {
     try {
       const res = await fetch(`/api/decks/${deckId}/cards`, {
         method: 'POST',
@@ -279,12 +312,10 @@ export function useStore() {
 
   // ── Activity / Streak ────────────────────────────────────
   const logActivity = useCallback(async (minutesStudied: number, cardsStudied: number, deckId: string) => {
-    // Activity is logged automatically by review/quiz submit APIs.
-    // We just need to refresh our local state.
     await refreshStats();
   }, [refreshStats]);
 
-  return {
+  const value: StoreState & StoreActions = {
     ...state,
     updateProfile,
     addDeck, updateDeck, deleteDeck,
@@ -293,4 +324,18 @@ export function useStore() {
     fetchDeckCards,
     refreshStats,
   };
+
+  return (
+    <StoreContext.Provider value={value}>
+      {children}
+    </StoreContext.Provider>
+  );
+}
+
+// ── Hook (consumers use this — all share the same state) ──────
+
+export function useStore(): StoreState & StoreActions {
+  const ctx = useContext(StoreContext);
+  if (!ctx) throw new Error('useStore must be used within <StoreProvider>');
+  return ctx;
 }

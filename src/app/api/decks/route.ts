@@ -64,13 +64,18 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return Response.json({ error: 'Chưa đăng nhập' }, { status: 401 });
 
-  const body = await req.json();
-  const parsed = CreateDeckSchema.safeParse(body);
-  if (!parsed.success) return Response.json({ error: parsed.error.issues[0].message }, { status: 400 });
+  try {
+    const body = await req.json();
+    const parsed = CreateDeckSchema.safeParse(body);
+    if (!parsed.success) return Response.json({ error: parsed.error.issues[0].message }, { status: 400 });
 
-  const deck = await prisma.deck.create({
-    data: { ...parsed.data, userId: session.user.id },
-  });
+    const deck = await prisma.deck.create({
+      data: { ...parsed.data, userId: session.user.id },
+    });
 
-  return Response.json({ deck }, { status: 201 });
+    return Response.json({ deck }, { status: 201 });
+  } catch (err: any) {
+    console.error('POST /api/decks error:', err);
+    return Response.json({ error: err?.message || 'Server error' }, { status: 500 });
+  }
 }

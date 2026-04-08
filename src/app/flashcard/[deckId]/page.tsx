@@ -43,8 +43,6 @@ export default function FlashcardMode() {
     load();
   }, [deckId, fetchDeckCards]);
 
-  if (!deck) return <div>Không tìm thấy bộ bài</div>;
-
   const currentCard = queue[currentIndex];
 
   const handleFlip = useCallback(() => {
@@ -117,6 +115,22 @@ export default function FlashcardMode() {
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [handleFlip, handleEvaluate, isFlipped, router]);
+
+  if (storeLoading || loading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - var(--nav-height))', gap: '1.5rem' }}>
+        <div style={{ fontSize: '3rem', animation: 'bounce 1.4s ease-in-out infinite' }}>🧠</div>
+        <div style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', animation: 'spin 0.8s linear infinite' }} />
+        <p style={{ fontSize: '1rem', fontWeight: 600, opacity: 0.5 }}>Đang tải bộ thẻ...</p>
+        <style>{`
+          @keyframes spin { to { transform: rotate(360deg); } }
+          @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+        `}</style>
+      </div>
+    );
+  }
+
+  if (!deck) return <div>Không tìm thấy bộ bài</div>;
 
   return (
     <div className={styles.container}>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from '@/app/page.module.css';
+import loadingStyles from '@/app/loading.module.css';
 import libStyles from './lib.module.css';
 import { useStore } from '@/lib/store';
 import { ChevronLeft, ChevronRight, Plus, Upload, MoreVertical, Edit2, Trash2, BookOpen, X } from 'lucide-react';
@@ -28,9 +29,10 @@ export default function FlashcardLibrary() {
   const [importDeck, setImportDeck] = useState<string | null>(null); // deckId to import into
 
   const { decks, isLoading, deleteDeck } = useStore();
+  const flashDecks = decks.filter(d => !d.type || d.type === 'FLASHCARD');
 
-  const totalPages = Math.ceil(decks.length / PAGE_SIZE);
-  const paged = decks.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.ceil(flashDecks.length / PAGE_SIZE);
+  const paged = flashDecks.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleDelete = (deckId: string) => {
     if (confirm('Xoá bộ bài này? Toàn bộ thẻ bên trong cũng sẽ bị xoá.')) {
@@ -41,9 +43,14 @@ export default function FlashcardLibrary() {
 
   if (isLoading) {
     return (
-      <div className={styles.loadingContainer}>
-        <div className={styles.loader}></div>
-        <p>Đang tải dữ liệu...</p>
+      <div className={loadingStyles.skeletonContainer}>
+        <div className={loadingStyles.skeletonHero} />
+        <div className={loadingStyles.skeletonBar} />
+        <div className={loadingStyles.skeletonGrid}>
+          <div className={loadingStyles.skeletonCard} />
+          <div className={loadingStyles.skeletonCard} />
+          <div className={loadingStyles.skeletonCard} />
+        </div>
       </div>
     );
   }
@@ -64,7 +71,7 @@ export default function FlashcardLibrary() {
 
       {/* Action bar */}
       <div className={libStyles.actionBar}>
-        <span className={libStyles.deckCount}>{decks.length} bộ bài</span>
+        <span className={libStyles.deckCount}>{flashDecks.length} bộ bài</span>
         <div className={libStyles.actionGroup}>
           <button className={libStyles.btnImport} onClick={() => setImportDeck('__pick')}>
             <Upload size={15} /> Import
@@ -175,7 +182,7 @@ export default function FlashcardLibrary() {
       {importDeck !== null && (
         <ImportModal
           deckId={importDeck === '__pick' ? null : importDeck}
-          allDecks={decks}
+          allDecks={flashDecks}
           onClose={() => setImportDeck(null)}
         />
       )}

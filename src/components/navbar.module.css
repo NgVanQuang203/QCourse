@@ -448,6 +448,42 @@
   border-color: rgba(255,255,255,0.4);
 }
 
+/* Skeleton placeholder shown while session is loading */
+.avatarSkeleton {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--border);
+  animation: skeletonPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.loginBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: white;
+  background: var(--primary);
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.loginBtn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+}
+
 /* ── DROPDOWN UPDATED ─────────────────────────────────────────── */
 .dropdownHeader {
   display: flex;

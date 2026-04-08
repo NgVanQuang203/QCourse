@@ -55,20 +55,30 @@ export default function QuizMode() {
   }, [cards]);
 
   const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [timeLeft, setTimeLeft] = useState(quizCards.length * 60);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [timerStarted, setTimerStarted] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
   const [highlightedIdx, setHighlightedIdx] = useState<number | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
+  // Initialize timer when quizCards become available
   useEffect(() => {
-    if (isSubmitted || timeLeft <= 0) return;
-    const id = setInterval(() => setTimeLeft(p => p - 1), 1000);
-    return () => clearInterval(id);
-  }, [isSubmitted, timeLeft]);
+    if (quizCards.length > 0 && !timerStarted) {
+      const perQuestion = (deck as any)?.timeLimitSec || 60;
+      setTimeLeft(quizCards.length * perQuestion);
+      setTimerStarted(true);
+    }
+  }, [quizCards, timerStarted, deck]);
 
   useEffect(() => {
-    if (timeLeft <= 0 && !isSubmitted) handleSubmit();
+    if (!timerStarted || isSubmitted || timeLeft <= 0) return;
+    const id = setInterval(() => setTimeLeft(p => p - 1), 1000);
+    return () => clearInterval(id);
+  }, [timerStarted, isSubmitted, timeLeft]);
+
+  useEffect(() => {
+    if (timeLeft <= 0 && timerStarted && !isSubmitted) handleSubmit();
   }, [timeLeft]);
 
   const handleSubmit = async () => {
@@ -113,6 +123,17 @@ export default function QuizMode() {
       router.push('/library/quiz');
     }
   };
+
+  if (storeLoading || loading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - var(--nav-height))', gap: '1.5rem' }}>
+        <div style={{ fontSize: '3rem', animation: 'spin 1.5s ease-in-out infinite' }}>🎯</div>
+        <div style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', animation: 'spin 0.8s linear infinite' }} />
+        <p style={{ fontSize: '1rem', fontWeight: 600, opacity: 0.5 }}>Đang tải đề thi...</p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   if (!deck) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - var(--nav-height))' }}>

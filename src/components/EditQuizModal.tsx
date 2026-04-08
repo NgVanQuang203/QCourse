@@ -41,6 +41,70 @@ function emptyQuestion(): QuizQuestion {
   };
 }
 
+const setOpt = (form: QuizQuestion, i: number, val: string): QuizQuestion => {
+  const opts = [...form.options] as [string, string, string, string];
+  opts[i] = val;
+  return { ...form, options: opts };
+};
+
+const QuestionForm = ({ q, setQ, onSave, onCancel, saveLabel }: {
+  q: QuizQuestion;
+  setQ: (q: QuizQuestion) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  saveLabel: string;
+}) => (
+  <div className={qStyles.qForm}>
+    <div className={qStyles.qFormGroup}>
+      <label className={qStyles.qLabel}>Câu hỏi *</label>
+      <textarea
+        className={qStyles.qTextarea}
+        value={q.question}
+        onChange={e => setQ({ ...q, question: e.target.value })}
+        placeholder="Nhập nội dung câu hỏi..."
+        rows={2}
+        autoFocus
+      />
+    </div>
+
+    <div className={qStyles.optionsGrid}>
+      {OPTION_LETTERS.map((letter, i) => (
+        <div key={i} className={qStyles.optionRow}>
+          <button
+            type="button"
+            className={`${qStyles.optionBadge} ${q.correct === i ? qStyles.optionCorrect : ''}`}
+            onClick={() => setQ({ ...q, correct: i as 0|1|2|3 })}
+            title="Đặt làm đáp án đúng"
+          >
+            {q.correct === i ? <Check size={12}/> : letter}
+          </button>
+          <input
+            className={qStyles.optionInput}
+            value={q.options[i]}
+            onChange={e => setQ(setOpt(q, i, e.target.value))}
+            placeholder={`Đáp án ${letter}...`}
+          />
+        </div>
+      ))}
+    </div>
+
+    <div className={qStyles.qHint}>
+      💡 Nhấn vào chữ <strong>A · B · C · D</strong> để chọn đáp án đúng (ô xanh)
+    </div>
+
+    <div className={qStyles.qActions}>
+      <button className={qStyles.btnGhost} onClick={onCancel}><X size={13}/> Huỷ</button>
+      <button 
+        className={qStyles.btnSave} 
+        disabled={!q.question.trim() || q.options.some(o => !o.trim())} 
+        onClick={onSave}
+      >
+        <Save size={13}/> {saveLabel}
+      </button>
+    </div>
+  </div>
+);
+
 export default function EditQuizModal({ deckId, onClose }: Props) {
   const { decks, cards, addDeck, updateDeck, addCard, updateCard, deleteCard } = useStore();
 
@@ -69,11 +133,11 @@ export default function EditQuizModal({ deckId, onClose }: Props) {
   const [addingNew, setAddingNew] = useState(false);
   const [newQ, setNewQ] = useState<QuizQuestion>(emptyQuestion());
 
-  const handleSaveDeck = () => {
+  const handleSaveDeck = async () => {
     if (!deckForm.name.trim()) return;
     if (isNew && !currentDeckId) {
-      const id = addDeck({ name: deckForm.name, description: deckForm.description, color: deckForm.color, folderId: 'f1' });
-      setCurrentDeckId(id);
+      const id = await addDeck({ name: deckForm.name, description: deckForm.description, color: deckForm.color, folderId: undefined, type: 'QUIZ' });
+      setCurrentDeckId(id as string);
       setSection('questions');
     } else if (currentDeckId) {
       updateDeck(currentDeckId, { name: deckForm.name, description: deckForm.description, color: deckForm.color });
@@ -97,10 +161,10 @@ export default function EditQuizModal({ deckId, onClose }: Props) {
     });
   };
 
-  const handleSaveEdit = () => {
-    if (!editingId || !editForm.question.trim()) return;
+  const handleSaveEdit = async () => {
+    if (!editingId || !editForm.question.trim() || editForm.options.some(o => !o.trim())) return;
     const correctBack = editForm.options[editForm.correct];
-    updateCard(editingId, {
+    await updateCard(editingId, {
       front: editForm.question,
       back: correctBack,
       options: [...editForm.options],
@@ -109,10 +173,10 @@ export default function EditQuizModal({ deckId, onClose }: Props) {
     setEditingId(null);
   };
 
-  const handleAddNew = () => {
-    if (!newQ.question.trim() || !currentDeckId) return;
+  const handleAddNew = async () => {
+    if (!newQ.question.trim() || !currentDeckId || newQ.options.some(o => !o.trim())) return;
     const correctBack = newQ.options[newQ.correct];
-    addCard({
+    await addCard({
       deckId: currentDeckId,
       front: newQ.question,
       back: correctBack,
@@ -127,65 +191,7 @@ export default function EditQuizModal({ deckId, onClose }: Props) {
     if (confirm('Xoá câu hỏi này?')) deleteCard(id);
   };
 
-  const setOpt = (form: QuizQuestion, i: number, val: string): QuizQuestion => {
-    const opts = [...form.options] as [string, string, string, string];
-    opts[i] = val;
-    return { ...form, options: opts };
-  };
-
-  const QuestionForm = ({ q, setQ, onSave, onCancel, saveLabel }: {
-    q: QuizQuestion;
-    setQ: (q: QuizQuestion) => void;
-    onSave: () => void;
-    onCancel: () => void;
-    saveLabel: string;
-  }) => (
-    <div className={qStyles.qForm}>
-      <div className={qStyles.qFormGroup}>
-        <label className={qStyles.qLabel}>Câu hỏi *</label>
-        <textarea
-          className={qStyles.qTextarea}
-          value={q.question}
-          onChange={e => setQ({ ...q, question: e.target.value })}
-          placeholder="Nhập nội dung câu hỏi..."
-          rows={2}
-          autoFocus
-        />
-      </div>
-
-      <div className={qStyles.optionsGrid}>
-        {OPTION_LETTERS.map((letter, i) => (
-          <div key={i} className={qStyles.optionRow}>
-            <button
-              type="button"
-              className={`${qStyles.optionBadge} ${q.correct === i ? qStyles.optionCorrect : ''}`}
-              onClick={() => setQ({ ...q, correct: i as 0|1|2|3 })}
-              title="Đặt làm đáp án đúng"
-            >
-              {q.correct === i ? <Check size={12}/> : letter}
-            </button>
-            <input
-              className={qStyles.optionInput}
-              value={q.options[i]}
-              onChange={e => setQ(setOpt(q, i, e.target.value))}
-              placeholder={`Đáp án ${letter}...`}
-            />
-          </div>
-        ))}
-      </div>
-
-      <div className={qStyles.qHint}>
-        💡 Nhấn vào chữ <strong>A · B · C · D</strong> để chọn đáp án đúng (ô xanh)
-      </div>
-
-      <div className={qStyles.qActions}>
-        <button className={qStyles.btnGhost} onClick={onCancel}><X size={13}/> Huỷ</button>
-        <button className={qStyles.btnSave} disabled={!q.question.trim()} onClick={onSave}>
-          <Save size={13}/> {saveLabel}
-        </button>
-      </div>
-    </div>
-  );
+// QuestionForm has been extracted outside the component.
 
   return (
     <div className={styles.overlay} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>

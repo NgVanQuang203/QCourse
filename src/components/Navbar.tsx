@@ -136,7 +136,9 @@ export default function Navbar() {
 
             {/* Account dropdown or Login button */}
             {mounted && (
-              status === 'authenticated' && profile ? (
+              status === 'loading' ? (
+                <div className={styles.avatarSkeleton} />
+              ) : status === 'authenticated' && profile ? (
                 <div
                   className={styles.accountWrapper}
                   onMouseEnter={() => setIsDropdownOpen(true)}
