@@ -252,8 +252,8 @@
 /* ── ERROR ALERT ─────────────────────────────────────────────── */
 .errorAlert {
   padding: 0.75rem 1rem;
-  background: rgba(239,68,68,0.08);
-  border: 1.5px solid rgba(239,68,68,0.25);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1.5px solid rgba(239, 68, 68, 0.25);
   border-radius: 11px;
   color: var(--danger);
   font-size: 0.84rem;
@@ -262,13 +262,24 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  animation: shake 0.4s ease;
+  animation: errorEntrance 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-@keyframes shake {
-  0%,100% { transform: translateX(0); }
-  20%,60% { transform: translateX(-5px); }
-  40%,80% { transform: translateX(5px); }
+@keyframes errorEntrance {
+  0% { opacity: 0; transform: scale(0.95) translateY(-5px); }
+  50% { transform: scale(1.02); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.loadingOverlay {
+  position: absolute;
+  inset: 0;
+  background: var(--background);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
 }
 
 /* ── FORM ────────────────────────────────────────────────────── */

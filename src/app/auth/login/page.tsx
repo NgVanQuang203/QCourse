@@ -1,17 +1,39 @@
 "use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import styles from '../auth.module.css';
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className={styles.loadingOverlay}><span className={styles.spinner}/></div>}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPw, setShowPw] = useState(false);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const err = searchParams.get('error');
+    if (err) {
+      if (err === 'OAuthAccountNotLinked') {
+        setError('Email này đã được sử dụng với phương thức đăng nhập khác. Vui lòng đăng nhập đúng phương thức bạn đã chọn trước đây!');
+      } else if (err === 'AccessDenied') {
+        setError('Bạn đã từ chối cấp quyền truy cập. Vui lòng thử lại!');
+      } else {
+        setError('Đã xảy ra lỗi trong quá trình đăng nhập. Vui lòng thử lại!');
+      }
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

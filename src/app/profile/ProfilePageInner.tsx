@@ -36,22 +36,27 @@ function Heatmap({ activity }: { activity: ActivityDay[] }) {
     const padded = [...Array<null>(startDow).fill(null), ...arr] as (ActivityDay | null)[];
     const nWeeks = Math.ceil(padded.length / 7);
 
-    // Month spanning blocks — each block knows its weekIdx + weekCount
+    // Month spanning blocks
     const blocks: { label: string; weekIdx: number; weekCount: number }[] = [];
     let lastKey = '';
     for (let wi = 0; wi < nWeeks; wi++) {
-      const dayInWeek = padded.slice(wi * 7, wi * 7 + 7).find(Boolean) as ActivityDay | undefined;
-      if (!dayInWeek) continue;
-      const d = new Date(dayInWeek.date);
+      const weekSlice = padded.slice(wi * 7, wi * 7 + 7);
+      // Logic fix: find if ANY day in this week is the 1ST of a month
+      const firstOfMonth = weekSlice.find(day => day && day.date.endsWith('-01'));
+      // Fallback to Sunday if no 1st of month in this week
+      const dayForMonth = firstOfMonth || (weekSlice.find(Boolean) as ActivityDay);
+      
+      if (!dayForMonth) continue;
+      const d = new Date(dayForMonth.date);
       const key = `${d.getFullYear()}-${d.getMonth()}`;
-      // Short label: "T.4", "T.12" or "T.1 '26" when year changes
       const monthNum = d.getMonth() + 1;
       const label = monthNum === 1 ? `T.1 '${String(d.getFullYear()).slice(2)}` : `T.${monthNum}`;
+      
       if (key !== lastKey) {
         blocks.push({ label, weekIdx: wi, weekCount: 1 });
         lastKey = key;
       } else {
-        blocks[blocks.length - 1].weekCount++;
+        if (blocks.length > 0) blocks[blocks.length - 1].weekCount++;
       }
     }
     return { paddedDays: padded, numWeeks: nWeeks, monthBlocks: blocks };
@@ -68,9 +73,22 @@ function Heatmap({ activity }: { activity: ActivityDay[] }) {
   const DAY_COL_W  = 22;
   const DAY_GAP    = 4;
 
+  // Show tooltip on mouse hover (desktop) or touch (mobile)
   const onEnter = (e: React.MouseEvent, day: ActivityDay) => {
     const r = (e.target as HTMLElement).getBoundingClientRect();
-    setTooltip({ day, vx: r.left + r.width / 2, vy: r.top - 8 });
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const clampedX = Math.max(90, Math.min(vw - 90, r.left + r.width / 2));
+    setTooltip({ day, vx: clampedX, vy: r.top - 10 });
+  };
+
+  const onTouch = (e: React.TouchEvent, day: ActivityDay) => {
+    e.preventDefault();
+    const r = (e.target as HTMLElement).getBoundingClientRect();
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const clampedX = Math.max(90, Math.min(vw - 90, r.left + r.width / 2));
+    setTooltip({ day, vx: clampedX, vy: r.top - 10 });
+    // Auto-dismiss on mobile after 2s
+    setTimeout(() => setTooltip(null), 2000);
   };
 
   const fmtDate = (s: string) =>
@@ -127,6 +145,8 @@ function Heatmap({ activity }: { activity: ActivityDay[] }) {
                       className={`${styles.hmCell} ${styles[`lv${lv}`]} ${isTd ? styles.hmToday : ''}`}
                       onMouseEnter={e => onEnter(e, day)}
                       onMouseLeave={() => setTooltip(null)}
+                      onTouchStart={e => onTouch(e, day)}
+                      onTouchEnd={() => {}} /* prevent ghost click on mobile */
                     />
                   );
                 })}
@@ -143,11 +163,17 @@ function Heatmap({ activity }: { activity: ActivityDay[] }) {
         <span className={styles.legendLabel}>Nhiều</span>
       </div>
 
-      {/* Tooltip — position:fixed, never clipped */}
+      {/* Tooltip — fixed position with viewport clamping */}
       {tooltip && (
         <div
           className={styles.heatmapTooltip}
-          style={{ position: 'fixed', left: tooltip.vx, top: tooltip.vy, transform: 'translate(-50%,-100%)', zIndex: 9999 }}
+          style={{ 
+            position: 'fixed', 
+            left: tooltip.vx, 
+            top: tooltip.vy, 
+            transform: 'translate(-50%,-100%)', 
+            zIndex: 9999,
+          }}
         >
           <div className={styles.htDate}>{fmtDate(tooltip.day.date)}</div>
           {tooltip.day.minutesStudied > 0 ? (
@@ -420,26 +446,28 @@ export default function ProfilePageInner() {
       {/* ── MAIN BODY ── */}
       <div className={styles.body}>
 
-        {/* Sidebar */}
+        {/* Sidebar — desktop: vertical sticky menu, mobile: horizontal pill scroll */}
         <aside className={styles.sidebar}>
-          {TABS_ALL.map(t => {
-            if (t.id === 'password' && profile?.hasPassword === false) return null;
-            return (
-              <button
-                key={t.id}
-                className={`${styles.sidebarItem} ${tab === t.id ? styles.sidebarActive : ''}`}
-                onClick={() => setTab(t.id)}
-              >
-                <span className={styles.sidebarIcon}>{t.icon}</span>
-                <span>{t.label}</span>
-              </button>
-            );
-          })}
-          <div className={styles.sidebarDivider} />
-          <button className={`${styles.sidebarItem} ${styles.sidebarLogout}`} onClick={() => setShowLogout(true)}>
-            <span className={styles.sidebarIcon}>🚪</span>
-            <span>Đăng xuất</span>
-          </button>
+          <div className={styles.sidebarInner}>
+            {TABS_ALL.map(t => {
+              if (t.id === 'password' && profile?.hasPassword === false) return null;
+              return (
+                <button
+                  key={t.id}
+                  className={`${styles.sidebarItem} ${tab === t.id ? styles.sidebarActive : ''}`}
+                  onClick={() => setTab(t.id)}
+                >
+                  <span className={styles.sidebarIcon}>{t.icon}</span>
+                  <span>{t.label}</span>
+                </button>
+              );
+            })}
+            <div className={styles.sidebarDivider} />
+            <button className={`${styles.sidebarItem} ${styles.sidebarLogout}`} onClick={() => setShowLogout(true)}>
+              <span className={styles.sidebarIcon}>🚪</span>
+              <span>Đăng xuất</span>
+            </button>
+          </div>
         </aside>
 
         {/* Content */}
