@@ -76,8 +76,8 @@ export default function QuizLibrary() {
       </div>
 
       <div className={styles.grid}>
-        {paged.map(deck => {
-          const total = (deck as any)._count?.cards ?? 0;
+        {paged.map((deck) => {
+          const total = deck._count?.cards ?? 0;
           return (
             <div key={deck.id} className={styles.deckCard}>
               <div className={styles.headerRow}>

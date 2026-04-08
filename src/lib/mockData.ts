@@ -12,7 +12,7 @@ export interface Card {
 
 export interface Deck {
   id: string;
-  folderId: string;
+  folderId?: string | null;
   name: string;
   description: string;
   color: string;

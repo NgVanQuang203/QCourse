@@ -33,7 +33,7 @@ export interface ActivityDay {
 }
 
 export interface StoreState {
-  decks: (Deck & { dueCount?: number; masteredCount?: number })[];
+  decks: (Deck & { dueCount?: number; masteredCount?: number; _count?: { cards: number } })[];
   cards: Card[];
   profile: UserProfile | null;
   activity: ActivityDay[];

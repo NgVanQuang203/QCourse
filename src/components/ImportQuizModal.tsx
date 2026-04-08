@@ -78,7 +78,7 @@ function parseQuiz(raw: string): ParsedQ[] {
 }
 
 export default function ImportQuizModal({ deckId, allDecks, onClose }: Props) {
-  const { cards, addCard } = useStore();
+  const { importCards } = useStore();
   const [selectedDeckId, setSelectedDeckId] = useState<string>(deckId ?? allDecks[0]?.id ?? '');
   const [tab, setTab] = useState<'text' | 'csv' | 'json'>('text');
   const [rawText, setRawText] = useState('');

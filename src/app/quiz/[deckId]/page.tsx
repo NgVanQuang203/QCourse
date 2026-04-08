@@ -284,7 +284,7 @@ export default function QuizMode() {
                   <p className={styles.questionText}>{card.front}</p>
 
                   <div className={styles.optionsList}>
-                    {card.options?.map((opt, optIdx) => {
+                    {card.options?.map((opt: string, optIdx: number) => {
                       const isSelected = answers[card.id] === optIdx;
                       const isCorrect = card.correctOptionIndex === optIdx;
                       let cls = styles.optionBtn;

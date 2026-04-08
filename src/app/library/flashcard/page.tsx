@@ -95,8 +95,8 @@ export default function FlashcardLibrary() {
 
       {/* Grid */}
       <div className={styles.grid}>
-        {paged.map(deck => {
-          const total = (deck as any)._count?.cards ?? 0;
+        {paged.map((deck) => {
+          const total = deck._count?.cards ?? 0;
           const dueCount = deck.dueCount ?? 0;
           const masteredCount = deck.masteredCount ?? 0;
           const masterPct = total === 0 ? 0 : Math.round((masteredCount / total) * 100);
