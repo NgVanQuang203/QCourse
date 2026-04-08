@@ -136,11 +136,11 @@ export default function EditQuizModal({ deckId, onClose }: Props) {
   const handleSaveDeck = async () => {
     if (!deckForm.name.trim()) return;
     if (isNew && !currentDeckId) {
-      const id = await addDeck({ name: deckForm.name, description: deckForm.description, color: deckForm.color, folderId: undefined, type: 'QUIZ' });
+      const id = await addDeck({ name: deckForm.name, description: deckForm.description, color: deckForm.color, timeLimitSec: deckForm.timeLimitSec, folderId: undefined, type: 'QUIZ' });
       setCurrentDeckId(id as string);
       setSection('questions');
     } else if (currentDeckId) {
-      updateDeck(currentDeckId, { name: deckForm.name, description: deckForm.description, color: deckForm.color });
+      updateDeck(currentDeckId, { name: deckForm.name, description: deckForm.description, color: deckForm.color, timeLimitSec: deckForm.timeLimitSec });
     }
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);

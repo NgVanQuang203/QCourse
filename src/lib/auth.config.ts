@@ -67,7 +67,7 @@ export const authConfig = {
   // ── Custom pages ───────────────────────────────────────────────────────────
   pages: {
     signIn:  '/auth/login',
-    newUser: '/onboarding',
+    // newUser: '/onboarding', // Remove to prevent 404 on new Google signup
     error:   '/auth/error',
   },
   // ── Session strategy ───────────────────────────────────────────────────────

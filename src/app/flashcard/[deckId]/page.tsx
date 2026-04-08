@@ -21,7 +21,7 @@ export default function FlashcardMode() {
   // Thống kê phiên học
   const [stats, setStats] = useState({ correct: 0, wrong: 0 });
 
-  const { decks, fetchDeckCards, isLoading: storeLoading } = useStore();
+  const { decks, fetchDeckCards, isLoading: storeLoading, refreshStats } = useStore();
   const [loading, setLoading] = useState(true);
 
   const deck = decks.find(d => d.id === deckId);
@@ -33,7 +33,6 @@ export default function FlashcardMode() {
         const cards = await fetchDeckCards(deckId);
         if (cards) {
           const now = Date.now();
-          // Lấy các thẻ đã đến hạn ôn tập
           const due = cards.filter(c => c.sm2Data.nextReviewDate <= now);
           setQueue(due);
         }
@@ -59,6 +58,8 @@ export default function FlashcardMode() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quality, minutesSession: 1 }), // Mặc định 1p học/thẻ hoặc tính toán thực tế
       });
+      // Synchronize stats so profile page shows updated heatmap and metrics immediately
+      refreshStats();
     } catch (err) {
       console.error("Failed to save review:", err);
     }
@@ -70,14 +71,24 @@ export default function FlashcardMode() {
 
     setIsFlipped(false);
 
+    // If quality is poor ("học lại"), append it to the end of the queue so user must review it again
+    if (quality < 3) {
+      setQueue(prev => [...prev, currentCard]);
+    }
+
     setTimeout(() => {
-      if (currentIndex + 1 < queue.length) {
-        setCurrentIndex(currentIndex + 1);
-      } else {
-        setIsDone(true);
-      }
+      // Because we may have just appended to the queue, queue length could have increased.
+      // But setState in React is async, so we use a functional update to safely check the updated queue.
+      setQueue(updatedQueue => {
+        if (currentIndex + 1 < updatedQueue.length) {
+          setCurrentIndex(currentIndex + 1);
+        } else {
+          setIsDone(true);
+        }
+        return updatedQueue;
+      });
     }, 400);
-  }, [currentCard, currentIndex, isFlipped, queue.length]);
+  }, [currentCard, currentIndex, isFlipped, refreshStats]);
 
   // ── KEYBOARD SHORTCUTS ──────────────────────────────────────────
   useEffect(() => {
@@ -186,9 +197,9 @@ export default function FlashcardMode() {
 
             <button
               style={{ background: 'var(--primary)', color: 'white', padding: '1rem 2rem', borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }}
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/library/flashcard')}
             >
-              Về thư viện
+              Về thư viện Flashcard
             </button>
           </div>
         ) : (

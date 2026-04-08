@@ -9,13 +9,15 @@ import { useStore } from '@/lib/store';
 import { ChevronLeft, ChevronRight, Plus, Upload, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import EditQuizModal from '@/components/EditQuizModal';
 import ImportQuizModal from '@/components/ImportQuizModal';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 12;
 
 export default function QuizLibrary() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [deleteDeckId, setDeleteDeckId] = useState<string | null>(null);
   const [editDeck, setEditDeck] = useState<string | null>(null);
   const [importDeck, setImportDeck] = useState<string | null>(null);
 
@@ -25,8 +27,12 @@ export default function QuizLibrary() {
   const totalPages = Math.ceil(quizDecks.length / PAGE_SIZE);
   const paged = quizDecks.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const handleDelete = (deckId: string) => {
-    if (confirm('Xoá bộ bài này?')) { deleteDeck(deckId); setMenuOpenId(null); }
+  const confirmDelete = async () => {
+    if (deleteDeckId) {
+      await deleteDeck(deleteDeckId);
+      setDeleteDeckId(null);
+      setMenuOpenId(null);
+    }
   };
 
   if (isLoading) {
@@ -87,10 +93,10 @@ export default function QuizLibrary() {
                           <Edit2 size={14} /> Chỉnh sửa
                         </button>
                         <button className={libStyles.menuItem} onClick={() => { setImportDeck(deck.id); setMenuOpenId(null); }}>
-                          <Upload size={14} /> Import câu hỏi
+                          <Upload size={14} /> Import bộ câu hỏi
                         </button>
-                        <button className={`${libStyles.menuItem} ${libStyles.menuDanger}`} onClick={() => handleDelete(deck.id)}>
-                          <Trash2 size={14} /> Xoá
+                        <button className={`${libStyles.menuItem} ${libStyles.menuDanger}`} onClick={() => { setDeleteDeckId(deck.id); setMenuOpenId(null); }}>
+                          <Trash2 size={14} /> Xoá đề thi
                         </button>
                       </div>
                     )}
@@ -139,6 +145,13 @@ export default function QuizLibrary() {
       {importDeck !== null && (
         <ImportQuizModal deckId={importDeck === '__pick' ? null : importDeck} allDecks={quizDecks} onClose={() => setImportDeck(null)} />
       )}
+
+      <DeleteConfirmModal
+        isOpen={!!deleteDeckId}
+        deckName={quizDecks.find(d => d.id === deleteDeckId)?.name || ''}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteDeckId(null)}
+      />
     </main>
   );
 }

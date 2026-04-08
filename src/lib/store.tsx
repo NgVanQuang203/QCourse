@@ -22,6 +22,7 @@ export interface UserProfile {
   streak: number;
   maxStreak: number;
   createdAt: string;
+  hasPassword?: boolean;
 }
 
 export interface ActivityDay {
@@ -231,7 +232,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }));
         setState(s => {
           const otherCards = s.cards.filter(card => card.deckId !== deckId);
-          return { ...s, cards: [...otherCards, ...mappedCards] };
+          // Update the specific deck's card count so library syncs immediately
+          const newDecks = s.decks.map(d => 
+            d.id === deckId ? { ...d, _count: { ...d._count, cards: mappedCards.length } } : d
+          );
+          return { ...s, cards: [...otherCards, ...mappedCards], decks: newDecks };
         });
         return mappedCards;
       }

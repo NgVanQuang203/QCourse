@@ -45,7 +45,7 @@ export async function GET() {
     ).length + (total - deck.cards.filter(c => c.sm2Progress.length > 0).length); // New cards are also "due"
 
     const mastered = deck.cards.filter(c => 
-      c.sm2Progress.length > 0 && c.sm2Progress[0].repetitions >= 2
+      c.sm2Progress.length > 0 && c.sm2Progress[0].repetitions >= 1
     ).length;
 
     return {

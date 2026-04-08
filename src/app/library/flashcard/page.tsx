@@ -6,11 +6,12 @@ import styles from '@/app/page.module.css';
 import loadingStyles from '@/app/loading.module.css';
 import libStyles from './lib.module.css';
 import { useStore } from '@/lib/store';
-import { ChevronLeft, ChevronRight, Plus, Upload, MoreVertical, Edit2, Trash2, BookOpen, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Upload, MoreVertical, Edit2, Trash2, BookOpen, X, RefreshCcw } from 'lucide-react';
 import EditDeckModal from '@/components/EditDeckModal';
 import ImportModal from '@/components/ImportModal';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 12;
 const GRADIENT_PRESETS = [
   'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
   'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)',
@@ -25,19 +26,29 @@ export default function FlashcardLibrary() {
   const now = Date.now();
   const [page, setPage] = useState(1);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [deleteDeckId, setDeleteDeckId] = useState<string | null>(null);
+  const [resetDeckId, setResetDeckId] = useState<string | null>(null);
   const [editDeck, setEditDeck] = useState<string | null>(null); // deckId to edit, or 'new'
   const [importDeck, setImportDeck] = useState<string | null>(null); // deckId to import into
 
-  const { decks, isLoading, deleteDeck } = useStore();
+  const { decks, isLoading, deleteDeck, refreshStats } = useStore();
   const flashDecks = decks.filter(d => !d.type || d.type === 'FLASHCARD');
 
   const totalPages = Math.ceil(flashDecks.length / PAGE_SIZE);
   const paged = flashDecks.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const handleDelete = (deckId: string) => {
-    if (confirm('Xoá bộ bài này? Toàn bộ thẻ bên trong cũng sẽ bị xoá.')) {
-      deleteDeck(deckId);
+  const confirmDelete = async () => {
+    if (deleteDeckId) {
+      await deleteDeck(deleteDeckId);
+      setDeleteDeckId(null);
       setMenuOpenId(null);
+    }
+  };
+
+  const confirmReset = async (deckId: string) => {
+    if (confirm('Làm mới toàn bộ tiến độ học tập (về 0%) của bộ bài này?')) {
+      await fetch(`/api/decks/${deckId}/reset`, { method: 'POST' });
+      await refreshStats(); // Sync automatically via store
     }
   };
 
@@ -112,7 +123,10 @@ export default function FlashcardLibrary() {
                         <button className={libStyles.menuItem} onClick={() => { setImportDeck(deck.id); setMenuOpenId(null); }}>
                           <Upload size={14} /> Import thẻ
                         </button>
-                        <button className={`${libStyles.menuItem} ${libStyles.menuDanger}`} onClick={() => handleDelete(deck.id)}>
+                        <button className={libStyles.menuItem} onClick={() => { confirmReset(deck.id); setMenuOpenId(null); }}>
+                          <RefreshCcw size={14} /> Reset tiến độ
+                        </button>
+                        <button className={`${libStyles.menuItem} ${libStyles.menuDanger}`} onClick={() => { setDeleteDeckId(deck.id); setMenuOpenId(null); }}>
                           <Trash2 size={14} /> Xoá bộ bài
                         </button>
                       </div>
@@ -186,6 +200,12 @@ export default function FlashcardLibrary() {
           onClose={() => setImportDeck(null)}
         />
       )}
+      <DeleteConfirmModal
+        isOpen={!!deleteDeckId}
+        deckName={flashDecks.find(d => d.id === deleteDeckId)?.name || ''}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteDeckId(null)}
+      />
     </main>
   );
 }

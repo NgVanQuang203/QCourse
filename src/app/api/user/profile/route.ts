@@ -15,10 +15,20 @@ export async function GET() {
       id: true, name: true, nickname: true, email: true,
       image: true, avatarColor: true, mood: true, bio: true,
       streak: true, maxStreak: true, createdAt: true,
+      passwordHash: true, // Fetch so we can check if it exists
     },
   });
 
-  return Response.json({ user });
+  if (!user) return Response.json({ error: 'Không tìm thấy user' }, { status: 404 });
+
+  const { passwordHash, ...safeUser } = user;
+  
+  return Response.json({ 
+    user: { 
+      ...safeUser, 
+      hasPassword: !!passwordHash 
+    } 
+  });
 }
 
 const UpdateSchema = z.object({

@@ -24,7 +24,7 @@ export default function QuizMode() {
   const params = useParams();
   const router = useRouter();
   const deckId = params.deckId as string;
-  const { decks, fetchDeckCards, isLoading: storeLoading } = useStore();
+  const { decks, fetchDeckCards, isLoading: storeLoading, refreshStats } = useStore();
   const [cards, setCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -98,6 +98,7 @@ export default function QuizMode() {
           answers: formattedAnswers.filter(a => a.chosenIndex !== -1),
         }),
       });
+      refreshStats(); // Update profile stats immediately
     } catch (err) {
       console.error('Failed to submit quiz:', err);
     }
@@ -183,9 +184,9 @@ export default function QuizMode() {
               </button>
               <button
                 className={styles.emptyBtnSecondary}
-                onClick={() => router.push('/')}
+                onClick={() => router.push('/library/quiz')}
               >
-                <Home size={15} /> Trang chủ
+                <BookOpen size={15} /> Thư viện trắc nghiệm
               </button>
             </div>
           </motion.div>
@@ -462,8 +463,8 @@ export default function QuizMode() {
                   <button className={styles.modalBtnSecondary} onClick={() => setShowResultModal(false)}>
                     <RotateCcw size={14} /> Xem lại lỗi
                   </button>
-                  <button className={styles.modalBtnPrimary} onClick={() => router.push('/')}>
-                    <Home size={14} /> Về trang chủ
+                  <button className={styles.modalBtnPrimary} onClick={() => router.push('/library/quiz')}>
+                    <BookOpen size={14} /> Về thư viện
                   </button>
                 </div>
               </motion.div>

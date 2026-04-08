@@ -311,7 +311,7 @@ const AVATAR_GRADIENTS = [
 ];
 
 type Tab = 'profile' | 'activity' | 'password';
-const TABS: { id: Tab; icon: string; label: string }[] = [
+const TABS_ALL: { id: Tab; icon: string; label: string }[] = [
   { id: 'profile',  icon: '👤', label: 'Thông tin'  },
   { id: 'activity', icon: '📊', label: 'Hoạt động'  },
   { id: 'password', icon: '🔐', label: 'Mật khẩu'   },
@@ -356,9 +356,10 @@ export default function ProfilePageInner() {
 
   if (isLoading || !profile) {
     return (
-      <div className={styles.loadingFull}>
-        <Loader2 className={styles.spin} size={40} />
-        <p>Đang tải hồ sơ...</p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - var(--nav-height))', gap: '1.5rem' }}>
+        <div style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', animation: 'spin 0.8s linear infinite' }} />
+        <p style={{ fontSize: '1rem', fontWeight: 600, opacity: 0.5 }}>Đang tải hồ sơ...</p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
@@ -421,16 +422,19 @@ export default function ProfilePageInner() {
 
         {/* Sidebar */}
         <aside className={styles.sidebar}>
-          {TABS.map(t => (
-            <button
-              key={t.id}
-              className={`${styles.sidebarItem} ${tab === t.id ? styles.sidebarActive : ''}`}
-              onClick={() => setTab(t.id)}
-            >
-              <span className={styles.sidebarIcon}>{t.icon}</span>
-              <span>{t.label}</span>
-            </button>
-          ))}
+          {TABS_ALL.map(t => {
+            if (t.id === 'password' && profile?.hasPassword === false) return null;
+            return (
+              <button
+                key={t.id}
+                className={`${styles.sidebarItem} ${tab === t.id ? styles.sidebarActive : ''}`}
+                onClick={() => setTab(t.id)}
+              >
+                <span className={styles.sidebarIcon}>{t.icon}</span>
+                <span>{t.label}</span>
+              </button>
+            );
+          })}
           <div className={styles.sidebarDivider} />
           <button className={`${styles.sidebarItem} ${styles.sidebarLogout}`} onClick={() => setShowLogout(true)}>
             <span className={styles.sidebarIcon}>🚪</span>
@@ -549,7 +553,7 @@ export default function ProfilePageInner() {
           )}
 
           {/* ── PASSWORD TAB ── */}
-          {tab === 'password' && (
+          {tab === 'password' && profile?.hasPassword && (
             <div className={styles.card}>
               <h2 className={styles.cardTitle}>🔐 Đổi mật khẩu</h2>
               <p className={styles.cardSubtitle}>Mật khẩu mới phải đủ mạnh và khác mật khẩu hiện tại.</p>
