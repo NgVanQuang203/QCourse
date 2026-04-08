@@ -1,228 +1,288 @@
 // ─────────────────────────────────────────────────────────────
-//  Q-Card Store — localStorage frontend only (swap to API later)
+//  Q-Card Store — Database Sync Version
 // ─────────────────────────────────────────────────────────────
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { mockDecks, mockCards, Deck, Card } from './mockData';
-import { sm2InitialData } from './sm2';
+import { useSession } from 'next-auth/react';
+import { Deck, Card } from './mockData';
+import { SM2Data, sm2InitialData } from './sm2';
 
 // ── Types ─────────────────────────────────────────────────────
 
 export interface UserProfile {
-  displayName: string;
+  id: string;
+  name: string;
   nickname: string;
+  email: string;
   bio: string;
-  avatarColor: string; // gradient string
-  mood: string; // emoji
-  joinDate: string; // ISO
+  avatarColor: string;
+  mood: string;
+  streak: number;
+  maxStreak: number;
+  createdAt: string;
 }
 
 export interface ActivityDay {
-  date: string; // YYYY-MM-DD
+  date: string;
   minutesStudied: number;
   cardsStudied: number;
   deckIds: string[];
 }
 
 export interface StoreState {
-  decks: Deck[];
+  decks: (Deck & { dueCount?: number; masteredCount?: number })[];
   cards: Card[];
-  profile: UserProfile;
-  activity: ActivityDay[]; // last 365 days
+  profile: UserProfile | null;
+  activity: ActivityDay[];
   streak: number;
   maxStreak: number;
-  lastStudyDate: string; // YYYY-MM-DD
+  isLoading: boolean;
 }
 
-// ── Helpers ───────────────────────────────────────────────────
-
-function today() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function generateMockActivity(): ActivityDay[] {
-  const days: ActivityDay[] = [];
-  const now = new Date();
-  for (let i = 364; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().slice(0, 10);
-    // Simulate realistic activity — more recent = more likely
-    const recency = 1 - i / 365;
-    const active = Math.random() < (0.4 + recency * 0.45);
-    if (active) {
-      const mins = Math.floor(Math.random() * 55) + 5;
-      const cards = Math.floor(mins / 3) + Math.floor(Math.random() * 10);
-      const deckIds = ['d1', 'd3', 'd2'].slice(0, Math.ceil(Math.random() * 2));
-      days.push({ date: dateStr, minutesStudied: mins, cardsStudied: cards, deckIds });
-    } else {
-      days.push({ date: dateStr, minutesStudied: 0, cardsStudied: 0, deckIds: [] });
-    }
-  }
-  return days;
-}
-
-function calculateStreak(activity: ActivityDay[]): { streak: number; maxStreak: number } {
-  const sorted = [...activity].sort((a, b) => b.date.localeCompare(a.date));
-  let streak = 0;
-  let maxStreak = 0;
-  let cur = 0;
-  const todayStr = today();
-  let expectedDate = todayStr;
-
-  for (const day of sorted) {
-    if (day.date > todayStr) continue;
-    if (day.date === expectedDate) {
-      if (day.minutesStudied > 0) {
-        streak++;
-        cur++;
-        maxStreak = Math.max(maxStreak, cur);
-        const d = new Date(expectedDate);
-        d.setDate(d.getDate() - 1);
-        expectedDate = d.toISOString().slice(0, 10);
-      } else {
-        if (streak > 0) break;
-        cur = 0;
-        const d = new Date(expectedDate);
-        d.setDate(d.getDate() - 1);
-        expectedDate = d.toISOString().slice(0, 10);
-      }
-    }
-  }
-  return { streak, maxStreak };
-}
-
-const DEFAULT_PROFILE: UserProfile = {
-  displayName: 'Người dùng Q-Card',
-  nickname: 'qcarduser',
-  bio: '📚 Đam mê học tập và khám phá kiến thức mới mỗi ngày!',
-  avatarColor: 'linear-gradient(135deg, #6366f1, #a855f7)',
-  mood: '😄',
-  joinDate: new Date().toISOString(),
+const INITIAL_STATE: StoreState = {
+  decks: [],
+  cards: [],
+  profile: null,
+  activity: [],
+  streak: 0,
+  maxStreak: 0,
+  isLoading: true,
 };
-
-const STORAGE_KEY = 'qcard_store_v1';
-
-function loadState(): StoreState {
-  if (typeof window === 'undefined') return getInitialState();
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
-  return getInitialState();
-}
-
-function getInitialState(): StoreState {
-  const activity = generateMockActivity();
-  const { streak, maxStreak } = calculateStreak(activity);
-  return {
-    decks: mockDecks,
-    cards: mockCards,
-    profile: DEFAULT_PROFILE,
-    activity,
-    streak,
-    maxStreak,
-    lastStudyDate: activity.find(a => a.minutesStudied > 0)?.date ?? '',
-  };
-}
-
-function saveState(state: StoreState) {
-  if (typeof window === 'undefined') return;
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* ignore */ }
-}
 
 // ── Hook ─────────────────────────────────────────────────────
 
 export function useStore() {
-  const [state, setState] = useState<StoreState>(getInitialState);
+  const { data: session, status } = useSession();
+  const [state, setState] = useState<StoreState>(INITIAL_STATE);
 
-  // Load from localStorage on mount
+  // ── Fetch Initial Data ──────────────────────────────────────
+  const fetchData = useCallback(async () => {
+    if (status === 'loading') return;
+    if (status === 'unauthenticated') {
+      setState(s => ({ ...s, isLoading: false }));
+      return;
+    }
+    
+    setState(s => ({ ...s, isLoading: true }));
+    try {
+      const [decksRes, profileRes, activityRes] = await Promise.all([
+        fetch('/api/decks'),
+        fetch('/api/user/profile'),
+        fetch('/api/activity')
+      ]);
+
+      const [decksData, profileData, activityData] = await Promise.all([
+        decksRes.json(),
+        profileRes.json(),
+        activityRes.json()
+      ]);
+
+      setState({
+        decks: decksData.decks || [],
+        cards: [], // Cards loaded on demand or per deck
+        profile: profileData.user || null,
+        activity: activityData.activity || [],
+        streak: activityData.streak || 0,
+        maxStreak: activityData.maxStreak || 0,
+        isLoading: false,
+      });
+    } catch (error) {
+      console.error('Failed to fetch store data:', error);
+      setState(s => ({ ...s, isLoading: false }));
+    }
+  }, [status]);
+
   useEffect(() => {
-    const loaded = loadState();
-    setState(loaded);
-  }, []);
+    fetchData();
+  }, [fetchData]);
 
-  const update = useCallback((updater: (prev: StoreState) => StoreState) => {
-    setState(prev => {
-      const next = updater(prev);
-      saveState(next);
-      return next;
-    });
+  // ── Helper: Refresh counts/activity ──────────────────────────
+  const refreshStats = useCallback(async () => {
+    const [decksRes, activityRes] = await Promise.all([
+      fetch('/api/decks'),
+      fetch('/api/activity')
+    ]);
+    const [decksData, activityData] = await Promise.all([
+      decksRes.json(),
+      activityRes.json()
+    ]);
+    setState(s => ({
+      ...s,
+      decks: decksData.decks || [],
+      activity: activityData.activity || [],
+      streak: activityData.streak || 0,
+      maxStreak: activityData.maxStreak || 0,
+    }));
   }, []);
 
   // ── Profile ──────────────────────────────────────────────
-  const updateProfile = useCallback((profile: Partial<UserProfile>) => {
-    update(s => ({ ...s, profile: { ...s.profile, ...profile } }));
-  }, [update]);
+  const updateProfile = useCallback(async (profile: Partial<UserProfile>) => {
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile),
+      });
+      const data = await res.json();
+      if (data.user) {
+        setState(s => ({ ...s, profile: { ...s.profile!, ...data.user } }));
+      }
+    } catch (error) {
+      console.error('Update profile failed:', error);
+    }
+  }, []);
 
   // ── Decks ────────────────────────────────────────────────
-  const addDeck = useCallback((deck: Omit<Deck, 'id'>) => {
-    const id = `d_${Date.now()}`;
-    update(s => ({ ...s, decks: [...s.decks, { ...deck, id }] }));
-    return id;
-  }, [update]);
+  const addDeck = useCallback(async (deck: Omit<Deck, 'id'>) => {
+    try {
+      const res = await fetch('/api/decks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(deck),
+      });
+      const data = await res.json();
+      if (data.deck) {
+        setState(s => ({ ...s, decks: [data.deck, ...s.decks] }));
+        return data.deck.id;
+      }
+    } catch (error) {
+      console.error('Add deck failed:', error);
+    }
+  }, []);
 
-  const updateDeck = useCallback((id: string, changes: Partial<Deck>) => {
-    update(s => ({ ...s, decks: s.decks.map(d => d.id === id ? { ...d, ...changes } : d) }));
-  }, [update]);
+  const updateDeck = useCallback(async (id: string, changes: Partial<Deck>) => {
+    try {
+      const res = await fetch(`/api/decks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(changes),
+      });
+      const data = await res.json();
+      if (data.deck) {
+        setState(s => ({
+          ...s,
+          decks: s.decks.map(d => d.id === id ? { ...d, ...data.deck } : d)
+        }));
+      }
+    } catch (error) {
+      console.error('Update deck failed:', error);
+    }
+  }, []);
 
-  const deleteDeck = useCallback((id: string) => {
-    update(s => ({
-      ...s,
-      decks: s.decks.filter(d => d.id !== id),
-      cards: s.cards.filter(c => c.deckId !== id),
-    }));
-  }, [update]);
+  const deleteDeck = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/decks/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setState(s => ({
+          ...s,
+          decks: s.decks.filter(d => d.id !== id),
+          cards: s.cards.filter(c => c.deckId !== id),
+        }));
+      }
+    } catch (error) {
+      console.error('Delete deck failed:', error);
+    }
+  }, []);
 
   // ── Cards ────────────────────────────────────────────────
-  const addCard = useCallback((card: Omit<Card, 'id' | 'sm2Data'>) => {
-    const id = `c_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    const newCard: Card = { ...card, id, sm2Data: sm2InitialData() };
-    update(s => ({ ...s, cards: [...s.cards, newCard] }));
-    return id;
-  }, [update]);
+  const fetchDeckCards = useCallback(async (deckId: string) => {
+    try {
+      const res = await fetch(`/api/decks/${deckId}`);
+      const data = await res.json();
+      if (data.deck?.cards) {
+        const mappedCards = data.deck.cards.map((c: any) => ({
+          ...c,
+          sm2Data: c.sm2Progress?.[0] ? {
+            easiness: c.sm2Progress[0].easeFactor,
+            interval: c.sm2Progress[0].interval,
+            repetitions: c.sm2Progress[0].repetitions,
+            nextReviewDate: new Date(c.sm2Progress[0].nextDueDate).getTime(),
+          } : sm2InitialData()
+        }));
+        setState(s => {
+          const otherCards = s.cards.filter(card => card.deckId !== deckId);
+          return { ...s, cards: [...otherCards, ...mappedCards] };
+        });
+        return mappedCards;
+      }
+    } catch (error) {
+      console.error('Fetch cards failed:', error);
+    }
+  }, []);
 
-  const updateCard = useCallback((id: string, changes: Partial<Card>) => {
-    update(s => ({ ...s, cards: s.cards.map(c => c.id === id ? { ...c, ...changes } : c) }));
-  }, [update]);
+  const addCard = useCallback(async (card: Omit<Card, 'id' | 'sm2Data'>) => {
+    try {
+      const res = await fetch(`/api/decks/${card.deckId}/cards`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(card),
+      });
+      const data = await res.json();
+      if (data.count) {
+        // Since it's bulk or single, we re-fetch deck cards to be sure
+        await fetchDeckCards(card.deckId);
+      }
+    } catch (error) {
+      console.error('Add card failed:', error);
+    }
+  }, [fetchDeckCards]);
 
-  const deleteCard = useCallback((id: string) => {
-    update(s => ({ ...s, cards: s.cards.filter(c => c.id !== id) }));
-  }, [update]);
+  const updateCard = useCallback(async (id: string, changes: Partial<Card>) => {
+    try {
+      const res = await fetch(`/api/cards/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(changes),
+      });
+      const data = await res.json();
+      if (data.card) {
+        setState(s => ({
+          ...s,
+          cards: s.cards.map(c => c.id === id ? { ...c, ...data.card } : c)
+        }));
+      }
+    } catch (error) {
+      console.error('Update card failed:', error);
+    }
+  }, []);
+
+  const deleteCard = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/cards/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setState(s => ({ ...s, cards: s.cards.filter(c => c.id !== id) }));
+      }
+    } catch (error) {
+      console.error('Delete card failed:', error);
+    }
+  }, []);
 
   // ── Import cards ─────────────────────────────────────────
-  const importCards = useCallback((deckId: string, pairs: { front: string; back: string }[]) => {
-    const newCards: Card[] = pairs.map((p, i) => ({
-      id: `c_import_${Date.now()}_${i}`,
-      deckId,
-      front: p.front.trim(),
-      back: p.back.trim(),
-      sm2Data: sm2InitialData(),
-    }));
-    update(s => ({ ...s, cards: [...s.cards, ...newCards] }));
-    return newCards.length;
-  }, [update]);
+  const importCards = useCallback(async (deckId: string, cards: Partial<Card>[]) => {
+    try {
+      const res = await fetch(`/api/decks/${deckId}/cards`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cards }),
+      });
+      const data = await res.json();
+      if (data.count) {
+        await fetchDeckCards(deckId);
+        return data.count;
+      }
+    } catch (error) {
+      console.error('Import cards failed:', error);
+    }
+    return 0;
+  }, [fetchDeckCards]);
 
   // ── Activity / Streak ────────────────────────────────────
-  const logActivity = useCallback((minutesStudied: number, cardsStudied: number, deckId: string) => {
-    const todayStr = today();
-    update(s => {
-      const existing = s.activity.find(a => a.date === todayStr);
-      let newActivity: ActivityDay[];
-      if (existing) {
-        newActivity = s.activity.map(a =>
-          a.date === todayStr
-            ? { ...a, minutesStudied: a.minutesStudied + minutesStudied, cardsStudied: a.cardsStudied + cardsStudied, deckIds: [...new Set([...a.deckIds, deckId])] }
-            : a
-        );
-      } else {
-        newActivity = [...s.activity, { date: todayStr, minutesStudied, cardsStudied, deckIds: [deckId] }];
-      }
-      const { streak, maxStreak } = calculateStreak(newActivity);
-      return { ...s, activity: newActivity, streak, maxStreak, lastStudyDate: todayStr };
-    });
-  }, [update]);
+  const logActivity = useCallback(async (minutesStudied: number, cardsStudied: number, deckId: string) => {
+    // Activity is logged automatically by review/quiz submit APIs.
+    // We just need to refresh our local state.
+    await refreshStats();
+  }, [refreshStats]);
 
   return {
     ...state,
@@ -230,5 +290,7 @@ export function useStore() {
     addDeck, updateDeck, deleteDeck,
     addCard, updateCard, deleteCard,
     importCards, logActivity,
+    fetchDeckCards,
+    refreshStats,
   };
 }

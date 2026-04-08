@@ -1,11 +1,10 @@
-// src/middleware.ts — Route protection
+// src/proxy.ts — Route protection (Next.js 16: renamed from middleware.ts)
 // Runs on every request BEFORE the page renders (Edge runtime)
+import { NextResponse } from 'next/server';
 import NextAuth from 'next-auth';
 import { authConfig } from '@/lib/auth.config';
 
 const { auth } = NextAuth(authConfig);
-
-import { NextResponse } from 'next/server';
 
 // Routes that require authentication
 const PROTECTED = ['/profile', '/flashcard', '/quiz', '/library'];
@@ -33,6 +32,6 @@ export default auth((req) => {
 });
 
 export const config = {
-  // Run middleware on all routes except static files and Next.js internals
+  // Run proxy on all routes except static files and Next.js internals
   matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.png$).*)'],
 };

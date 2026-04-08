@@ -18,13 +18,46 @@ export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return Response.json({ error: 'Chưa đăng nhập' }, { status: 401 });
 
+  const userId = session.user.id;
+  const now = new Date();
+
   const decks = await prisma.deck.findMany({
-    where:   { userId: session.user.id },
-    include: { _count: { select: { cards: true } } },
+    where:   { userId },
+    include: {
+      _count: { select: { cards: true } },
+      cards: {
+        select: {
+          sm2Progress: {
+            where: { userId },
+            select: { nextDueDate: true, repetitions: true }
+          }
+        }
+      }
+    },
     orderBy: { updatedAt: 'desc' },
   });
 
-  return Response.json({ decks });
+  // Map to include calculated stats
+  const decksWithStats = decks.map(deck => {
+    const total = deck._count.cards;
+    const dueCount = deck.cards.filter(c => 
+      c.sm2Progress.length > 0 && c.sm2Progress[0].nextDueDate <= now
+    ).length + (total - deck.cards.filter(c => c.sm2Progress.length > 0).length); // New cards are also "due"
+
+    const mastered = deck.cards.filter(c => 
+      c.sm2Progress.length > 0 && c.sm2Progress[0].repetitions >= 2
+    ).length;
+
+    return {
+      ...deck,
+      dueCount,
+      masteredCount: mastered,
+      // Remove the raw cards data to keep the response light
+      cards: undefined 
+    };
+  });
+
+  return Response.json({ decks: decksWithStats });
 }
 
 export async function POST(req: NextRequest) {

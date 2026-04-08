@@ -27,7 +27,7 @@ export default function FlashcardLibrary() {
   const [editDeck, setEditDeck] = useState<string | null>(null); // deckId to edit, or 'new'
   const [importDeck, setImportDeck] = useState<string | null>(null); // deckId to import into
 
-  const { decks, cards, deleteDeck } = useStore();
+  const { decks, isLoading, deleteDeck } = useStore();
 
   const totalPages = Math.ceil(decks.length / PAGE_SIZE);
   const paged = decks.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -38,6 +38,15 @@ export default function FlashcardLibrary() {
       setMenuOpenId(null);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.loader}></div>
+        <p>Đang tải dữ liệu...</p>
+      </div>
+    );
+  }
 
   return (
     <main className={styles.container}>
@@ -69,11 +78,10 @@ export default function FlashcardLibrary() {
       {/* Grid */}
       <div className={styles.grid}>
         {paged.map(deck => {
-          const cardsInDeck = cards.filter(c => c.deckId === deck.id);
-          const total = cardsInDeck.length;
-          const dueCount = cardsInDeck.filter(c => c.sm2Data.nextReviewDate <= now).length;
-          const mastered = cardsInDeck.filter(c => c.sm2Data.repetitions >= 2).length;
-          const masterPct = total === 0 ? 0 : Math.round((mastered / total) * 100);
+          const total = (deck as any)._count?.cards ?? 0;
+          const dueCount = deck.dueCount ?? 0;
+          const masteredCount = deck.masteredCount ?? 0;
+          const masterPct = total === 0 ? 0 : Math.round((masteredCount / total) * 100);
 
           return (
             <div key={deck.id} className={styles.deckCard}>

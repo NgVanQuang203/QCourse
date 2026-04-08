@@ -18,7 +18,7 @@ export default function QuizLibrary() {
   const [editDeck, setEditDeck] = useState<string | null>(null);
   const [importDeck, setImportDeck] = useState<string | null>(null);
 
-  const { decks, cards, deleteDeck } = useStore();
+  const { decks, isLoading, deleteDeck } = useStore();
 
   const totalPages = Math.ceil(decks.length / PAGE_SIZE);
   const paged = decks.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -26,6 +26,15 @@ export default function QuizLibrary() {
   const handleDelete = (deckId: string) => {
     if (confirm('Xoá bộ bài này?')) { deleteDeck(deckId); setMenuOpenId(null); }
   };
+
+  if (isLoading) {
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.loader}></div>
+        <p>Đang chuẩn bị đề thi...</p>
+      </div>
+    );
+  }
 
   return (
     <main className={styles.container}>
@@ -55,8 +64,7 @@ export default function QuizLibrary() {
 
       <div className={styles.grid}>
         {paged.map(deck => {
-          const cardsInDeck = cards.filter(c => c.deckId === deck.id);
-          const total = cardsInDeck.length;
+          const total = (deck as any)._count?.cards ?? 0;
           return (
             <div key={deck.id} className={styles.deckCard}>
               <div className={styles.headerRow}>
@@ -92,7 +100,7 @@ export default function QuizLibrary() {
                   <span className={styles.statLabel}>câu hỏi</span>
                 </div>
                 <div className={styles.statItem}>
-                  <span className={styles.statValue}>{total * 60}s</span>
+                  <span className={styles.statValue}>{(total) * (deck.timeLimitSec || 60)}s</span>
                   <span className={styles.statLabel}>thời gian</span>
                 </div>
               </div>

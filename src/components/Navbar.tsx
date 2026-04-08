@@ -1,12 +1,14 @@
+// src/components/Navbar.tsx
 "use client";
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { LogOut, User, Settings } from 'lucide-react';
+import { LogOut, User, Settings, LogIn } from 'lucide-react';
 import styles from './navbar.module.css';
 import { useEffect, useState } from 'react';
 import { useStore } from '@/lib/store';
+import { signIn, signOut, useSession } from 'next-auth/react';
 
 // ── Custom Streak Icon (Lightning bolt — unique to Q-Card) ──
 function StreakIcon({ streak }: { streak: number }) {
@@ -53,6 +55,7 @@ function StreakIcon({ streak }: { streak: number }) {
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { data: session, status } = useSession();
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -91,8 +94,7 @@ export default function Navbar() {
     return item.match?.some(m => pathname.startsWith(m)) ?? false;
   };
 
-  // Get initials for avatar
-  const initials = profile.displayName.slice(0, 2).toUpperCase();
+  const initials = profile?.name ? profile.name.slice(0, 2).toUpperCase() : '??';
 
   return (
     <>
@@ -119,7 +121,7 @@ export default function Navbar() {
 
           <div className={styles.navActions}>
             {/* Streak chip */}
-            {mounted && <StreakIcon streak={streak} />}
+            {mounted && status === 'authenticated' && <StreakIcon streak={streak} />}
 
             {/* Theme toggle */}
             {mounted && (
@@ -132,41 +134,49 @@ export default function Navbar() {
               </button>
             )}
 
-            {/* Account dropdown */}
-            <div
-              className={styles.accountWrapper}
-              onMouseEnter={() => setIsDropdownOpen(true)}
-              onMouseLeave={() => setIsDropdownOpen(false)}
-            >
-              <button className={styles.avatarBtn} title="Tài khoản" style={{ background: profile.avatarColor }}>
-                {initials}
-              </button>
+            {/* Account dropdown or Login button */}
+            {mounted && (
+              status === 'authenticated' && profile ? (
+                <div
+                  className={styles.accountWrapper}
+                  onMouseEnter={() => setIsDropdownOpen(true)}
+                  onMouseLeave={() => setIsDropdownOpen(false)}
+                >
+                  <button className={styles.avatarBtn} title="Tài khoản" style={{ background: profile.avatarColor }}>
+                    {initials}
+                  </button>
 
-              {isDropdownOpen && (
-                <div className={styles.dropdown}>
-                  <div className={styles.dropdownHeader}>
-                    <div className={styles.dropdownAvatar} style={{ background: profile.avatarColor }}>
-                      {initials}
+                  {isDropdownOpen && (
+                    <div className={styles.dropdown}>
+                      <div className={styles.dropdownHeader}>
+                        <div className={styles.dropdownAvatar} style={{ background: profile.avatarColor }}>
+                          {initials}
+                        </div>
+                        <div>
+                          <div className={styles.dropdownUsername}>{profile.name}</div>
+                          <div className={styles.dropdownEmail}>@{profile.nickname}</div>
+                        </div>
+                      </div>
+                      <div className={styles.dropdownDivider} />
+                      <div className={styles.dropdownItem} onClick={() => { router.push('/profile'); setIsDropdownOpen(false); }}>
+                        <User size={16} /> Trang cá nhân
+                      </div>
+                      <div className={styles.dropdownItem} onClick={() => { router.push('/profile?tab=settings'); setIsDropdownOpen(false); }}>
+                        <Settings size={16} /> Cài đặt
+                      </div>
+                      <div className={styles.dropdownDivider} />
+                      <div className={`${styles.dropdownItem} ${styles.dangerItem}`} onClick={() => signOut()}>
+                        <LogOut size={16} /> Đăng xuất
+                      </div>
                     </div>
-                    <div>
-                      <div className={styles.dropdownUsername}>{profile.displayName}</div>
-                      <div className={styles.dropdownEmail}>@{profile.nickname}</div>
-                    </div>
-                  </div>
-                  <div className={styles.dropdownDivider} />
-                  <div className={styles.dropdownItem} onClick={() => { router.push('/profile'); setIsDropdownOpen(false); }}>
-                    <User size={16} /> Trang cá nhân
-                  </div>
-                  <div className={styles.dropdownItem} onClick={() => { router.push('/profile?tab=settings'); setIsDropdownOpen(false); }}>
-                    <Settings size={16} /> Cài đặt
-                  </div>
-                  <div className={styles.dropdownDivider} />
-                  <div className={`${styles.dropdownItem} ${styles.dangerItem}`}>
-                    <LogOut size={16} /> Đăng xuất
-                  </div>
+                  )}
                 </div>
-              )}
-            </div>
+              ) : (
+                <button className={styles.loginBtn} onClick={() => signIn()}>
+                  <LogIn size={16} /> <span>Đăng nhập</span>
+                </button>
+              )
+            )}
 
             {/* Mobile hamburger */}
             <button
@@ -192,10 +202,12 @@ export default function Navbar() {
             {item.label}
           </Link>
         ))}
-        <Link href="/profile" className={`${styles.mobileLink} ${pathname === '/profile' ? styles.active : ''}`}>
-          <span className={styles.mobileLinkIcon}>👤</span>
-          Trang cá nhân
-        </Link>
+        {status === 'authenticated' && (
+          <Link href="/profile" className={`${styles.mobileLink} ${pathname === '/profile' ? styles.active : ''}`}>
+            <span className={styles.mobileLinkIcon}>👤</span>
+            Trang cá nhân
+          </Link>
+        )}
         <div className={styles.mobileDivider} />
         <div className={styles.mobileBottom}>
           {mounted && (
@@ -204,9 +216,15 @@ export default function Navbar() {
               {resolvedTheme === 'dark' ? 'Chế độ Sáng' : 'Chế độ Tối'}
             </button>
           )}
-          <button className={styles.mobileThemeBtn} style={{ color: 'var(--danger)' }}>
-            <span style={{ fontSize: '1.5rem' }}>🚪</span> Đăng xuất
-          </button>
+          {status === 'authenticated' ? (
+            <button className={styles.mobileThemeBtn} style={{ color: 'var(--danger)' }} onClick={() => signOut()}>
+              <span style={{ fontSize: '1.5rem' }}>🚪</span> Đăng xuất
+            </button>
+          ) : (
+            <button className={styles.mobileThemeBtn} onClick={() => signIn()}>
+              <span style={{ fontSize: '1.5rem' }}>🔑</span> Đăng nhập
+            </button>
+          )}
         </div>
       </div>
     </>

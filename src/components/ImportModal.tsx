@@ -62,9 +62,9 @@ export default function ImportModal({ deckId, allDecks, onClose }: Props) {
     if (file) handleCsvFile(file);
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (!selectedDeckId || preview.length === 0) return;
-    const count = importCards(selectedDeckId, preview);
+    const count = await importCards(selectedDeckId, preview);
     setImported(count);
     setTimeout(() => { onClose(); }, 1800);
   };

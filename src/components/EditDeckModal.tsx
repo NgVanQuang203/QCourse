@@ -46,14 +46,16 @@ export default function EditDeckModal({ deckId, mode, onClose }: Props) {
   const [activeSection, setActiveSection] = useState<'info' | 'cards'>('info');
   const [currentDeckId, setCurrentDeckId] = useState<string | null>(deckId);
 
-  const handleSaveDeck = () => {
+  const handleSaveDeck = async () => {
     if (!deckForm.name.trim()) return;
     if (isNew && !currentDeckId) {
-      const newId = addDeck({ ...deckForm, folderId: 'f1' });
-      setCurrentDeckId(newId);
-      setActiveSection('cards');
+      const newId = await addDeck({ ...deckForm, folderId: undefined });
+      if (newId) {
+        setCurrentDeckId(newId);
+        setActiveSection('cards');
+      }
     } else if (currentDeckId) {
-      updateDeck(currentDeckId, deckForm);
+      await updateDeck(currentDeckId, deckForm);
     }
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -75,10 +77,10 @@ export default function EditDeckModal({ deckId, mode, onClose }: Props) {
     });
   };
 
-  const handleSaveCard = () => {
+  const handleSaveCard = async () => {
     if (!editingCardId || !cardForm.front.trim()) return;
     const opts = mode === 'quiz' ? [cardForm.option1, cardForm.option2, cardForm.option3, cardForm.option4].filter(Boolean) : undefined;
-    updateCard(editingCardId, {
+    await updateCard(editingCardId, {
       front: cardForm.front,
       back: cardForm.back,
       ...(mode === 'quiz' && opts ? { options: opts, correctOptionIndex: cardForm.correct } : {}),
@@ -86,9 +88,9 @@ export default function EditDeckModal({ deckId, mode, onClose }: Props) {
     setEditingCardId(null);
   };
 
-  const handleAddCard = () => {
+  const handleAddCard = async () => {
     if (!newCardForm.front.trim() || !currentDeckId) return;
-    addCard({ deckId: currentDeckId, front: newCardForm.front, back: newCardForm.back });
+    await addCard({ deckId: currentDeckId, front: newCardForm.front, back: newCardForm.back });
     setNewCardForm({ front: '', back: '' });
     setAddingCard(false);
   };

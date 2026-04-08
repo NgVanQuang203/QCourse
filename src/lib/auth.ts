@@ -1,4 +1,5 @@
 // src/lib/auth.ts
+// [CACHE BUST: FORCING TURBOPACK TO RECOMPILE AUTH]
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@auth/prisma-adapter';

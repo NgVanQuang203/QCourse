@@ -17,10 +17,20 @@ export default function LoginPage() {
     e.preventDefault();
     if (!form.email || !form.password) { setError('Vui lòng điền đầy đủ thông tin.'); return; }
     setLoading(true); setError('');
-    // TODO: call NextAuth signIn('credentials', {...})
-    await new Promise(r => setTimeout(r, 900));
-    setLoading(false);
-    router.push('/');
+
+    const result = await signIn('credentials', {
+      email: form.email,
+      password: form.password,
+      redirect: false,
+    });
+
+    if (result?.error) {
+      setError('Email hoặc mật khẩu không chính xác.');
+      setLoading(false);
+    } else {
+      router.push('/');
+      router.refresh(); // Ensure session state is updated
+    }
   };
 
   const handleGoogle = () => {

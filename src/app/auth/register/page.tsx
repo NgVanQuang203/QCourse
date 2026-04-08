@@ -31,10 +31,26 @@ export default function RegisterPage() {
     if (form.password !== form.confirm) { setError('Mật khẩu xác nhận không khớp.'); return; }
     if (!agreed) { setError('Bạn cần đồng ý với điều khoản dịch vụ.'); return; }
     setLoading(true); setError('');
-    // TODO: call registerUser API
-    await new Promise(r => setTimeout(r, 1000));
-    setLoading(false);
-    router.push('/');
+
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: form.name, email: form.email, password: form.password }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error || 'Đăng ký thất bại.');
+      setLoading(false);
+    } else {
+      // Auto login after register
+      await signIn('credentials', {
+        email: form.email,
+        password: form.password,
+        callbackUrl: '/',
+      });
+    }
   };
 
   const handleGoogle = () => {

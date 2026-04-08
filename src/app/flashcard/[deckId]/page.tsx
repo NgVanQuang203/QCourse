@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { mockCards, mockDecks, Card } from '@/lib/mockData';
-import { calculateSM2 } from '@/lib/sm2';
+import { useStore } from '@/lib/store';
+import { Card } from '@/lib/mockData';
 import styles from './flashcard.module.css';
 import { BrainCircuit, ArrowLeft, Keyboard } from 'lucide-react';
 
@@ -21,15 +21,27 @@ export default function FlashcardMode() {
   // Thống kê phiên học
   const [stats, setStats] = useState({ correct: 0, wrong: 0 });
 
-  const deck = mockDecks.find(d => d.id === deckId);
+  const { decks, fetchDeckCards, isLoading: storeLoading } = useStore();
+  const [loading, setLoading] = useState(true);
+
+  const deck = decks.find(d => d.id === deckId);
 
   useEffect(() => {
-    if (deckId) {
-      const now = Date.now();
-      const due = mockCards.filter(c => c.deckId === deckId && c.sm2Data.nextReviewDate <= now);
-      setQueue(due);
-    }
-  }, [deckId]);
+    const load = async () => {
+      if (deckId) {
+        setLoading(true);
+        const cards = await fetchDeckCards(deckId);
+        if (cards) {
+          const now = Date.now();
+          // Lấy các thẻ đã đến hạn ôn tập
+          const due = cards.filter(c => c.sm2Data.nextReviewDate <= now);
+          setQueue(due);
+        }
+        setLoading(false);
+      }
+    };
+    load();
+  }, [deckId, fetchDeckCards]);
 
   if (!deck) return <div>Không tìm thấy bộ bài</div>;
 
@@ -39,9 +51,19 @@ export default function FlashcardMode() {
     setIsFlipped(prev => !prev);
   }, []);
 
-  const handleEvaluate = useCallback((quality: number) => {
+  const handleEvaluate = useCallback(async (quality: number) => {
     if (!currentCard || !isFlipped) return;
-    calculateSM2(quality, currentCard.sm2Data);
+
+    // Submit review to API
+    try {
+      await fetch(`/api/cards/${currentCard.id}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quality, minutesSession: 1 }), // Mặc định 1p học/thẻ hoặc tính toán thực tế
+      });
+    } catch (err) {
+      console.error("Failed to save review:", err);
+    }
 
     setStats(prev => ({
       correct: prev.correct + (quality >= 3 ? 1 : 0),

@@ -6,8 +6,9 @@ import { useStore, ActivityDay } from '@/lib/store';
 import styles from './profile.module.css';
 import {
   User, Lock, LogOut, Activity, Check,
-  Trophy, Clock, BookOpen
+  Trophy, Clock, BookOpen, Loader2
 } from 'lucide-react';
+import { signOut } from 'next-auth/react';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HEATMAP v3 — flex month chips with exact pixel-span alignment + auto-scroll
@@ -322,22 +323,54 @@ const TABS: { id: Tab; icon: string; label: string }[] = [
 export default function ProfilePageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { profile, streak, maxStreak, activity, updateProfile } = useStore();
+  const { profile, streak, maxStreak, activity, isLoading, updateProfile } = useStore();
 
   const [tab, setTab] = useState<Tab>('profile');
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ ...profile });
+  const [form, setForm] = useState({ 
+    name: '', 
+    nickname: '', 
+    bio: '', 
+    avatarColor: '', 
+    mood: '' 
+  });
   const [saved, setSaved] = useState(false);
   const [pw, setPw] = useState({ current: '', next: '', confirm: '' });
   const [pwSaved, setPwSaved] = useState(false);
+  const [pwError, setPwError] = useState('');
   const [showLogout, setShowLogout] = useState(false);
 
   useEffect(() => { if (searchParams.get('tab') === 'settings') setTab('password'); }, [searchParams]);
-  useEffect(() => { setForm({ ...profile }); }, [profile]);
+  
+  useEffect(() => { 
+    if (profile) {
+      setForm({ 
+        name: profile.name || '', 
+        nickname: profile.nickname || '', 
+        bio: profile.bio || '', 
+        avatarColor: profile.avatarColor || 'linear-gradient(135deg, #6366f1, #a855f7)', 
+        mood: profile.mood || '😊' 
+      }); 
+    }
+  }, [profile]);
+
+  if (isLoading || !profile) {
+    return (
+      <div className={styles.loadingFull}>
+        <Loader2 className={styles.spin} size={40} />
+        <p>Đang tải hồ sơ...</p>
+      </div>
+    );
+  }
 
   const badge = getBadge(streak);
 
-  const handleSave = () => { updateProfile(form); setEditing(false); setSaved(true); setTimeout(() => setSaved(false), 2000); };
+  const handleSave = () => { 
+    updateProfile(form as any); 
+    setEditing(false); 
+    setSaved(true); 
+    setTimeout(() => setSaved(false), 2000); 
+  };
 
   const pwStrength = (p: string) => {
     let s = 0;
@@ -357,12 +390,12 @@ export default function ProfilePageInner() {
         <div className={styles.profileHeaderInner}>
           <div className={styles.avatarWrap}>
             <div className={styles.avatarCircle} style={{ background: profile.avatarColor }}>
-              {profile.displayName.slice(0, 2).toUpperCase()}
+              {(profile.name || 'Q').slice(0, 2).toUpperCase()}
             </div>
             <div className={styles.moodBadge}>{profile.mood}</div>
           </div>
           <div className={styles.profileHeaderInfo}>
-            <div className={styles.profileName}>{profile.displayName}</div>
+            <div className={styles.profileName}>{profile.name}</div>
             <div className={styles.profileHandle}>@{profile.nickname}</div>
             <div className={styles.profileBio}>{profile.bio}</div>
             <div className={styles.badgeRow}>
@@ -452,8 +485,8 @@ export default function ProfilePageInner() {
               <div className={styles.formGrid}>
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>Họ và tên</label>
-                  <input className={styles.formInput} disabled={!editing} value={form.displayName}
-                    onChange={e => setForm(f => ({...f, displayName: e.target.value}))} placeholder="Nguyễn Văn A"/>
+                  <input className={styles.formInput} disabled={!editing} value={form.name}
+                    onChange={e => setForm(f => ({...f, name: e.target.value}))} placeholder="Nguyễn Văn A"/>
                 </div>
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>Nickname</label>
@@ -546,9 +579,29 @@ export default function ProfilePageInner() {
               })}
               <button className={styles.saveBtn} style={{ marginTop: '0.5rem' }}
                 disabled={!pw.current || !pw.next || pw.next !== pw.confirm || strength < 2}
-                onClick={() => { setPwSaved(true); setPw({current:'',next:'',confirm:''}); setTimeout(() => setPwSaved(false), 3000); }}>
+                onClick={async () => {
+                  try {
+                    setPwError('');
+                    const res = await fetch('/api/user/change-password', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ currentPassword: pw.current, newPassword: pw.next }),
+                    });
+                    const data = await res.json();
+                    if (data.error) {
+                      setPwError(data.error);
+                    } else {
+                      setPwSaved(true);
+                      setPw({current:'',next:'',confirm:''});
+                      setTimeout(() => setPwSaved(false), 3000);
+                    }
+                  } catch (err) {
+                    setPwError('Lỗi kết nối server');
+                  }
+                }}>
                 <Lock size={14}/> Đổi mật khẩu
               </button>
+              {pwError && <div className={styles.errorMsg} style={{ marginTop: '0.5rem' }}>{pwError}</div>}
             </div>
           )}
 
@@ -564,7 +617,7 @@ export default function ProfilePageInner() {
             <p className={styles.logoutDesc}>Bạn có chắc muốn đăng xuất khỏi Q-Card không?</p>
             <div className={styles.logoutBtns}>
               <button className={styles.cancelBtnLg} onClick={() => setShowLogout(false)}>Ở lại</button>
-              <button className={styles.dangerBtnLg} onClick={() => router.push('/')}>Đăng xuất</button>
+              <button className={styles.dangerBtnLg} onClick={() => signOut({ callbackUrl: '/' })}>Đăng xuất</button>
             </div>
           </div>
         </div>

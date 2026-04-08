@@ -20,7 +20,16 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
   const { deckId } = await params;
   const deck = await prisma.deck.findFirst({
     where:   { id: deckId, userId: session.user.id },
-    include: { cards: { orderBy: { createdAt: 'asc' } } },
+    include: { 
+      cards: { 
+        orderBy: { createdAt: 'asc' },
+        include: {
+          sm2Progress: {
+                where: { userId: session.user.id }
+          }
+        }
+      } 
+    },
   });
 
   if (!deck) return Response.json({ error: 'Không tìm thấy' }, { status: 404 });

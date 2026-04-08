@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { mockCards, mockDecks } from '@/lib/mockData';
+import { useStore } from '@/lib/store';
 import styles from './quiz.module.css';
 import {
   ArrowLeft, Clock, CheckCircle2, XCircle,
@@ -24,18 +24,35 @@ export default function QuizMode() {
   const params = useParams();
   const router = useRouter();
   const deckId = params.deckId as string;
-  const deck = mockDecks.find(d => d.id === deckId);
+  const { decks, fetchDeckCards, isLoading: storeLoading } = useStore();
+  const [cards, setCards] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const deck = decks.find(d => d.id === deckId);
+
+  useEffect(() => {
+    const load = async () => {
+      if (deckId) {
+        setLoading(true);
+        const fetchedCards = await fetchDeckCards(deckId);
+        if (fetchedCards) setCards(fetchedCards);
+        setLoading(false);
+      }
+    };
+    load();
+  }, [deckId, fetchDeckCards]);
 
   const quizCards = useMemo(() => {
-    const rawCards = mockCards.filter(c => c.deckId === deckId);
-    return rawCards.map(c => {
-      if (c.options && c.options.length > 0) return c;
-      const otherAnswers = rawCards.filter(o => o.id !== c.id).map(o => o.back);
+    if (!cards.length) return [];
+    return cards.map(c => {
+      if (c.options && Array.isArray(c.options) && c.options.length > 0) return c;
+      // Fallback for cards without options (treat as flashcard-style quiz)
+      const otherAnswers = cards.filter(o => o.id !== c.id).map(o => o.back);
       const optionsStr = [c.back, ...shuffle(otherAnswers).slice(0, 3)];
       const finalOptions = shuffle(optionsStr);
       return { ...c, options: finalOptions, correctOptionIndex: finalOptions.indexOf(c.back) };
     });
-  }, [deckId]);
+  }, [cards]);
 
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [timeLeft, setTimeLeft] = useState(quizCards.length * 60);
@@ -54,7 +71,27 @@ export default function QuizMode() {
     if (timeLeft <= 0 && !isSubmitted) handleSubmit();
   }, [timeLeft]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    const formattedAnswers = quizCards.map(c => ({
+      cardId: c.id,
+      chosenIndex: answers[c.id] ?? -1,
+      correctIndex: c.correctOptionIndex,
+      timeSec: 10, // Tạm thời giả định 10s/câu hoặc tính toán chi tiết hơn
+    }));
+
+    try {
+      await fetch('/api/quiz/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deckId,
+          answers: formattedAnswers.filter(a => a.chosenIndex !== -1),
+        }),
+      });
+    } catch (err) {
+      console.error('Failed to submit quiz:', err);
+    }
+
     setIsSubmitted(true);
     setShowResultModal(true);
   };
