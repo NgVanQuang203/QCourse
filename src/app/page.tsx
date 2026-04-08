@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
+import { useStore } from '@/lib/store';
 import styles from './page.module.css';
 
 // Counter component (hook inside component = safe)
@@ -58,6 +59,12 @@ const floatingCards = [
 
 export default function Home() {
   const router = useRouter();
+  const { profile, decks } = useStore();
+
+  const totalFcDue = decks.filter(d => d.type === 'FLASHCARD' || !d.type).reduce((acc, d) => acc + (d.dueCount ?? 0), 0);
+  const totalQuizDue = decks.filter(d => d.type === 'QUIZ').reduce((acc, d) => acc + (d.dueCount ?? 0), 0);
+  const fcCount = decks.filter(d => d.type === 'FLASHCARD' || !d.type).length;
+  const quizCount = decks.filter(d => d.type === 'QUIZ').length;
 
   return (
     <div>
@@ -122,28 +129,57 @@ export default function Home() {
             </button>
           </motion.div>
 
-          {/* Feature cards */}
+          {/* Feature cards - Dynamic Duo */}
           <motion.div
             className={styles.homeCardRow}
             initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.44, duration: 0.58 }}
           >
-            <div className={styles.homeCard} onClick={() => router.push('/library/flashcard')}>
+            {/* Flashcard Card */}
+            <div className={`${styles.homeCard} ${styles.cardFc}`} onClick={() => router.push('/library/flashcard')}>
               <div className={styles.homeCardEmoji}>🧠</div>
               <div className={styles.homeCardTitle}>Luyện Flashcard</div>
               <div className={styles.homeCardDesc}>
-                Ôn tập lặp lại ngắt quãng theo thuật toán SM-2 được khoa học kiểm chứng.
+                Hệ thống SM-2 thông minh tự động lên lịch thẻ giúp kiến thức khắc sâu vào não bộ.
               </div>
-              <div className={styles.homeCardArrow}>→</div>
+              <div className={styles.homeCardBottom}>
+                {profile ? (
+                  totalFcDue > 0 ? (
+                    <div className={`${styles.liveBadge} ${styles.active}`}>🔥 {totalFcDue} thẻ đang tới hạn</div>
+                  ) : fcCount > 0 ? (
+                    <div className={styles.liveBadge}>📚 Có {fcCount} bộ thẻ của bạn</div>
+                  ) : (
+                    <div className={styles.liveBadge}>Bắt đầu tạo thẻ ngay</div>
+                  )
+                ) : (
+                  <div className={styles.liveBadge}>⚡ Spaced Repetition</div>
+                )}
+                <div className={styles.ctaChip}>Tới Thư viện</div>
+              </div>
             </div>
-            <div className={styles.homeCard} onClick={() => router.push('/library/quiz')}>
+
+            {/* Quiz Card */}
+            <div className={`${styles.homeCard} ${styles.cardQuiz}`} onClick={() => router.push('/library/quiz')}>
               <div className={styles.homeCardEmoji}>🎯</div>
               <div className={styles.homeCardTitle}>Làm Trắc nghiệm</div>
               <div className={styles.homeCardDesc}>
-                Kiểm tra tổng hợp kiến thức với bộ đề có đồng hồ đếm ngược thực tế.
+                Tạo và giải quyết các bài kiểm tra thực tế với tính năng đếm giờ và chấm điểm tự động.
               </div>
-              <div className={styles.homeCardArrow}>→</div>
+              <div className={styles.homeCardBottom}>
+                {profile ? (
+                  totalQuizDue > 0 ? (
+                    <div className={`${styles.liveBadge} ${styles.active}`}>🔥 {totalQuizDue} câu đang chờ</div>
+                  ) : quizCount > 0 ? (
+                    <div className={styles.liveBadge}>📝 Có {quizCount} bộ đề của bạn</div>
+                  ) : (
+                    <div className={styles.liveBadge}>Thử sức ngay hôm nay</div>
+                  )
+                ) : (
+                  <div className={styles.liveBadge}>⏱️ Tính giờ thi thực tế</div>
+                )}
+                <div className={styles.ctaChip}>Tới Thư viện</div>
+              </div>
             </div>
           </motion.div>
         </motion.div>

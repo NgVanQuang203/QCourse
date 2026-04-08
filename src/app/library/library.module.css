@@ -1,0 +1,432 @@
+/* ================================================================
+   LIBRARY.MODULE.CSS — Premium File Explorer & Creative Cards
+   Shared by Flashcard & Quiz library pages
+   ================================================================ */
+
+.libraryPage {
+  display: flex;
+  min-height: calc(100svh - var(--nav-height));
+  background: var(--background);
+}
+
+.mainArea {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* ── HEADER & BREADCRUMB ──────────────────────────────────────── */
+.headerBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--foreground);
+  letter-spacing: -0.5px;
+}
+
+.breadcrumbLink {
+  color: var(--foreground);
+  opacity: 0.5;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  background: none;
+  border: none;
+  font: inherit;
+  padding: 0;
+}
+.breadcrumbLink:hover { opacity: 1; }
+
+.breadcrumbSep { opacity: 0.3; font-size: 1.2rem; }
+
+.headerActions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btnImport {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.1rem;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btnImport:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+.btnCreate {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  border-radius: 12px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 4px 12px rgba(99,102,241,0.25);
+}
+.btnCreate:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,102,241,0.35); }
+
+/* ── FOLDER SECTION (Google Drive style) ──────────────────────── */
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--foreground);
+  opacity: 0.8;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.folderGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.folderCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  position: relative;
+}
+.folderCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+  border-color: var(--primary-light);
+  background: var(--primary-light);
+}
+
+.folderIcon {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.folderInfo {
+  flex: 1;
+  min-width: 0;
+}
+.folderName {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.folderMeta {
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.5;
+  margin-top: 0.2rem;
+}
+
+/* Kebab menu inside folders/decks */
+.kebabWrap { position: absolute; right: 0.75rem; top: 0.75rem; z-index: 90; }
+.kebabBtn {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--foreground);
+  opacity: 0.4;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s;
+}
+.kebabBtn:hover, .kebabBtn:focus { opacity: 1; background: var(--surface-hover); }
+
+/* Inverted kebab for dark banners */
+.kebabBtnLight { color: white; opacity: 0.7; }
+.kebabBtnLight:hover { opacity: 1; background: rgba(255,255,255,0.2); }
+
+.menuDropdown {
+  position: absolute;
+  top: calc(100% + 4px); right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.4rem;
+  display: flex; flex-direction: column; gap: 0.1rem;
+  min-width: 180px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+  z-index: 99999;
+  animation: popDown 0.15s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes popDown {
+  from { opacity: 0; transform: translateY(-5px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.menuItem {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px; border: none; background: transparent;
+  color: var(--foreground); font-weight: 600; font-size: 0.85rem;
+  cursor: pointer; text-align: left; transition: all 0.12s;
+}
+.menuItem:hover { background: var(--surface-hover); }
+.menuDivider { height: 1px; background: var(--border); margin: 0.2rem 0.5rem; }
+.menuItemDanger { color: var(--danger) !important; }
+.menuItemDanger:hover { background: rgba(239,68,68,0.08) !important; }
+
+
+/* ── DECK GRID ────────────────────────────────────────────────── */
+.deckGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+/* ── PREMIUM CLEAN UI FLASHCARD DESIGN ────────────────── */
+.fcCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 200px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 8px 24px -8px rgba(0,0,0,0.06);
+  z-index: 1;
+}
+/* Elevate z-index on hover or when active so dropdown naturally falls over siblings */
+.fcCard:hover, .fcCard:focus-within {
+  transform: translateY(-5px);
+  border-color: rgba(0,0,0,0.1);
+  box-shadow: 0 20px 40px -12px rgba(0,0,0,0.12);
+  z-index: 50;
+}
+
+/* Subtle left elegant border derived from color rather than full top bar */
+.fcGradientTop {
+  height: auto;
+  padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-shrink: 0;
+  border-bottom: none;
+  background: transparent !important; /* override inline style */
+}
+/* We use a pseudo element for the color accent to keep it extremely elegant */
+.fcCard::after {
+  content: '';
+  position: absolute;
+  top: 1.5rem; left: 0;
+  width: 4px; height: 28px;
+  border-radius: 0 4px 4px 0;
+  background: var(--primary); /* To be overridden via inline style in React if needed */
+  transition: height 0.3s ease;
+}
+.fcCard:hover::after {
+  height: 40px;
+}
+
+/* Elegant Title typography */
+.fcTitleArea {
+  padding: 0 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.fcTitle {
+  font-family: inherit;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--foreground);
+  letter-spacing: -0.3px;
+}
+.fcDesc {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--foreground);
+  opacity: 0.5;
+  font-weight: 500;
+  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* Minimalist Progress Section */
+.fcProgress {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem 1.5rem 1.5rem;
+  background: transparent;
+  border-top: none;
+}
+
+
+/* ── PREMIUM QUIZ DESIGN ──────────────────────────────────────── */
+.quizCard {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  cursor: pointer;
+  position: relative;
+  height: 220px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  z-index: 1;
+}
+.quizCard:hover, .quizCard:focus-within {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+  border-color: rgba(0,0,0,0.2);
+  z-index: 50;
+}
+
+/* A subtle grid/blueprint background to give a "test paper" vibe */
+.quizBgGrid {
+  position: absolute; inset: 0; z-index: 0; opacity: 0.05;
+  background-image: linear-gradient(var(--foreground) 1px, transparent 1px), linear-gradient(90deg, var(--foreground) 1px, transparent 1px);
+  background-size: 16px 16px;
+  pointer-events: none;
+}
+
+.quizTop {
+  padding: 1.25rem;
+  border-bottom: 2px solid var(--border);
+  background: var(--background);
+  display: flex;
+  gap: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.quizIconBox {
+  width: 48px; height: 48px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; color: white; font-weight: 900;
+  box-shadow: inset 0 -3px 0 rgba(0,0,0,0.15);
+  flex-shrink: 0;
+}
+
+.quizInfo { flex: 1; min-width: 0; }
+.quizTitle { font-size: 1.1rem; font-weight: 900; letter-spacing: -0.3px; color: var(--foreground); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quizMeta { font-size: 0.75rem; font-weight: 700; color: var(--foreground); opacity: 0.5; font-family: monospace; }
+
+.quizBody {
+  padding: 1.25rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+.quizScoreLabel { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--foreground); opacity: 0.4; margin-bottom: 0.25rem; }
+.quizScoreValue { font-size: 2rem; font-weight: 900; color: var(--foreground); font-family: monospace; line-height: 1; }
+
+.quizAction {
+  position: absolute; right: 1.25rem; bottom: 1.25rem;
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--foreground); color: var(--background);
+  transition: transform 0.2s;
+}
+.quizCard:hover .quizAction { transform: scale(1.15); }
+
+
+/* ── DUE NOTIFICATION (SLICK STATUS TAG) ──────────────────────── */
+.statusTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+.statusDue { background: rgba(239,68,68,0.9); color: white; border: 1px solid rgba(255,100,100,0.4); box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
+.statusDone { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); }
+
+/* SVG Progress Ring */
+.ringWrap { position: relative; width: 36px; height: 36px; flex-shrink: 0; }
+.ringSvg { transform: rotate(-90deg); overflow: visible; }
+.ringBg { fill: none; stroke: var(--border); stroke-width: 3.5; }
+.ringFill { fill: none; stroke-width: 3.5; stroke-linecap: round; transition: stroke-dashoffset 0.6s cubic-bezier(0.4,0,0.2,1); }
+.ringText { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 800; color: var(--foreground); }
+
+/* ── MODALS (For new folder etc) ──────────────────────────────── */
+.modalOverlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+  z-index: 200; display: flex; align-items: center; justify-content: center;
+}
+.folderModal {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
+  padding: 2rem; width: 90%; max-width: 400px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+}
+.folderModalTitle { font-size: 1.25rem; font-weight: 900; margin-bottom: 1.5rem; color: var(--foreground); }
+.emojiPicker { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.emojiBtn { width: 44px; height: 44px; border-radius: 12px; border: 2px solid var(--border); background: var(--surface-hover); font-size: 1.4rem; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+.emojiBtn:hover { transform: scale(1.1); }
+.emojiActive { border-color: var(--primary) !important; background: var(--primary-light) !important; transform: scale(1.1); }
+.modalInput { width: 100%; padding: 0.9rem 1rem; border-radius: 12px; border: 2px solid var(--border); background: var(--background); color: var(--foreground); font-size: 1rem; font-weight: 700; font-family: inherit; margin-bottom: 1.5rem; box-sizing: border-box; transition: border-color 0.15s; }
+.modalInput:focus { outline: none; border-color: var(--primary); }
+.modalActions { display: flex; gap: 0.75rem; }
+.modalCancel { flex: 1; padding: 0.85rem; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface-hover); color: var(--foreground); font-weight: 800; cursor: pointer; transition: all 0.15s; }
+.modalSave { flex: 1; padding: 0.85rem; border-radius: 12px; border: none; background: var(--primary); color: white; font-weight: 800; cursor: pointer; transition: all 0.15s; box-shadow: 0 4px 12px rgba(99,102,241,0.2); }
+.modalSave:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(99,102,241,0.3); }
+
+/* Move Deck List */
+.moveFolderList { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; max-height: 280px; overflow-y: auto; }
+.moveFolderItem { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 1rem; border-radius: 12px; border: 1px solid var(--border); background: var(--background); cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.15s; }
+.moveFolderItem:hover { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+.moveFolderItemActive { border-color: var(--primary) !important; background: var(--primary-light) !important; color: var(--primary) !important; font-weight: 800; }
+
+/* Empty state */
+.emptyState { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 1rem; text-align: center; opacity: 0.7; }
+.emptyIcon { font-size: 4rem; margin-bottom: 1rem; filter: grayscale(1) opacity(0.5); }
+.emptyText { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.5rem; }
+.emptySub { font-size: 0.9rem; font-weight: 600; opacity: 0.6; margin-bottom: 1.5rem; max-width: 300px; }
+
+/* ── RESPONSIVE ───────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .mainArea { padding: 1.25rem 1rem; gap: 1.5rem; }
+  .headerBar { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .breadcrumb { font-size: 1.2rem; }
+  .headerActions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+  .btnImport, .btnCreate { justify-content: center; }
+  .folderGrid, .deckGrid { grid-template-columns: 1fr; }
+}

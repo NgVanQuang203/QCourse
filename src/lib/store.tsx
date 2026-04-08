@@ -9,7 +9,15 @@ import { useSession } from 'next-auth/react';
 import { Deck, Card } from './mockData';
 import { SM2Data, sm2InitialData } from './sm2';
 
-// ── Types ─────────────────────────────────────────────────────
+// ── Types ───────────────────────────────────────────────
+
+export interface Folder {
+  id: string;
+  name: string;
+  icon: string;
+  type: 'FLASHCARD' | 'QUIZ';
+  _count?: { decks: number };
+}
 
 export interface UserProfile {
   id: string;
@@ -34,6 +42,7 @@ export interface ActivityDay {
 
 export interface StoreState {
   decks: (Deck & { dueCount?: number; masteredCount?: number; _count?: { cards: number } })[];
+  folders: Folder[];
   cards: Card[];
   profile: UserProfile | null;
   activity: ActivityDay[];
@@ -54,10 +63,16 @@ export interface StoreActions {
   logActivity: (minutesStudied: number, cardsStudied: number, deckId: string) => Promise<void>;
   fetchDeckCards: (deckId: string) => Promise<Card[] | undefined>;
   refreshStats: () => Promise<void>;
+  // Folder actions
+  addFolder: (name: string, icon?: string, type?: 'FLASHCARD' | 'QUIZ') => Promise<Folder | undefined>;
+  updateFolder: (id: string, changes: { name?: string; icon?: string }) => Promise<void>;
+  deleteFolder: (id: string) => Promise<void>;
+  moveDeckToFolder: (deckId: string, folderId: string | null) => Promise<void>;
 }
 
 const INITIAL_STATE: StoreState = {
   decks: [],
+  folders: [],
   cards: [],
   profile: null,
   activity: [],
@@ -86,20 +101,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     
     setState(s => ({ ...s, isLoading: true }));
     try {
-      const [decksRes, profileRes, activityRes] = await Promise.all([
+      const [decksRes, profileRes, activityRes, foldersRes] = await Promise.all([
         fetch('/api/decks'),
         fetch('/api/user/profile'),
-        fetch('/api/activity')
+        fetch('/api/activity'),
+        fetch('/api/folders'),
       ]);
 
-      const [decksData, profileData, activityData] = await Promise.all([
+      const [decksData, profileData, activityData, foldersData] = await Promise.all([
         decksRes.json(),
         profileRes.json(),
-        activityRes.json()
+        activityRes.json(),
+        foldersRes.json(),
       ]);
 
       setState({
         decks: decksData.decks || [],
+        folders: foldersData.folders || [],
         cards: [],
         profile: profileData.user || null,
         activity: activityData.activity || [],
@@ -173,7 +191,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       if (data.deck) {
         // Add to local state immediately so all consumers see it
-        setState(s => ({ ...s, decks: [{ ...data.deck, _count: { cards: 0 }, dueCount: 0, masteredCount: 0 }, ...s.decks] }));
+        setState(s => {
+          let updatedFolders = s.folders;
+          // If the deck is in a folder, increment that folder's count immediately
+          if (data.deck.folderId) {
+            updatedFolders = s.folders.map(f => 
+              f.id === data.deck.folderId 
+                ? { ...f, _count: { ...f._count, decks: (f._count?.decks || 0) + 1 } } 
+                : f
+            );
+          }
+          return { 
+            ...s, 
+            folders: updatedFolders,
+            decks: [{ ...data.deck, _count: { cards: 0 }, dueCount: 0, masteredCount: 0 }, ...s.decks] 
+          };
+        });
         return data.deck.id;
       }
     } catch (error) {
@@ -204,11 +237,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     try {
       const res = await fetch(`/api/decks/${id}`, { method: 'DELETE' });
       if (res.ok) {
-        setState(s => ({
-          ...s,
-          decks: s.decks.filter(d => d.id !== id),
-          cards: s.cards.filter(c => c.deckId !== id),
-        }));
+        setState(s => {
+          const deckToDelete = s.decks.find(d => d.id === id);
+          let updatedFolders = s.folders;
+          // Decrement folder count if it was in a folder
+          if (deckToDelete?.folderId) {
+            updatedFolders = s.folders.map(f => 
+              f.id === deckToDelete.folderId 
+                ? { ...f, _count: { ...f._count, decks: Math.max(0, (f._count?.decks || 0) - 1) } } 
+                : f
+            );
+          }
+          return {
+            ...s,
+            folders: updatedFolders,
+            decks: s.decks.filter(d => d.id !== id),
+            cards: s.cards.filter(c => c.deckId !== id),
+          };
+        });
       }
     } catch (error) {
       console.error('Delete deck failed:', error);
@@ -320,6 +366,72 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     await refreshStats();
   }, [refreshStats]);
 
+  // ── Folder Actions ───────────────────────────────────────────
+  const addFolder = useCallback(async (name: string, icon = '📁', type: 'FLASHCARD' | 'QUIZ' = 'FLASHCARD'): Promise<Folder | undefined> => {
+    try {
+      const res = await fetch('/api/folders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, icon, type }),
+      });
+      const data = await res.json();
+      if (data.folder) {
+        setState(s => ({ ...s, folders: [...s.folders, data.folder] }));
+        return data.folder;
+      }
+    } catch (e) { console.error('addFolder failed:', e); }
+  }, []);
+
+  const updateFolder = useCallback(async (id: string, changes: { name?: string; icon?: string }) => {
+    try {
+      const res = await fetch(`/api/folders/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(changes),
+      });
+      const data = await res.json();
+      if (data.folder) {
+        setState(s => ({ ...s, folders: s.folders.map(f => f.id === id ? { ...f, ...data.folder } : f) }));
+      }
+    } catch (e) { console.error('updateFolder failed:', e); }
+  }, []);
+
+  const deleteFolder = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/folders/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setState(s => ({
+          ...s,
+          folders: s.folders.filter(f => f.id !== id),
+          decks: s.decks.map(d => d.folderId === id ? { ...d, folderId: null } : d),
+        }));
+      }
+    } catch (e) { console.error('deleteFolder failed:', e); }
+  }, []);
+
+  const moveDeckToFolder = useCallback(async (deckId: string, folderId: string | null) => {
+    try {
+      const res = await fetch(`/api/decks/${deckId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folderId }),
+      });
+      if (res.ok) {
+        setState(s => ({
+          ...s,
+          decks: s.decks.map(d => d.id === deckId ? { ...d, folderId } : d),
+          // Update folder deck counts
+          folders: s.folders.map(f => {
+            const oldDeck = s.decks.find(d => d.id === deckId);
+            if (f.id === oldDeck?.folderId) return { ...f, _count: { decks: (f._count?.decks ?? 1) - 1 } };
+            if (f.id === folderId) return { ...f, _count: { decks: (f._count?.decks ?? 0) + 1 } };
+            return f;
+          }),
+        }));
+      }
+    } catch (e) { console.error('moveDeckToFolder failed:', e); }
+  }, []);
+
   const value: StoreState & StoreActions = {
     ...state,
     updateProfile,
@@ -328,6 +440,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     importCards, logActivity,
     fetchDeckCards,
     refreshStats,
+    addFolder, updateFolder, deleteFolder, moveDeckToFolder,
   };
 
   return (

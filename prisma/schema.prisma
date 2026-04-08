@@ -95,6 +95,8 @@ model Folder {
   name   String
   icon   String @default("📁")
 
+  type   DeckType @default(FLASHCARD)
+
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   decks  Deck[]
 
@@ -102,6 +104,7 @@ model Folder {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([type])
 }
 
 enum DeckType {

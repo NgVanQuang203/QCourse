@@ -28,7 +28,8 @@ interface QuizQuestion {
 }
 
 interface Props {
-  deckId: string | null;  // null = create new
+  deckId: string | null;
+  initialFolderId?: string | null;
   onClose: () => void;
 }
 
@@ -105,7 +106,7 @@ const QuestionForm = ({ q, setQ, onSave, onCancel, saveLabel }: {
   </div>
 );
 
-export default function EditQuizModal({ deckId, onClose }: Props) {
+export default function EditQuizModal({ deckId, initialFolderId, onClose }: Props) {
   const { decks, cards, addDeck, updateDeck, addCard, updateCard, deleteCard } = useStore();
 
   const isNew = deckId === null;
@@ -136,7 +137,7 @@ export default function EditQuizModal({ deckId, onClose }: Props) {
   const handleSaveDeck = async () => {
     if (!deckForm.name.trim()) return;
     if (isNew && !currentDeckId) {
-      const id = await addDeck({ name: deckForm.name, description: deckForm.description, color: deckForm.color, timeLimitSec: deckForm.timeLimitSec, folderId: undefined, type: 'QUIZ' });
+      const id = await addDeck({ name: deckForm.name, description: deckForm.description, color: deckForm.color, timeLimitSec: deckForm.timeLimitSec, folderId: initialFolderId ?? undefined, type: 'QUIZ' });
       setCurrentDeckId(id as string);
       setSection('questions');
     } else if (currentDeckId) {

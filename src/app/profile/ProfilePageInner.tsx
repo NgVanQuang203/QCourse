@@ -31,34 +31,55 @@ function Heatmap({ activity }: { activity: ActivityDay[] }) {
       const s = d.toISOString().slice(0, 10);
       arr.push(activity.find(a => a.date === s) ?? { date: s, minutesStudied: 0, cardsStudied: 0, deckIds: [] });
     }
-    // Pad start to align to Sunday
-    const startDow = new Date(arr[0].date).getDay();
+    // Pad start so week begins on Sunday (day 0)
+    const startDow = new Date(arr[0].date).getDay(); // 0=Sun … 6=Sat
     const padded = [...Array<null>(startDow).fill(null), ...arr] as (ActivityDay | null)[];
     const nWeeks = Math.ceil(padded.length / 7);
 
-    // Month spanning blocks
+    // ── Month block algorithm (correct) ────────────────────────────────────
+    // Rule: Start a NEW block at the week that CONTAINS the 1st of a month.
+    // Each week belongs to the month of the EARLIEST non-null real date in it.
+    // But if that week contains a 1st-of-month date, it triggers a new block.
     const blocks: { label: string; weekIdx: number; weekCount: number }[] = [];
-    let lastKey = '';
+    let currentMonthKey = '';
+
     for (let wi = 0; wi < nWeeks; wi++) {
-      const weekSlice = padded.slice(wi * 7, wi * 7 + 7);
-      // Logic fix: find if ANY day in this week is the 1ST of a month
-      const firstOfMonth = weekSlice.find(day => day && day.date.endsWith('-01'));
-      // Fallback to Sunday if no 1st of month in this week
-      const dayForMonth = firstOfMonth || (weekSlice.find(Boolean) as ActivityDay);
+      const slice = padded.slice(wi * 7, wi * 7 + 7);
       
-      if (!dayForMonth) continue;
-      const d = new Date(dayForMonth.date);
-      const key = `${d.getFullYear()}-${d.getMonth()}`;
-      const monthNum = d.getMonth() + 1;
-      const label = monthNum === 1 ? `T.1 '${String(d.getFullYear()).slice(2)}` : `T.${monthNum}`;
-      
-      if (key !== lastKey) {
+      // Check if this week contains the 1st day of any month
+      const hasFirst = slice.some(day => day && day.date.slice(8, 10) === '01');
+      // Determine which month this week "belongs" to (first real day)
+      const representativeDay = slice.find(Boolean) as ActivityDay | undefined;
+      if (!representativeDay) continue;
+
+      const d = new Date(representativeDay.date);
+      // If the week contains a 1st, use THAT month as the label
+      let monthKey: string;
+      let monthNum: number;
+      let year: number;
+
+      if (hasFirst) {
+        const firstDay = slice.find(day => day && day.date.slice(8, 10) === '01') as ActivityDay;
+        const fd = new Date(firstDay.date);
+        monthNum = fd.getMonth() + 1;
+        year = fd.getFullYear();
+        monthKey = `${year}-${fd.getMonth()}`;
+      } else {
+        monthNum = d.getMonth() + 1;
+        year = d.getFullYear();
+        monthKey = `${year}-${d.getMonth()}`;
+      }
+
+      const label = monthNum === 1 ? `T.1 '${String(year).slice(2)}` : `T.${monthNum}`;
+
+      if (monthKey !== currentMonthKey) {
         blocks.push({ label, weekIdx: wi, weekCount: 1 });
-        lastKey = key;
+        currentMonthKey = monthKey;
       } else {
         if (blocks.length > 0) blocks[blocks.length - 1].weekCount++;
       }
     }
+
     return { paddedDays: padded, numWeeks: nWeeks, monthBlocks: blocks };
   }, [activity, today]);
 

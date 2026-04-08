@@ -20,10 +20,11 @@ const GRADIENT_PRESETS = [
 interface Props {
   deckId: string | null; // null = create new
   mode: 'flashcard' | 'quiz';
+  initialFolderId?: string | null;
   onClose: () => void;
 }
 
-export default function EditDeckModal({ deckId, mode, onClose }: Props) {
+export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }: Props) {
   const { decks, cards, addDeck, updateDeck, addCard, updateCard, deleteCard } = useStore();
   const isNew = deckId === null;
   const existingDeck = decks.find(d => d.id === deckId);
@@ -49,7 +50,7 @@ export default function EditDeckModal({ deckId, mode, onClose }: Props) {
   const handleSaveDeck = async () => {
     if (!deckForm.name.trim()) return;
     if (isNew && !currentDeckId) {
-      const newId = await addDeck({ ...deckForm, folderId: undefined, type: 'FLASHCARD' });
+      const newId = await addDeck({ ...deckForm, folderId: initialFolderId ?? null, type: 'FLASHCARD' });
       if (newId) {
         setCurrentDeckId(newId);
         setActiveSection('cards');
