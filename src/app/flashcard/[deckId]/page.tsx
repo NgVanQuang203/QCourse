@@ -289,22 +289,38 @@ export default function FlashcardMode() {
             </div>
 
             <div className={`${styles.controls} ${isFlipped ? styles.visible : ''}`}>
-              <button className={`${styles.evalBtn} ${styles.btnFail}`} onClick={() => handleEvaluate(1)}>
+              <button 
+                className={`${styles.evalBtn} ${styles.btnFail}`} 
+                onClick={() => handleEvaluate(1)}
+                title="Học lại: Thẻ sẽ xuất hiện lại ngay lập tức"
+              >
                 <span className={styles.evalKey}>1</span>
                 Lại (1m)
                 <span className={styles.evalDesc}>Quên hẳn</span>
               </button>
-              <button className={`${styles.evalBtn} ${styles.btnHard}`} onClick={() => handleEvaluate(3)}>
+              <button 
+                className={`${styles.evalBtn} ${styles.btnHard}`} 
+                onClick={() => handleEvaluate(3)}
+                title="Khó: Bạn mất nhiều thời gian để nhớ ra"
+              >
                 <span className={styles.evalKey}>2</span>
                 Khó (10m)
                 <span className={styles.evalDesc}>Nghĩ lâu</span>
               </button>
-              <button className={`${styles.evalBtn} ${styles.btnGood}`} onClick={() => handleEvaluate(4)}>
+              <button 
+                className={`${styles.evalBtn} ${styles.btnGood}`} 
+                onClick={() => handleEvaluate(4)}
+                title="Tốt: Bạn nhớ rõ nhưng cần ôn lại sớm"
+              >
                 <span className={styles.evalKey}>3</span>
                 Tốt (1d)
                 <span className={styles.evalDesc}>Nhớ rõ</span>
               </button>
-              <button className={`${styles.evalBtn} ${styles.btnPerfect}`} onClick={() => handleEvaluate(5)}>
+              <button 
+                className={`${styles.evalBtn} ${styles.btnPerfect}`} 
+                onClick={() => handleEvaluate(5)}
+                title="Dễ: Rất dễ dàng, thẻ sẽ lặp lại sau vài ngày"
+              >
                 <span className={styles.evalKey}>4</span>
                 Dễ (4d)
                 <span className={styles.evalDesc}>Rất dễ</span>

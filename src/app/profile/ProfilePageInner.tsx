@@ -568,9 +568,9 @@ export default function ProfilePageInner() {
               <div className={styles.statsGrid}>
                 {[
                   { icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z"/></svg>, bg: 'linear-gradient(135deg,#7c3aed,#38bdf8)', val: streak,   label: 'Streak hiện tại' },
-                  { icon: <Trophy size={20} color="white"/>,   bg: 'linear-gradient(135deg,#f59e0b,#ef4444)', val: maxStreak, label: 'Streak cao nhất' },
+                  { icon: <Trophy size={20} color="white"/>,   bg: 'linear-gradient(135deg,#f59e0b,#ef4444)', val: (profile as any)?.quizStats?.maxScore || 0, label: 'Điểm cao nhất' },
                   { icon: <BookOpen size={20} color="white"/>, bg: 'linear-gradient(135deg,#10b981,#3b82f6)', val: activity.reduce((s,a) => s+a.cardsStudied, 0), label: 'Tổng thẻ học' },
-                  { icon: <Clock size={20} color="white"/>,    bg: 'linear-gradient(135deg,#6366f1,#a855f7)', val: `${Math.round(activity.reduce((s,a) => s+a.minutesStudied, 0)/60)}h`, label: 'Tổng giờ học' },
+                  { icon: <Clock size={20} color="white"/>,    bg: 'linear-gradient(135deg,#6366f1,#a855f7)', val: (profile as any)?.quizStats?.totalAttempts || 0, label: 'Số lần thi' },
                 ].map((s,i) => (
                   <div key={i} className={styles.statCard}>
                     <div className={styles.statCardIcon} style={{ background: s.bg }}>{s.icon}</div>

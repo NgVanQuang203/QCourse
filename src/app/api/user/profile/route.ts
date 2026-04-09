@@ -21,12 +21,25 @@ export async function GET() {
 
   if (!user) return Response.json({ error: 'Không tìm thấy user' }, { status: 404 });
 
+  // Fetch quiz stats
+  const [attemptCount, maxScoreData] = await Promise.all([
+    prisma.quizAttempt.count({ where: { userId: session.user.id } }),
+    prisma.quizAttempt.aggregate({
+      where: { userId: session.user.id },
+      _max: { score: true }
+    })
+  ]);
+
   const { passwordHash, ...safeUser } = user;
   
   return Response.json({ 
     user: { 
       ...safeUser, 
-      hasPassword: !!passwordHash 
+      hasPassword: !!passwordHash,
+      quizStats: {
+        totalAttempts: attemptCount,
+        maxScore: maxScoreData._max.score || 0
+      }
     } 
   });
 }
