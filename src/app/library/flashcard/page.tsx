@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import lib from '../library.module.css';
 import loadingStyles from '@/app/loading.module.css';
@@ -18,8 +18,30 @@ const EMOJIS = ['📁', '📘', '⚛️', '🌍', '💻', '🎨', '🧬', '🎵'
 export default function FlashcardLibrary() {
   const router = useRouter();
 
-  // null = show all decks; string = show decks in that folder
-  const [activeFolderId, setActiveFolderId] = useState<string | null | 'all'>('all');
+  // null = show individual uncategorized decks; 'all' = show folders; string = show decks in folder
+  const [activeFolderId, setRawActiveFolderId] = useState<string | null | 'all'>('all');
+  
+  useEffect(() => {
+    const handleState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const f = params.get('folder');
+      setRawActiveFolderId(f || 'all');
+    };
+    handleState(); // Initial load
+    window.addEventListener('popstate', handleState);
+    return () => window.removeEventListener('popstate', handleState);
+  }, []);
+
+  const setActiveFolderId = (id: string | null | 'all') => {
+    setRawActiveFolderId(id);
+    const url = new URL(window.location.href);
+    if (id === 'all' || id === null) {
+      url.searchParams.delete('folder');
+    } else {
+      url.searchParams.set('folder', id);
+    }
+    window.history.pushState({}, '', url.toString());
+  };
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [editDeck, setEditDeck] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);

@@ -161,7 +161,6 @@
 /* --- COMPLETELY NEW FLASHCARD DESIGN (Friendly Stack) --- */
 .fcCardWrap {
   position: relative;
-  min-height: 220px;
   cursor: pointer;
   z-index: 1;
 }
@@ -206,13 +205,13 @@
   background-color: var(--surface);
   border: 2px solid var(--border);
   border-radius: 20px;
-  position: absolute;
-  inset: 0;
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
+  min-height: 220px;
   transition: all 0.3s cubic-bezier(0.3, 1.5, 0.7, 1);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-  z-index: 1;
   overflow: visible;
 }
 
