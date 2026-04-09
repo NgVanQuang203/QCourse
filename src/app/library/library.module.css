@@ -87,6 +87,13 @@
   flex-shrink: 0;
 }
 
+.fcFolderBtnDragOver {
+  background: rgba(var(--primary-rgb, 37, 99, 235), 0.1) !important;
+  border: 1px dashed var(--primary) !important;
+  transform: scale(1.02);
+  z-index: 10;
+}
+
 .fcSidebarSep { height: 1px; background: var(--border); margin: 0.5rem 0.5rem; }
 
 .fcAddFolderBtn {

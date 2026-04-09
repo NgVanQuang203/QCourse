@@ -61,6 +61,7 @@ export default function FlashcardLibrary() {
   const {
     decks, folders, isLoading, deleteDeck, refreshStats,
     moveDeckToFolder, addFolder, updateFolder, deleteFolder,
+    addDeck, fetchDeckCards, importCards,
   } = useStore();
 
   const flashDecks = decks.filter(d => !d.type || d.type === 'FLASHCARD');
@@ -134,13 +135,50 @@ export default function FlashcardLibrary() {
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDropOnFolder = async (e: React.DragEvent, folderId: string | null) => {
+  const handleDropOnFolder = async (e: React.DragEvent, folderId: string | null | 'all') => {
     e.preventDefault();
     setDragOverFolderId(null);
     const deckId = e.dataTransfer.getData('deckId');
-    if (deckId && deckId !== folderId) {
-      await moveDeckToFolder(deckId, folderId);
+    // If dropping on 'all', move to root (null)
+    const targetFolderId = folderId === 'all' ? null : folderId;
+    
+    if (deckId && deckId !== targetFolderId) {
+      await moveDeckToFolder(deckId, targetFolderId);
       toast.success('Đã di chuyển bộ bài');
+    }
+  };
+
+  const copyDeckLink = (deckId: string) => {
+    const url = `${window.location.origin}/flashcard/${deckId}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Đã sao chép liên kết');
+  };
+
+  const duplicateDeck = async (deckId: string) => {
+    const deck = decks.find(d => d.id === deckId);
+    if (!deck) return;
+    
+    const loadingToast = toast.loading('Đang sao chép bộ bài...');
+    try {
+      const newDeckId = await addDeck({
+        name: `${deck.name} (Bản sao)`,
+        description: deck.description,
+        color: deck.color,
+        type: deck.type || 'FLASHCARD',
+        folderId: deck.folderId,
+      });
+
+      if (newDeckId) {
+        const cards = await fetchDeckCards(deckId);
+        if (cards && cards.length > 0) {
+          await importCards(newDeckId, cards.map(c => ({ front: c.front, back: c.back })));
+        }
+        toast.dismiss(loadingToast);
+        toast.success('Đã nhân bản bộ bài');
+      }
+    } catch (err) {
+      toast.dismiss(loadingToast);
+      toast.error('Không thể nhân bản');
     }
   };
 
@@ -164,8 +202,11 @@ export default function FlashcardLibrary() {
 
       {/* "All decks" button */}
       <button
-        className={`${lib.fcFolderBtn} ${activeFolderId === 'all' ? lib.fcFolderBtnActive : ''}`}
+        className={`${lib.fcFolderBtn} ${activeFolderId === 'all' ? lib.fcFolderBtnActive : ''} ${dragOverFolderId === 'all' ? lib.fcFolderBtnDragOver : ''}`}
         onClick={() => setActiveFolderId('all')}
+        onDragOver={(e) => { e.preventDefault(); setDragOverFolderId('all'); }}
+        onDragLeave={() => setDragOverFolderId(null)}
+        onDrop={(e) => handleDropOnFolder(e, 'all')}
       >
         <LayoutGrid size={15} /> Tất cả
         <span className={lib.fcFolderBtnCount}>{flashDecks.length}</span>
@@ -177,9 +218,26 @@ export default function FlashcardLibrary() {
         return (
           <div key={f.id} style={{ position: 'relative' }}>
             <button
-              className={`${lib.fcFolderBtn} ${activeFolderId === f.id ? lib.fcFolderBtnActive : ''}`}
+              className={`${lib.fcFolderBtn} ${activeFolderId === f.id ? lib.fcFolderBtnActive : ''} ${dragOverFolderId === f.id ? lib.fcFolderBtnDragOver : ''}`}
               onClick={() => setActiveFolderId(f.id)}
+              onDragOver={(e) => { e.preventDefault(); setDragOverFolderId(f.id); }}
+              onDragLeave={() => setDragOverFolderId(null)}
+              onDrop={(e) => handleDropOnFolder(e, f.id)}
               style={{ paddingRight: '2.6rem' }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setContextMenu({
+                  x: e.clientX,
+                  y: e.clientY,
+                  items: [
+                    { label: 'Mở thư mục', icon: <FolderIcon size={14}/>, onClick: () => setActiveFolderId(f.id) },
+                    { label: 'Đổi tên/icon', icon: <Edit2 size={14}/>, onClick: () => { setEditingFolder(f); setFolderForm({ name: f.name, icon: f.icon }); setIsFolderModalOpen(true); } },
+                    { divider: true, label: '', onClick: () => {} },
+                    { label: 'Xóa thư mục', icon: <Trash2 size={14}/>, variant: 'danger', onClick: () => { setDeleteDeckId(`f_${f.id}`); setMenuOpenId(null); } },
+                  ]
+                });
+              }}
             >
               {f.icon} {f.name}
               <span className={lib.fcFolderBtnCount}>{countForFolder(f.id)}</span>
@@ -217,8 +275,11 @@ export default function FlashcardLibrary() {
       {/* Uncategorized if there are any */}
       {uncategorizedCount > 0 && (
         <button
-          className={`${lib.fcFolderBtn} ${activeFolderId === null ? lib.fcFolderBtnActive : ''}`}
+          className={`${lib.fcFolderBtn} ${activeFolderId === null ? lib.fcFolderBtnActive : ''} ${dragOverFolderId === 'uncategorized' ? lib.fcFolderBtnDragOver : ''}`}
           onClick={() => setActiveFolderId(null)}
+          onDragOver={(e) => { e.preventDefault(); setDragOverFolderId('uncategorized'); }}
+          onDragLeave={() => setDragOverFolderId(null)}
+          onDrop={(e) => handleDropOnFolder(e, 'all')}
         >
           🗂️ Chưa phân loại
           <span className={lib.fcFolderBtnCount}>{uncategorizedCount}</span>
@@ -259,6 +320,8 @@ export default function FlashcardLibrary() {
           { label: 'Học ngay', icon: <Plus size={14}/>, onClick: () => router.push(`/flashcard/${deck.id}`) },
           { label: 'Chỉnh sửa', icon: <Edit2 size={14}/>, onClick: () => setEditDeck(deck.id) },
           { label: 'Chuyển thư mục', icon: <FolderInput size={14}/>, onClick: () => setMoveDeckId(deck.id) },
+          { label: 'Nhân bản', icon: <RefreshCcw size={14}/>, onClick: () => duplicateDeck(deck.id) },
+          { label: 'Sao chép liên kết', icon: <Upload size={14}/>, onClick: () => copyDeckLink(deck.id) },
           { divider: true, label: '', onClick: () => {} },
           { label: 'Làm mới tiến độ', icon: <RefreshCcw size={14}/>, onClick: () => setResetDeckId(deck.id) },
           { label: 'Xoá bộ bài', icon: <Trash2 size={14}/>, variant: 'danger', onClick: () => setDeleteDeckId(deck.id) },

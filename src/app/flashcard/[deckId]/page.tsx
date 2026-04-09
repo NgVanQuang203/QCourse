@@ -5,8 +5,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
 import { Card } from '@/lib/mockData';
 import styles from './flashcard.module.css';
-import { BrainCircuit, ArrowLeft, Keyboard } from 'lucide-react';
+import { BrainCircuit, ArrowLeft, Keyboard, Edit2, Trash2, Copy, SkipForward, FolderInput, Plus, MoreHorizontal } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import ContextMenu, { ContextMenuItem } from '@/components/ContextMenu';
+import { AnimatePresence } from 'framer-motion';
+import EditDeckModal from '@/components/EditDeckModal';
+import { toast } from '@/lib/toast';
 
 export default function FlashcardMode() {
   const params = useParams();
@@ -23,6 +27,8 @@ export default function FlashcardMode() {
 
   // Thống kê phiên học
   const [stats, setStats] = useState({ correct: 0, wrong: 0 });
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
+  const [editCardMode, setEditCardMode] = useState(false);
 
   const { decks, fetchDeckCards, isLoading: storeLoading, refreshStats } = useStore();
   const [loading, setLoading] = useState(true);
@@ -161,7 +167,6 @@ export default function FlashcardMode() {
       </div>
     );
   }
-
   if (!deck) {
     return (
       <div className={styles.container} style={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -185,6 +190,23 @@ export default function FlashcardMode() {
       </div>
     );
   }
+
+  const onCardContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!currentCard) return;
+
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      items: [
+        { label: 'Chỉnh sửa thẻ', icon: <Edit2 size={14}/>, onClick: () => setEditCardMode(true) },
+        { label: 'Sao chép mặt trước', icon: <Copy size={14}/>, onClick: () => { navigator.clipboard.writeText(currentCard.front); toast.success('Đã sao chép'); } },
+        { label: 'Bỏ qua thẻ này', icon: <SkipForward size={14}/>, onClick: () => { handleEvaluate(4); } }, // Skip as "Good" or add a dedicated skip logic
+        { divider: true, label: '', onClick: () => {} },
+        { label: 'Thoát học tập', icon: <ArrowLeft size={14}/>, variant: 'danger', onClick: () => router.push('/library/flashcard') },
+      ]
+    });
+  };
 
   return (
     <div className={styles.container}>
@@ -274,11 +296,12 @@ export default function FlashcardMode() {
                   ${isResetting ? styles['no-transition'] : ''}
                 `}
                 onClick={!swipeAnim ? handleFlip : undefined}
+                onContextMenu={onCardContextMenu}
               >
                 <div className={`${styles.cardFace} ${styles.cardFront}`}>
                   <div className={styles.cardQuestion}>{currentCard.front}</div>
                   {!isFlipped && (
-                    <div className={styles.hint}>👆 Nhấn vào thẻ hoặc nhấn <kbd>Space</kbd> để lật</div>
+                    <div className={styles.hint}>👆 Nhấn vào thẻ hoặc <kbd>Space</kbd> / <kbd>Chuột phải</kbd></div>
                   )}
                 </div>
                 <div className={`${styles.cardFace} ${styles.cardBack}`}>
@@ -329,6 +352,40 @@ export default function FlashcardMode() {
           </>
         )}
       </main>
+
+      <AnimatePresence>
+        {contextMenu && (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            items={contextMenu.items}
+            onClose={() => setContextMenu(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {editCardMode && (
+        <EditDeckModal
+          deckId={deckId}
+          mode="flashcard"
+          onClose={() => {
+            setEditCardMode(false);
+            // Refresh cards if they were edited
+            fetchDeckCards(deckId).then(cards => {
+               if (cards) {
+                 const now = Date.now();
+                 // We don't want to shuffle the whole queue, just update the current card if needed
+                 setQueue(prev => {
+                   const updated = [...prev];
+                   const fresh = cards.find(c => c.id === currentCard?.id);
+                   if (fresh) updated[currentIndex] = fresh;
+                   return updated;
+                 });
+               }
+            });
+          }}
+        />
+      )}
     </div>
   );
 }
