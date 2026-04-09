@@ -157,7 +157,8 @@ export default function FlashcardLibrary() {
             {/* Folder kebab */}
             <div
               style={{
-                position: 'absolute', right: '0.4rem', top: '50%', transform: 'translateY(-50%)',
+                position: 'absolute', right: '0.4rem', top: 0, bottom: 0,
+                display: 'flex', alignItems: 'center',
                 zIndex: fMenuOpen ? 9999 : 20,
               }}
               onClick={e => e.stopPropagation()}

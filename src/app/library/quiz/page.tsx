@@ -137,7 +137,7 @@ export default function QuizLibrary() {
                   <span className={lib.quizFolderBtnCount}>{count}</span>
                 </button>
                 <div
-                  style={{ position: 'absolute', right: '0.4rem', top: '50%', transform: 'translateY(-50%)', zIndex: fMenuOpen ? 9999 : 20 }}
+                  style={{ position: 'absolute', right: '0.4rem', top: 0, bottom: 0, display: 'flex', alignItems: 'center', zIndex: fMenuOpen ? 9999 : 20 }}
                   onClick={e => e.stopPropagation()}
                 >
                   <button className={lib.kebabBtn} onClick={() => setMenuOpenId(fMenuOpen ? null : `f_${f.id}`)}>
