@@ -9,7 +9,7 @@ type Ctx = { params: Promise<{ deckId: string }> };
 
 const CardSchema = z.object({
   front:              z.string().min(1),
-  back:               z.string().min(1),
+  back:               z.string(),
   hint:               z.string().optional(),
   imageUrl:           z.string().url().optional(),
   // Quiz fields

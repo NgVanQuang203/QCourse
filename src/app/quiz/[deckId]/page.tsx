@@ -29,6 +29,13 @@ export default function QuizMode() {
   const [cards, setCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Lobby States
+  const [isLobby, setIsLobby] = useState(true);
+  const [history, setHistory] = useState<any[]>([]);
+  const [highScore, setHighScore] = useState(0);
+  const [histLoading, setHistLoading] = useState(true);
+  const [selectedAttempt, setSelectedAttempt] = useState<any | null>(null);
+
   const deck = decks.find(d => d.id === deckId);
 
   useEffect(() => {
@@ -36,18 +43,37 @@ export default function QuizMode() {
       if (deckId) {
         setLoading(true);
         const fetchedCards = await fetchDeckCards(deckId);
-        if (fetchedCards) setCards(fetchedCards);
+        // Shuffle the questions right away
+        if (fetchedCards) setCards(shuffle([...fetchedCards]));
         setLoading(false);
       }
     };
     load();
   }, [deckId, fetchDeckCards]);
 
+  useEffect(() => {
+    if (deckId) {
+      fetch(`/api/quiz/${deckId}/history`)
+        .then(res => res.json())
+        .then(data => {
+          setHistory(data.attempts || []);
+          setHighScore(data.highestScore || 0);
+          setHistLoading(false);
+        })
+        .catch(() => setHistLoading(false));
+    }
+  }, [deckId]);
+
   const quizCards = useMemo(() => {
     if (!cards.length) return [];
     return cards.map(c => {
-      if (c.options && Array.isArray(c.options) && c.options.length > 0) return c;
-      // Fallback for cards without options (treat as flashcard-style quiz)
+      if (c.options && Array.isArray(c.options) && c.options.length > 0) {
+        // Shuffle explicit quiz options
+        const correctText = c.options[c.correctOptionIndex];
+        const finalOptions = shuffle([...c.options]);
+        return { ...c, options: finalOptions, correctOptionIndex: finalOptions.indexOf(correctText) };
+      }
+      // Fallback for flashcard-style quiz
       const otherAnswers = cards.filter(o => o.id !== c.id).map(o => o.back);
       const optionsStr = [c.back, ...shuffle(otherAnswers).slice(0, 3)];
       const finalOptions = shuffle(optionsStr);
@@ -85,6 +111,8 @@ export default function QuizMode() {
   const handleSubmit = async () => {
     const formattedAnswers = quizCards.map(c => ({
       cardId: c.id,
+      front: c.front || '',
+      options: c.options || [],
       chosenIndex: answers[c.id] ?? -1,
       correctIndex: c.correctOptionIndex,
       timeSec: 10, // Tạm thời giả định 10s/câu hoặc tính toán chi tiết hơn
@@ -131,6 +159,18 @@ export default function QuizMode() {
   };
 
   // Back button: confirm exit if quiz is in progress
+  const handleRestart = () => {
+    setAnswers({});
+    setIsSubmitted(false);
+    setShowResultModal(false);
+    const perQuestion = (deck as any)?.timeLimitSec || 60;
+    setTimeLeft(quizCards.length * perQuestion);
+    setCards(shuffle([...cards]));
+    setTimerStarted(true);
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleBack = () => {
     if (!isSubmitted && Object.keys(answers).length > 0) {
       setShowExitConfirm(true);
@@ -220,6 +260,174 @@ export default function QuizMode() {
             </div>
           </motion.div>
         </div>
+      </div>
+    );
+  }
+
+  // ── LOBBY STATE (START SCREEN) ──
+  if (isLobby) {
+    return (
+      <div className={styles.pageWrapper}>
+        <div className={styles.quizHeader}>
+          <button className={styles.backBtn} onClick={() => router.push('/library/quiz')}>
+            <ArrowLeft size={16} />
+            <span className={styles.backLabel}>Quay lại</span>
+          </button>
+        </div>
+        <div className={styles.lobbyContainer}>
+          <motion.div 
+            className={styles.lobbyCard}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className={styles.lobbyIcon}>⏱️</div>
+            <h1 className={styles.lobbyTitle}>{deck.name}</h1>
+            {deck.description && <p className={styles.lobbyDesc}>{deck.description}</p>}
+            
+            <div className={styles.lobbyMetaGrid}>
+              <div className={styles.lobbyMetaItem}>
+                <span className={styles.lobbyMetaLabel}>Số câu hỏi</span>
+                <span className={styles.lobbyMetaVal}>{quizCards.length}</span>
+              </div>
+              <div className={styles.lobbyMetaItem}>
+                <span className={styles.lobbyMetaLabel}>Thời gian</span>
+                <span className={styles.lobbyMetaVal}>{(deck as any)?.timeLimitSec ? Math.floor((deck as any).timeLimitSec / 60) + ' phút' : 'Không giới hạn'}</span>
+              </div>
+              <div className={styles.lobbyMetaItem}>
+                <span className={styles.lobbyMetaLabel}>Kỷ lục cao nhất</span>
+                <span className={styles.lobbyMetaVal} style={{ color: 'var(--primary)' }}>
+                  {quizCards.length > 0 ? ((highScore / quizCards.length) * 10).toFixed(1) + ' điểm' : '0 điểm'}
+                </span>
+              </div>
+            </div>
+
+            <div className={styles.lobbyHistory}>
+              <h3 className={styles.historyTitle}>Lịch sử 5 lần thi gần nhất</h3>
+              {histLoading ? (
+                <div style={{ opacity: 0.5, fontSize: '0.9rem' }}>Đang tải lịch sử...</div>
+              ) : history.length > 0 ? (
+                <div className={styles.historyList}>
+                  {history.slice(0, 5).map((h, i) => {
+                    const dateStr = new Date(h.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    return (
+                      <div 
+                        key={i} 
+                        className={`${styles.historyItem} ${styles.historyItemClickable}`}
+                        onClick={() => setSelectedAttempt(h)}
+                      >
+                        <div className={styles.historyItemDate}>{dateStr}</div>
+                        <div className={styles.historyItemScore}>{h.score}/{h.totalQuestions}</div>
+                        <div className={`${styles.historyItemGrade} ${styles['grade' + h.grade]}`}>{h.grade}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className={styles.historyEmpty}>Bạn chưa thi bài này lần nào.</div>
+              )}
+            </div>
+
+            <button 
+              className={styles.btnStartQuiz} 
+              onClick={() => {
+                setIsLobby(false);
+                setTimeLeft(quizCards.length * ((deck as any)?.timeLimitSec || 60));
+                setTimerStarted(true);
+              }}
+            >
+              🚀 BẮT ĐẦU LÀM BÀI
+            </button>
+          </motion.div>
+        </div>
+
+        {/* ── CHI TIẾT LỊCH SỬ THI (MODAL) ── */}
+        <AnimatePresence>
+          {selectedAttempt && (
+            <motion.div 
+              className={styles.modalOverlay}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedAttempt(null)}
+            >
+              <motion.div 
+                className={styles.historyDetailCard}
+                initial={{ y: 50, opacity: 0, scale: 0.95 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                exit={{ y: 20, opacity: 0, scale: 0.95 }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div className={styles.historyDetailHeader}>
+                  <h2>Lịch sử chi tiết</h2>
+                  <button className={styles.closeBtn} onClick={() => setSelectedAttempt(null)}><X size={20} /></button>
+                </div>
+                
+                <div className={styles.statRow} style={{ marginTop: '0.5rem' }}>
+                  <div className={styles.statBox} style={{ background: 'var(--primary-light)' }}>
+                    <span className={styles.statBoxNum} style={{ color: 'var(--primary)' }}>{selectedAttempt.score}/{selectedAttempt.totalQuestions}</span>
+                    <span className={styles.statBoxText} style={{ color: 'var(--primary)' }}>SỐ CÂU ĐÚNG</span>
+                  </div>
+                  <div className={`${styles.statBox} ${styles.correct}`}>
+                    <span className={styles.statBoxNum}>{Math.round((selectedAttempt.score / selectedAttempt.totalQuestions) * 100)}%</span>
+                    <span className={styles.statBoxText}>TỶ LỆ ĐÚNG</span>
+                  </div>
+                  <div className={styles.statBox} style={{ background: 'var(--surface-hover)' }}>
+                    <span className={styles.statBoxNum} style={{ color: 'var(--foreground)' }}>{selectedAttempt.grade}</span>
+                    <span className={styles.statBoxText}>XẾP LOẠI</span>
+                  </div>
+                </div>
+
+                <div className={styles.historyDetailBody}>
+                  {selectedAttempt.answers && selectedAttempt.answers.length > 0 ? (
+                    selectedAttempt.answers.map((ans: any, idx: number) => {
+                      if (!ans.front) {
+                        return (
+                          <div key={idx} className={styles.legacyReviewItem}>
+                            <strong>Câu {idx + 1}:</strong> Dữ liệu phiên bản cũ không lưu bộ câu hỏi chi tiết. 
+                            <span style={{color: ans.chosenIndex === ans.correctIndex ? 'var(--success)' : 'var(--danger)', fontWeight: 'bold' }}>
+                              {ans.chosenIndex === ans.correctIndex ? ' (Đúng)' : ' (Sai)'}
+                            </span>
+                          </div>
+                        );
+                      }
+
+                      const isCorrect = ans.chosenIndex === ans.correctIndex;
+                      return (
+                        <div key={idx} className={`${styles.reviewCard} ${isCorrect ? styles.reviewCorrectBd : styles.reviewWrongBd}`}>
+                          <div className={styles.questionHeader} style={{ marginBottom: '0.75rem' }}>
+                            <span className={styles.questionBadge}>Câu {idx + 1}</span>
+                            <span className={styles.questionStatus} style={{ color: isCorrect ? 'var(--success)' : 'var(--danger)' }}>
+                              {isCorrect ? <><CheckCircle2 size={13} /> Chính xác</> : <><XCircle size={13} /> Sai</>}
+                            </span>
+                          </div>
+                          <p className={styles.questionText} style={{ marginBottom: '1rem', fontSize: '1rem' }}>{ans.front}</p>
+                          <div className={styles.optionsList} style={{ gap: '0.4rem' }}>
+                            {ans.options?.map((opt: string, oIdx: number) => {
+                              const isChosen = ans.chosenIndex === oIdx;
+                              const isRightOne = ans.correctIndex === oIdx;
+                              let cls = styles.reviewOpt;
+                              if (isRightOne) cls += ` ${styles.reviewOptCorrect}`;
+                              else if (isChosen && !isRightOne) cls += ` ${styles.reviewOptWrong}`;
+                              
+                              return (
+                                <div key={oIdx} className={cls}>
+                                  <div className={styles.optionMarker} style={{ width: '24px', height: '24px', fontSize: '0.75rem' }}>{String.fromCharCode(65 + oIdx)}</div>
+                                  <span style={{ fontSize: '0.9rem' }}>{opt}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className={styles.legacyReviewItem}>Không có dữ liệu câu trả lời (Có thể đã chọn bỏ qua hết).</div>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
@@ -489,11 +697,14 @@ export default function QuizMode() {
                 </div>
 
                 <div className={styles.modalBtns}>
+                  <button className={styles.modalBtnSecondary} onClick={handleRestart}>
+                    <RotateCcw size={14} /> Thi lại
+                  </button>
                   <button className={styles.modalBtnSecondary} onClick={() => setShowResultModal(false)}>
                     <RotateCcw size={14} /> Xem lại lỗi
                   </button>
                   <button className={styles.modalBtnPrimary} onClick={() => router.push('/library/quiz')}>
-                    <BookOpen size={14} /> Về thư viện
+                    <BookOpen size={14} /> Thư viện
                   </button>
                 </div>
               </motion.div>

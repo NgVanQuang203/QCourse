@@ -7,7 +7,9 @@ import { scoreQuizAttempt, getVNDateStr, computeNewStreak } from '@/lib/algorith
 
 const AnswerSchema = z.object({
   cardId:       z.string(),
-  chosenIndex:  z.number().min(0).max(3),
+  front:        z.string().optional(),
+  options:      z.array(z.string()).optional(),
+  chosenIndex:  z.number().min(-1).max(3),
   correctIndex: z.number().min(0).max(3),
   timeSec:      z.number().min(0),
 });

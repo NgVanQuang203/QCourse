@@ -19,7 +19,7 @@ async function verifyCardOwnership(cardId: string, userId: string) {
 
 const UpdateCardSchema = z.object({
   front:              z.string().min(1).optional(),
-  back:               z.string().min(1).optional(),
+  back:               z.string().optional(),
   hint:               z.string().optional(),
   imageUrl:           z.string().url().optional(),
   options:            z.array(z.string()).length(4).optional(),

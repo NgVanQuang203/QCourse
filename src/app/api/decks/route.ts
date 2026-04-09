@@ -7,10 +7,10 @@ import { z } from 'zod';
 
 const CreateDeckSchema = z.object({
   name:         z.string().min(1).max(100),
-  description:  z.string().max(500).optional(),
+  description:  z.string().max(500).optional().nullable(),
   color:        z.string().default('#6366f1'),
   type:         z.enum(['FLASHCARD', 'QUIZ']).default('FLASHCARD'),
-  folderId:     z.string().optional(),
+  folderId:     z.string().optional().nullable(),
   timeLimitSec: z.number().min(10).max(300).default(60),
 });
 
@@ -29,7 +29,7 @@ export async function GET() {
         select: {
           sm2Progress: {
             where: { userId },
-            select: { nextDueDate: true, repetitions: true }
+            select: { nextDueDate: true, repetitions: true, interval: true }
           }
         }
       }
@@ -37,28 +37,70 @@ export async function GET() {
     orderBy: { updatedAt: 'desc' },
   });
 
+  // Fetch highest quiz scores in bulk for QUIZ decks
+  const quizDeckIds = decks.filter(d => d.type === 'QUIZ').map(d => d.id);
+  const highestScores: Record<string, number> = {};
+  if (quizDeckIds.length > 0) {
+    const topAttempts = await prisma.quizAttempt.findMany({
+      where: { userId, deckId: { in: quizDeckIds } },
+      orderBy: { score: 'desc' },
+      select: { deckId: true, score: true, totalQuestions: true },
+    });
+    // Keep only highest per deck
+    for (const a of topAttempts) {
+      if (highestScores[a.deckId] === undefined) {
+        // Store as 10-point scale
+        highestScores[a.deckId] = a.totalQuestions > 0
+          ? parseFloat(((a.score / a.totalQuestions) * 10).toFixed(1))
+          : 0;
+      }
+    }
+  }
+
   // Map to include calculated stats
   const decksWithStats = decks.map(deck => {
     const total = deck._count.cards;
-    const dueCount = deck.cards.filter(c => 
-      c.sm2Progress.length > 0 && c.sm2Progress[0].nextDueDate <= now
-    ).length + (total - deck.cards.filter(c => c.sm2Progress.length > 0).length); // New cards are also "due"
 
-    const mastered = deck.cards.filter(c => 
-      c.sm2Progress.length > 0 && c.sm2Progress[0].repetitions >= 1
+    if (deck.type === 'QUIZ') {
+      // Quiz decks: show highest score, no SM2 mastery
+      return {
+        ...deck,
+        dueCount: 0,
+        masteredCount: 0,
+        learningCount: 0,
+        highestScore: highestScores[deck.id] ?? 0,
+        cards: undefined,
+      };
+    }
+
+    // Flashcard decks: full SM2 stats
+    const dueCount = deck.cards.filter(c =>
+      c.sm2Progress.length > 0 && c.sm2Progress[0].nextDueDate <= now
+    ).length + (total - deck.cards.filter(c => c.sm2Progress.length > 0).length);
+
+    // Mastered: interval >= 7 days (long-term memory proven)
+    const mastered = deck.cards.filter(c =>
+      c.sm2Progress.length > 0 && c.sm2Progress[0].interval >= 7
+    ).length;
+
+    // Learning: reviewed but not yet mastered (1 <= interval < 7)
+    const learning = deck.cards.filter(c =>
+      c.sm2Progress.length > 0 && c.sm2Progress[0].interval > 0 && c.sm2Progress[0].interval < 7
     ).length;
 
     return {
       ...deck,
       dueCount,
       masteredCount: mastered,
-      // Remove the raw cards data to keep the response light
-      cards: undefined 
+      learningCount: learning,
+      highestScore: 0,
+      cards: undefined,
     };
   });
 
   return Response.json({ decks: decksWithStats });
 }
+
 
 export async function POST(req: NextRequest) {
   const session = await auth();

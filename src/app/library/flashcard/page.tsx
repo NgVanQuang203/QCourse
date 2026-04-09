@@ -12,6 +12,7 @@ import {
 import EditDeckModal from '@/components/EditDeckModal';
 import ImportModal from '@/components/ImportModal';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
+import ConfirmModal from '@/components/ConfirmModal';
 
 const EMOJIS = ['📁', '📘', '⚛️', '🌍', '💻', '🎨', '🧬', '🎵', '🧠', '💼', '🔬', '📐'];
 
@@ -46,6 +47,7 @@ export default function FlashcardLibrary() {
   const [editDeck, setEditDeck] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [deleteDeckId, setDeleteDeckId] = useState<string | null>(null);
+  const [resetDeckId, setResetDeckId] = useState<string | null>(null);
   const [moveDeckId, setMoveDeckId] = useState<string | null>(null);
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
@@ -90,9 +92,9 @@ export default function FlashcardLibrary() {
   };
 
   const confirmReset = async (deckId: string) => {
-    if (!confirm('Làm mới toàn bộ tiến độ về 0%?')) return;
     await fetch(`/api/decks/${deckId}/reset`, { method: 'POST' });
     await refreshStats();
+    setResetDeckId(null);
   };
 
   const handleSaveFolder = async () => {
@@ -211,7 +213,10 @@ export default function FlashcardLibrary() {
     const total = deck._count?.cards ?? 0;
     const due = deck.dueCount ?? 0;
     const mastered = deck.masteredCount ?? 0;
-    const pct = total > 0 ? Math.round((mastered / total) * 100) : 0;
+    const learning = deck.learningCount ?? 0;
+    const newCount = total - mastered - learning;
+    const masteredPct = total > 0 ? Math.round((mastered / total) * 100) : 0;
+    const learningPct = total > 0 ? Math.round((learning / total) * 100) : 0;
     const isMenuOpen = menuOpenId === deck.id;
     const deckColor = deck.color?.startsWith('linear') ? 'var(--primary)' : (deck.color || 'var(--primary)');
 
@@ -235,9 +240,22 @@ export default function FlashcardLibrary() {
             <div className={lib.fcCardDesc}>{deck.description || 'Chưa có mô tả'}</div>
           </div>
 
+          {/* Stacked 3-level progress bar */}
+          <div className={lib.fcProgressWrap}>
+            <div className={lib.fcProgressBar}>
+              {mastered > 0 && <div className={lib.fcProgressMastered} style={{ width: `${masteredPct}%` }} />}
+              {learning > 0 && <div className={lib.fcProgressLearning} style={{ width: `${learningPct}%` }} />}
+            </div>
+            <div className={lib.fcProgressLegend}>
+              <span className={lib.fcProgressLegendItem} style={{ color: 'var(--success)' }}>✦ {mastered} thuộc</span>
+              <span className={lib.fcProgressLegendItem} style={{ color: 'var(--warning)' }}>◑ {learning} học</span>
+              <span className={lib.fcProgressLegendItem} style={{ opacity: 0.45 }}>○ {newCount} mới</span>
+            </div>
+          </div>
+
           <div className={lib.fcCardFooter}>
-            <div className={lib.fcCardPill} style={{ color: pct >= 100 ? 'var(--success)' : pct > 0 ? 'var(--primary)' : 'var(--foreground)' }}>
-              {pct}% HOÀN THÀNH
+            <div className={lib.fcCardPill} style={{ color: masteredPct >= 100 ? 'var(--success)' : masteredPct > 0 ? 'var(--primary)' : 'var(--foreground)' }}>
+              {masteredPct}% HOÀN THÀNH
             </div>
             
             <div className={lib.fcCardCount}>
@@ -266,7 +284,7 @@ export default function FlashcardLibrary() {
                   <FolderInput size={13} /> Chuyển thư mục
                 </button>
                 <div className={lib.menuDivider} />
-                <button className={lib.menuItem} onClick={() => { confirmReset(deck.id); setMenuOpenId(null); }}>
+                <button className={lib.menuItem} onClick={() => { setResetDeckId(deck.id); setMenuOpenId(null); }}>
                   <RefreshCcw size={13} /> Làm mới tiến độ
                 </button>
                 <button className={`${lib.menuItem} ${lib.menuItemDanger}`} onClick={() => { setDeleteDeckId(deck.id); setMenuOpenId(null); }}>
@@ -432,18 +450,16 @@ export default function FlashcardLibrary() {
           onClose={() => setEditDeck(null)}
         />
       )}
-      {importOpen && (
-        <ImportModal
-          deckId={null}
-          allDecks={flashDecks}
-          onClose={() => setImportOpen(false)}
-        />
-      )}
-      <DeleteConfirmModal
-        isOpen={!!deleteDeckId}
-        deckName={deleteName}
-        onConfirm={confirmDelete}
-        onCancel={() => setDeleteDeckId(null)}
+      {importOpen && <ImportModal deckId={null} allDecks={flashDecks} onClose={() => setImportOpen(false)} />}
+      <DeleteConfirmModal isOpen={!!deleteDeckId} deckName={deleteName} onConfirm={confirmDelete} onCancel={() => setDeleteDeckId(null)} />
+      <ConfirmModal
+        isOpen={!!resetDeckId}
+        title="Làm mới tiến độ?"
+        message="Toàn bộ tiến độ học tập của bộ thẻ này sẽ bị xoá và quay về trạng thái Thẻ mới (0%)."
+        confirmLabel="Làm mới"
+        variant="warning"
+        onConfirm={() => confirmReset(resetDeckId!)}
+        onCancel={() => setResetDeckId(null)}
       />
     </div>
   );

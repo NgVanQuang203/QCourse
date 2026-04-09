@@ -50,9 +50,21 @@ export function calculateSM2(state: SM2State, quality: Quality): SM2State {
   // Cap interval at 1 year
   interval = Math.min(interval, 365);
 
-  const nextDueDate = new Date();
-  nextDueDate.setDate(nextDueDate.getDate() + interval);
-  nextDueDate.setHours(0, 0, 0, 0); // Midnight for day-level comparison
+  // ── Tính toán Giờ Việt Nam (UTC+7) ──
+  // Lấy giờ phút hiện tại theo chuẩn Quốc tế (UTC)
+  const now = new Date();
+  
+  // Dịch sang giờ Việt Nam
+  const vnTime = new Date(now.getTime() + 7 * 3600 * 1000);
+  
+  // Cộng số ngày interval
+  vnTime.setDate(vnTime.getDate() + interval);
+  
+  // Set chuẩn 0h00 phút sáng (Nửa đêm bước sang ngày mới tại VN)
+  vnTime.setHours(0, 0, 0, 0);
+  
+  // Trừ ngược đi 7 tiếng để lưu UTC gốc vào DB
+  const nextDueDate = new Date(vnTime.getTime() - 7 * 3600 * 1000);
 
   return { interval, repetitions, easeFactor, nextDueDate };
 }

@@ -5,6 +5,7 @@ import { useStore } from '@/lib/store';
 import styles from './EditDeckModal.module.css';
 import qStyles from './EditQuizModal.module.css';
 import { X, Plus, Trash2, Save, Edit3, Check } from 'lucide-react';
+import ConfirmModal from './ConfirmModal';
 
 const GRADIENT_PRESETS = [
   'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
@@ -130,6 +131,7 @@ export default function EditQuizModal({ deckId, initialFolderId, onClose }: Prop
 
   // Inline editing
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [questionToDeleteId, setQuestionToDeleteId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<QuizQuestion>(emptyQuestion());
   const [addingNew, setAddingNew] = useState(false);
   const [newQ, setNewQ] = useState<QuizQuestion>(emptyQuestion());
@@ -189,7 +191,12 @@ export default function EditQuizModal({ deckId, initialFolderId, onClose }: Prop
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Xoá câu hỏi này?')) deleteCard(id);
+    setQuestionToDeleteId(id);
+  };
+
+  const confirmDeleteQuestion = () => {
+    if (questionToDeleteId) deleteCard(questionToDeleteId);
+    setQuestionToDeleteId(null);
   };
 
 // QuestionForm has been extracted outside the component.
@@ -348,6 +355,15 @@ export default function EditQuizModal({ deckId, initialFolderId, onClose }: Prop
           )}
         </div>
       </div>
+      <ConfirmModal
+        isOpen={!!questionToDeleteId}
+        title="Xoá câu hỏi này?"
+        message="Nội dung câu hỏi này sẽ bị xoá vĩnh viễn khỏi bộ đề thi."
+        confirmLabel="Xoá câu hỏi"
+        variant="danger"
+        onConfirm={confirmDeleteQuestion}
+        onCancel={() => setQuestionToDeleteId(null)}
+      />
     </div>
   );
 }

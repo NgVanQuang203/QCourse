@@ -8,7 +8,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { useSession } from 'next-auth/react';
 import { Deck, Card } from './mockData';
 import { SM2Data, sm2InitialData } from './sm2';
-import toast from 'react-hot-toast';
+import { toast } from './toast';
 
 // ── Types ───────────────────────────────────────────────
 

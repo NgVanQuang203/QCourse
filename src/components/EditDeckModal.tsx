@@ -5,6 +5,7 @@ import { useStore } from '@/lib/store';
 import { Deck } from '@/lib/mockData';
 import styles from './EditDeckModal.module.css';
 import { X, Plus, Trash2, Save, Edit3, ChevronDown, ChevronUp, Check } from 'lucide-react';
+import ConfirmModal from './ConfirmModal';
 
 const GRADIENT_PRESETS = [
   'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
@@ -39,6 +40,7 @@ export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }
 
   // Card being edited inline
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const [cardToDeleteId, setCardToDeleteId] = useState<string | null>(null);
   const [cardForm, setCardForm] = useState({ front: '', back: '', option1: '', option2: '', option3: '', option4: '', correct: 0 });
   const [addingCard, setAddingCard] = useState(false);
   const [newCardForm, setNewCardForm] = useState({ front: '', back: '' });
@@ -97,7 +99,12 @@ export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }
   };
 
   const handleDeleteCard = (cardId: string) => {
-    if (confirm('Xoá thẻ này?')) deleteCard(cardId);
+    setCardToDeleteId(cardId);
+  };
+  
+  const confirmDeleteCard = () => {
+    if (cardToDeleteId) deleteCard(cardToDeleteId);
+    setCardToDeleteId(null);
   };
 
   const currentCards = currentDeckId ? cards.filter(c => c.deckId === currentDeckId) : [];
@@ -269,6 +276,15 @@ export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }
           )}
         </div>
       </div>
+      <ConfirmModal
+        isOpen={!!cardToDeleteId}
+        title="Xoá thẻ này?"
+        message="Nội dung thẻ này sẽ bị xoá vĩnh viễn khỏi bộ bài."
+        confirmLabel="Xoá thẻ"
+        variant="danger"
+        onConfirm={confirmDeleteCard}
+        onCancel={() => setCardToDeleteId(null)}
+      />
     </div>
   );
 }

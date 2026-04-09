@@ -20,9 +20,7 @@
 }
 
 .modal {
-  background: rgba(var(--surface-rgb), 0.75);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
+  background: var(--surface);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-top: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 28px;

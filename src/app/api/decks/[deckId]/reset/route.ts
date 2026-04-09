@@ -21,16 +21,18 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       return Response.json({ error: 'Không thể reset bộ tài liệu này' }, { status: 403 });
     }
 
+    // Reset Flashcard SM2 progress
     const cardIds = deck.cards.map(c => c.id);
-    
     if (cardIds.length > 0) {
       await prisma.sM2Progress.deleteMany({
-        where: {
-          userId,
-          cardId: { in: cardIds },
-        },
+        where: { userId, cardId: { in: cardIds } },
       });
     }
+
+    // Reset Quiz attempt history
+    await prisma.quizAttempt.deleteMany({
+      where: { userId, deckId },
+    });
 
     return Response.json({ ok: true });
   } catch (err: any) {

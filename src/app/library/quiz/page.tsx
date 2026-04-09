@@ -9,6 +9,7 @@ import { Plus, MoreVertical, Edit2, Trash2, FolderInput, RefreshCcw, ChevronRigh
 import EditQuizModal from '@/components/EditQuizModal';
 import ImportQuizModal from '@/components/ImportQuizModal';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
+import ConfirmModal from '@/components/ConfirmModal';
 
 const EMOJIS = ['📝', '📘', '⚛️', '🌍', '💻', '🏛️', '🧬', '🎵', '🏆', '💼', '🔬', '📐'];
 
@@ -43,6 +44,7 @@ export default function QuizLibrary() {
   const [editDeck, setEditDeck] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [deleteDeckId, setDeleteDeckId] = useState<string | null>(null);
+  const [resetDeckId, setResetDeckId] = useState<string | null>(null);
   const [moveDeckId, setMoveDeckId] = useState<string | null>(null);
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
@@ -74,9 +76,9 @@ export default function QuizLibrary() {
   };
 
   const confirmReset = async (deckId: string) => {
-    if (!confirm('Xoá lịch sử thi và đặt điểm về 0?')) return;
     await fetch(`/api/decks/${deckId}/reset`, { method: 'POST' });
     await refreshStats();
+    setResetDeckId(null);
   };
 
   const handleSaveFolder = async () => {
@@ -237,12 +239,15 @@ export default function QuizLibrary() {
                     <div className={lib.quizBannerIcon}>⏱️</div>
                     <div className={lib.quizBannerMain}>
                       <div className={lib.quizBannerTitle}>{deck.name}</div>
+                      {deck.description && <div className={lib.quizBannerDesc}>{deck.description}</div>}
                       <div className={lib.quizBannerMeta}>{totalCards} câu · {timeLimitStr} phút</div>
                     </div>
                     <div className={lib.quizBannerSep} />
                     <div className={lib.quizBannerScore}>
                       <div className={lib.quizBannerScoreLbl}>Cao nhất</div>
-                      <div className={lib.quizBannerScoreVal}>{mastered}</div>
+                      <div className={lib.quizBannerScoreVal} style={{ color: (deck as any).highestScore >= 8 ? 'var(--success)' : (deck as any).highestScore >= 5 ? 'var(--warning)' : 'var(--foreground)' }}>
+                        {(deck as any).highestScore > 0 ? `${(deck as any).highestScore}/10` : '—'}
+                      </div>
                     </div>
 
                     <div
@@ -262,7 +267,7 @@ export default function QuizLibrary() {
                             <FolderInput size={13} /> Chuyển danh mục
                           </button>
                           <div className={lib.menuDivider} />
-                          <button className={lib.menuItem} onClick={() => { confirmReset(deck.id); setMenuOpenId(null); }}>
+                          <button className={lib.menuItem} onClick={() => { setResetDeckId(deck.id); setMenuOpenId(null); }}>
                             <RefreshCcw size={13} /> Xoá lịch sử thi
                           </button>
                           <button className={`${lib.menuItem} ${lib.menuItemDanger}`} onClick={() => { setDeleteDeckId(deck.id); setMenuOpenId(null); }}>
@@ -331,6 +336,15 @@ export default function QuizLibrary() {
       {editDeck && <EditQuizModal deckId={editDeck === 'new' ? null : editDeck} initialFolderId={currentFolderId} onClose={() => setEditDeck(null)} />}
       {importOpen && <ImportQuizModal deckId={null} allDecks={quizDecks} onClose={() => setImportOpen(false)} />}
       <DeleteConfirmModal isOpen={!!deleteDeckId} deckName={deleteName} onConfirm={confirmDelete} onCancel={() => setDeleteDeckId(null)} />
+      <ConfirmModal
+        isOpen={!!resetDeckId}
+        title="Xoá lịch sử thi?"
+        message="Toàn bộ kết quả các lần thi trước và điểm cao nhất của bộ đề này sẽ bị xoá vĩnh viễn."
+        confirmLabel="Xoá lịch sử"
+        variant="warning"
+        onConfirm={() => confirmReset(resetDeckId!)}
+        onCancel={() => setResetDeckId(null)}
+      />
     </div>
   );
 }
