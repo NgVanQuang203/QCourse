@@ -582,7 +582,7 @@
   border-bottom-right-radius: 20px;
   background: rgba(128, 128, 128, 0.05);
   gap: 0.4rem;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .fcCardPill {
