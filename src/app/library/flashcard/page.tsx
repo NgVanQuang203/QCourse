@@ -291,7 +291,7 @@ export default function FlashcardLibrary() {
       <div
         key={deck.id}
         className={lib.fcCardWrap}
-        style={{ '--deck-color': deckColor, zIndex: isMenuOpen ? 100 : undefined } as React.CSSProperties}
+        style={{ '--deck-color': deckColor, zIndex: isMenuOpen ? 500 : undefined } as React.CSSProperties}
         onClick={() => router.push(`/flashcard/${deck.id}`)}
         onContextMenu={onRightClick}
         draggable
