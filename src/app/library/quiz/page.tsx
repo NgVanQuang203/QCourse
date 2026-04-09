@@ -143,7 +143,7 @@ export default function QuizLibrary() {
     const quiz = quizDecks.find(d => d.id === quizId);
     if (!quiz) return;
 
-    const loadingToast = toast.loading('Đang sao chép đề thi...');
+    toast.info('Đang sao chép đề thi...');
     try {
       const newDeckId = await addDeck({
         name: `${quiz.name} (Bản sao)`,
@@ -158,11 +158,9 @@ export default function QuizLibrary() {
         if (cards && cards.length > 0) {
           await importCards(newDeckId, cards);
         }
-        toast.dismiss(loadingToast);
         toast.success('Đã nhân bản đề thi');
       }
     } catch (err) {
-      toast.dismiss(loadingToast);
       toast.error('Không thể nhân bản');
     }
   };
