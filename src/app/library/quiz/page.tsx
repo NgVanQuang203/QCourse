@@ -418,7 +418,10 @@ export default function QuizLibrary() {
                       key={deck.id}
                       className={lib.quizBanner}
                       onClick={() => router.push(`/quiz/${deck.id}`)}
-                      style={{ zIndex: isMenuOpen ? 500 : undefined }}
+                      style={{ 
+                        zIndex: isMenuOpen ? 500 : undefined,
+                        transform: isMenuOpen ? 'none' : undefined
+                      }}
                       draggable
                       onDragStart={(e) => handleDragStart(e, deck.id)}
                       onContextMenu={(e) => {
