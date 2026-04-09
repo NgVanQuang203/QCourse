@@ -55,7 +55,11 @@ export default function QuizLibrary() {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
 
-  const { decks, folders, isLoading, deleteDeck, refreshStats, moveDeckToFolder, addFolder, updateFolder, deleteFolder } = useStore();
+  const {
+    decks, folders, isLoading, deleteDeck, refreshStats,
+    moveDeckToFolder, addFolder, updateFolder, deleteFolder,
+    addDeck, fetchDeckCards, importCards,
+  } = useStore();
 
   const quizDecks = decks.filter((d: any) => d.type === 'QUIZ');
   const quizFolders = folders.filter((f: any) => f.type === 'QUIZ');
@@ -103,13 +107,49 @@ export default function QuizLibrary() {
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDropOnFolder = async (e: React.DragEvent, folderId: string | null) => {
+  const handleDropOnFolder = async (e: React.DragEvent, folderId: string | null | 'all') => {
     e.preventDefault();
     setDragOverFolderId(null);
     const deckId = e.dataTransfer.getData('deckId');
-    if (deckId && deckId !== folderId) {
-      await moveDeckToFolder(deckId, folderId);
+    const targetFolderId = folderId === 'all' ? null : folderId;
+
+    if (deckId && deckId !== targetFolderId) {
+      await moveDeckToFolder(deckId, targetFolderId);
       toast.success('Đã di chuyển đề thi');
+    }
+  };
+
+  const copyQuizLink = (deckId: string) => {
+    const url = `${window.location.origin}/quiz/${deckId}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Đã sao chép liên kết');
+  };
+
+  const duplicateQuiz = async (quizId: string) => {
+    const quiz = quizDecks.find(d => d.id === quizId);
+    if (!quiz) return;
+    
+    const loadingToast = toast.loading('Đang sao chép đề thi...');
+    try {
+      const newDeckId = await addDeck({
+        name: `${quiz.name} (Bản sao)`,
+        description: quiz.description,
+        color: quiz.color,
+        type: 'QUIZ',
+        folderId: quiz.folderId,
+      });
+
+      if (newDeckId) {
+        const cards = await fetchDeckCards(quizId);
+        if (cards && cards.length > 0) {
+          await importCards(newDeckId, cards);
+        }
+        toast.dismiss(loadingToast);
+        toast.success('Đã nhân bản đề thi');
+      }
+    } catch (err) {
+      toast.dismiss(loadingToast);
+      toast.error('Không thể nhân bản');
     }
   };
 
@@ -138,8 +178,11 @@ export default function QuizLibrary() {
           </div>
 
           <button
-            className={`${lib.quizFolderBtn} ${currentFolderId === null ? lib.quizFolderBtnActive : ''}`}
+            className={`${lib.quizFolderBtn} ${currentFolderId === null ? lib.quizFolderBtnActive : ''} ${dragOverFolderId === 'all' ? lib.fcFolderBtnDragOver : ''}`}
             onClick={() => setCurrentFolderId(null)}
+            onDragOver={(e) => { e.preventDefault(); setDragOverFolderId('all'); }}
+            onDragLeave={() => setDragOverFolderId(null)}
+            onDrop={(e) => handleDropOnFolder(e, 'all')}
           >
             🗂️ Tất cả
             <span className={lib.quizFolderBtnCount}>{quizDecks.length}</span>
@@ -151,9 +194,26 @@ export default function QuizLibrary() {
             return (
               <div key={f.id} style={{ position: 'relative' }}>
                 <button
-                  className={`${lib.quizFolderBtn} ${currentFolderId === f.id ? lib.quizFolderBtnActive : ''}`}
+                  className={`${lib.quizFolderBtn} ${currentFolderId === f.id ? lib.quizFolderBtnActive : ''} ${dragOverFolderId === f.id ? lib.fcFolderBtnDragOver : ''}`}
                   onClick={() => setCurrentFolderId(f.id)}
+                  onDragOver={(e) => { e.preventDefault(); setDragOverFolderId(f.id); }}
+                  onDragLeave={() => setDragOverFolderId(null)}
+                  onDrop={(e) => handleDropOnFolder(e, f.id)}
                   style={{ paddingRight: '2.6rem' }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setContextMenu({
+                      x: e.clientX,
+                      y: e.clientY,
+                      items: [
+                        { label: 'Mở danh mục', icon: <Plus size={14}/>, onClick: () => setCurrentFolderId(f.id) },
+                        { label: 'Sửa danh mục', icon: <Edit2 size={14}/>, onClick: () => openEditFolder(e, f) },
+                        { divider: true, label: '', onClick: () => {} },
+                        { label: 'Xóa danh mục', icon: <Trash2 size={14}/>, variant: 'danger', onClick: () => setDeleteDeckId(`f_${f.id}`) },
+                      ]
+                    });
+                  }}
                 >
                   {f.icon} {f.name}
                   <span className={lib.quizFolderBtnCount}>{count}</span>
@@ -190,7 +250,17 @@ export default function QuizLibrary() {
         </aside>
 
         {/* ── RIGHT PANEL ── */}
-        <div className={lib.quizPanel}>
+        <div className={lib.quizPanel} onContextMenu={(e) => {
+          e.preventDefault();
+          setContextMenu({
+            x: e.clientX,
+            y: e.clientY,
+            items: [
+              { label: 'Tạo đề thi mới', icon: <Plus size={14}/>, onClick: () => setEditDeck('new') },
+              { label: 'Làm mới thư viện', icon: <RefreshCcw size={14}/>, onClick: () => refreshStats() },
+            ]
+          });
+        }}>
           <div className={lib.quizPanelHeader}>
             <div>
               <div className={lib.quizPanelTitle}>
@@ -204,17 +274,15 @@ export default function QuizLibrary() {
           </div>
 
           <div className={lib.quizPanelBody} onContextMenu={(e) => {
-            if (e.target === e.currentTarget) {
-              e.preventDefault();
-              setContextMenu({
-                x: e.clientX,
-                y: e.clientY,
-                items: [
-                  { label: 'Tạo đề thi mới', icon: <Plus size={14}/>, onClick: () => setEditDeck('new') },
-                  { label: 'Làm mới thư viện', icon: <RefreshCcw size={14}/>, onClick: () => refreshStats() },
-                ]
-              });
-            }
+            e.preventDefault();
+            setContextMenu({
+              x: e.clientX,
+              y: e.clientY,
+              items: [
+                { label: 'Tạo đề thi mới', icon: <Plus size={14}/>, onClick: () => setEditDeck('new') },
+                { label: 'Làm mới thư viện', icon: <RefreshCcw size={14}/>, onClick: () => refreshStats() },
+              ]
+            });
           }}>
             {isLoading ? (
               <div className={loadingStyles.skeletonGrid} style={{ marginTop: '1rem' }}>
@@ -299,6 +367,8 @@ export default function QuizLibrary() {
                           { label: 'Bắt đầu thi', icon: <Plus size={14}/>, onClick: () => router.push(`/quiz/${deck.id}`) },
                           { label: 'Chỉnh sửa', icon: <Edit2 size={14}/>, onClick: () => setEditDeck(deck.id) },
                           { label: 'Chuyển danh mục', icon: <FolderInput size={14}/>, onClick: () => setMoveDeckId(deck.id) },
+                          { label: 'Nhân bản', icon: <RefreshCcw size={14}/>, onClick: () => duplicateQuiz(deck.id) },
+                          { label: 'Sao chép liên kết', icon: <Plus size={14}/>, onClick: () => copyQuizLink(deck.id) },
                           { divider: true, label: '', onClick: () => {} },
                           { label: 'Xoá lịch sử thi', icon: <RefreshCcw size={14}/>, onClick: () => setResetDeckId(deck.id) },
                           { label: 'Xóa đề thi', icon: <Trash2 size={14}/>, variant: 'danger', onClick: () => setDeleteDeckId(deck.id) },

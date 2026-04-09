@@ -423,7 +423,19 @@ export default function FlashcardLibrary() {
       : `${activeFolder?.icon} ${activeFolder?.name}`;
 
   const panel = (
-    <div className={lib.fcPanel}>
+    <div className={lib.fcPanel} onContextMenu={(e) => {
+      e.preventDefault();
+      setContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        items: [
+          { label: 'Tạo bộ thẻ mới', icon: <Plus size={14}/>, onClick: () => setEditDeck('new') },
+          { label: 'Nhập bộ thẻ', icon: <Upload size={14}/>, onClick: () => setImportOpen(true) },
+          { divider: true, label: '', onClick: () => {} },
+          { label: 'Làm mới thư viện', icon: <RefreshCcw size={14}/>, onClick: () => refreshStats() },
+        ]
+      });
+    }}>
       {/* Panel header */}
       <div className={lib.fcPanelHeader}>
         <div>
@@ -440,21 +452,18 @@ export default function FlashcardLibrary() {
         </div>
       </div>
 
-      {/* Panel body */}
       <div className={lib.fcPanelBody} onContextMenu={(e) => {
-        if (e.target === e.currentTarget) {
-          e.preventDefault();
-          setContextMenu({
-            x: e.clientX,
-            y: e.clientY,
-            items: [
-              { label: 'Tạo bộ thẻ mới', icon: <Plus size={14}/>, onClick: () => setEditDeck('new') },
-              { label: 'Nhập bộ thẻ', icon: <Upload size={14}/>, onClick: () => setImportOpen(true) },
-              { divider: true, label: '', onClick: () => {} },
-              { label: 'Làm mới thư viện', icon: <RefreshCcw size={14}/>, onClick: () => refreshStats() },
-            ]
-          });
-        }
+        e.preventDefault();
+        setContextMenu({
+          x: e.clientX,
+          y: e.clientY,
+          items: [
+            { label: 'Tạo bộ thẻ mới', icon: <Plus size={14}/>, onClick: () => setEditDeck('new') },
+            { label: 'Nhập bộ thẻ', icon: <Upload size={14}/>, onClick: () => setImportOpen(true) },
+            { divider: true, label: '', onClick: () => {} },
+            { label: 'Làm mới thư viện', icon: <RefreshCcw size={14}/>, onClick: () => refreshStats() },
+          ]
+        });
       }}>
         {/* Stats — only show at "All" view */}
         {activeFolderId === 'all' && flashDecks.length > 0 && (
