@@ -378,18 +378,16 @@ export default function FlashcardLibrary() {
       className={lib.libraryPage} 
       onClick={() => setMenuOpenId(null)}
       onContextMenu={(e) => {
-        if (e.target === e.currentTarget || (e.target as HTMLElement).classList.contains(lib.fcLayout) || (e.target as HTMLElement).classList.contains(lib.fcPanel)) {
-          e.preventDefault();
-          setContextMenu({
-            x: e.clientX,
-            y: e.clientY,
-            items: [
-              { label: 'Tạo bộ thẻ mới', icon: <Plus size={14}/>, onClick: () => setEditDeck('new') },
-              { label: 'Thêm thư mục mới', icon: <Plus size={14}/>, divider: true, onClick: () => { setEditingFolder(null); setFolderForm({ name: '', icon: '📁' }); setIsFolderModalOpen(true); } },
-              { label: 'Làm mới thư viện', icon: <RefreshCcw size={14}/>, onClick: () => refreshStats() },
-            ]
-          });
-        }
+        e.preventDefault();
+        setContextMenu({
+          x: e.clientX,
+          y: e.clientY,
+          items: [
+            { label: 'Tạo bộ thẻ mới', icon: <Plus size={14}/>, onClick: () => setEditDeck('new') },
+            { label: 'Thêm thư mục mới', icon: <Plus size={14}/>, divider: true, onClick: () => { setEditingFolder(null); setFolderForm({ name: '', icon: '📁' }); setIsFolderModalOpen(true); } },
+            { label: 'Làm mới thư viện', icon: <RefreshCcw size={14}/>, onClick: () => refreshStats() },
+          ]
+        });
       }}
     >
       <div className={lib.fcLayout}>

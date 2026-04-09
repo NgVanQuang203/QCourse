@@ -186,18 +186,16 @@ export default function QuizLibrary() {
       className={lib.libraryPage} 
       onClick={() => setMenuOpenId(null)}
       onContextMenu={(e) => {
-        if (e.target === e.currentTarget || (e.target as HTMLElement).classList.contains(lib.quizLayout) || (e.target as HTMLElement).classList.contains(lib.quizPanel)) {
-          e.preventDefault();
-          setContextMenu({
-            x: e.clientX,
-            y: e.clientY,
-            items: [
-              { label: 'Tạo đề thi mới', icon: <Plus size={14} />, onClick: () => setEditDeck('new') },
-              { label: 'Thêm danh mục mới', icon: <Plus size={14} />, divider: true, onClick: () => { setEditingFolder(null); setFolderForm({ name: '', icon: '📝' }); setIsFolderModalOpen(true); } },
-              { label: 'Làm mới thư viện', icon: <RefreshCcw size={14} />, onClick: () => refreshStats() },
-            ]
-          });
-        }
+        e.preventDefault();
+        setContextMenu({
+          x: e.clientX,
+          y: e.clientY,
+          items: [
+            { label: 'Tạo đề thi mới', icon: <Plus size={14} />, onClick: () => setEditDeck('new') },
+            { label: 'Thêm danh mục mới', icon: <Plus size={14} />, divider: true, onClick: () => { setEditingFolder(null); setFolderForm({ name: '', icon: '📝' }); setIsFolderModalOpen(true); } },
+            { label: 'Làm mới thư viện', icon: <RefreshCcw size={14} />, onClick: () => refreshStats() },
+          ]
+        });
       }}
     >
       <div className={lib.quizLayout}>
@@ -403,10 +401,6 @@ export default function QuizLibrary() {
                                 </button>
                               </div>
                             )}
-                          </div>
-
-                          <div className={lib.quizPlayBtn} style={{ position: 'absolute', bottom: '1rem', right: '1rem' }}>
-                            <ChevronRight size={18} color="white" />
                           </div>
                         </div>
                       );
