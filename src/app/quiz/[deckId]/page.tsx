@@ -10,6 +10,7 @@ import {
   BookOpen, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import confetti from 'canvas-confetti';
 
 function shuffle<T>(array: T[]): T[] {
   const arr = [...array];
@@ -105,6 +106,19 @@ export default function QuizMode() {
 
     setIsSubmitted(true);
     setShowResultModal(true);
+
+    // Call confetti for passing visual feedback
+    const { pct } = calculateScore();
+    if (pct >= 50) {
+      setTimeout(() => {
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#2563eb', '#10b981', '#f59e0b', '#3b82f6', '#ec4899']
+        });
+      }, 300);
+    }
   };
 
   const scrollToQuestion = (idx: number) => {
@@ -136,14 +150,29 @@ export default function QuizMode() {
     );
   }
 
-  if (!deck) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - var(--nav-height))' }}>
-      <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>❌</div>
-        <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>Bộ bài không tồn tại</div>
+  if (!deck) {
+    return (
+      <div className={styles.pageWrapper} style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', maxWidth: 400, padding: '2rem' }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem', filter: 'grayscale(1)', opacity: 0.5 }}>📭</div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '0.5rem' }}>Không tìm thấy đề thi</h2>
+          <p style={{ opacity: 0.5, marginBottom: '2.5rem', lineHeight: 1.5 }}>
+            Đề thi trắc nghiệm này không tồn tại hoặc có thể đã bị xóa. Vui lòng kiểm tra lại đường dẫn.
+          </p>
+          <button
+            onClick={() => router.push('/library/quiz')}
+            style={{ 
+              background: 'var(--primary)', color: 'white', padding: '0.85rem 1.5rem', 
+              borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 14px rgba(37,99,235,0.3)'
+            }}
+          >
+            <ArrowLeft size={16} /> Quay lại thư viện
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   // ── BEAUTIFUL EMPTY STATE ──
   if (quizCards.length === 0) {

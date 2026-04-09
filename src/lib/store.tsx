@@ -8,6 +8,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { useSession } from 'next-auth/react';
 import { Deck, Card } from './mockData';
 import { SM2Data, sm2InitialData } from './sm2';
+import toast from 'react-hot-toast';
 
 // ── Types ───────────────────────────────────────────────
 
@@ -186,6 +187,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         console.error('Add deck failed:', res.status, errData);
+        toast.error('Không thể tạo bộ thẻ');
         return;
       }
       const data = await res.json();
@@ -207,10 +209,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             decks: [{ ...data.deck, _count: { cards: 0 }, dueCount: 0, masteredCount: 0 }, ...s.decks] 
           };
         });
+        toast.success(data.deck.type === 'QUIZ' ? 'Tạo bộ đề thi thành công!' : 'Tạo bộ thẻ thành công!');
         return data.deck.id;
       }
     } catch (error) {
       console.error('Add deck failed:', error);
+      toast.error('Có lỗi xảy ra');
     }
   }, []);
 
@@ -227,9 +231,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ...s,
           decks: s.decks.map(d => d.id === id ? { ...d, ...data.deck } : d)
         }));
+        toast.success('Cập nhật thành công!');
       }
     } catch (error) {
       console.error('Update deck failed:', error);
+      toast.error('Không thể cập nhật');
     }
   }, []);
 
@@ -255,9 +261,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             cards: s.cards.filter(c => c.deckId !== id),
           };
         });
+        toast.success('Đã xóa thành công!');
       }
     } catch (error) {
       console.error('Delete deck failed:', error);
+      toast.error('Không thể xóa bộ phận này');
     }
   }, []);
 
@@ -306,9 +314,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       if (data.count) {
         await fetchDeckCards(card.deckId);
+        toast.success('Thêm bài thành công');
       }
     } catch (error) {
       console.error('Add card failed:', error);
+      toast.error('Có lỗi xảy ra');
     }
   }, [fetchDeckCards]);
 
@@ -336,9 +346,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const res = await fetch(`/api/cards/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setState(s => ({ ...s, cards: s.cards.filter(c => c.id !== id) }));
+        toast.success('Đã xóa thẻ');
       }
     } catch (error) {
       console.error('Delete card failed:', error);
+      toast.error('Có lỗi xảy ra');
     }
   }, []);
 
@@ -377,9 +389,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       if (data.folder) {
         setState(s => ({ ...s, folders: [...s.folders, data.folder] }));
+        toast.success('Đã tạo danh mục');
         return data.folder;
       }
-    } catch (e) { console.error('addFolder failed:', e); }
+    } catch (e) { 
+      console.error('addFolder failed:', e); 
+      toast.error('Không thể tạo danh mục');
+    }
   }, []);
 
   const updateFolder = useCallback(async (id: string, changes: { name?: string; icon?: string }) => {
@@ -392,8 +408,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       if (data.folder) {
         setState(s => ({ ...s, folders: s.folders.map(f => f.id === id ? { ...f, ...data.folder } : f) }));
+        toast.success('Đã cập nhật danh mục');
       }
-    } catch (e) { console.error('updateFolder failed:', e); }
+    } catch (e) { 
+      console.error('updateFolder failed:', e); 
+      toast.error('Có lỗi xảy ra');
+    }
   }, []);
 
   const deleteFolder = useCallback(async (id: string) => {
@@ -405,8 +425,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           folders: s.folders.filter(f => f.id !== id),
           decks: s.decks.map(d => d.folderId === id ? { ...d, folderId: null } : d),
         }));
+        toast.success('Đã xóa danh mục');
       }
-    } catch (e) { console.error('deleteFolder failed:', e); }
+    } catch (e) { 
+      console.error('deleteFolder failed:', e); 
+      toast.error('Có lỗi xảy ra');
+    }
   }, []);
 
   const moveDeckToFolder = useCallback(async (deckId: string, folderId: string | null) => {
@@ -428,8 +452,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             return f;
           }),
         }));
+        toast.success('Đã di chuyển thành công!');
       }
-    } catch (e) { console.error('moveDeckToFolder failed:', e); }
+    } catch (e) { 
+      console.error('moveDeckToFolder failed:', e); 
+      toast.error('Không thể di chuyển');
+    }
   }, []);
 
   const value: StoreState & StoreActions = {

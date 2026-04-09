@@ -14,6 +14,8 @@ const font = Be_Vietnam_Pro({
   display: "swap",
 });
 
+import { Toaster } from 'react-hot-toast';
+
 export const metadata: Metadata = {
   title: "Q-Card | Nền Tảng Học Tập Thông Minh",
   description: "Flashcard & trắc nghiệm với thuật toán Spaced Repetition SM-2",
@@ -35,10 +37,21 @@ export default function RootLayout({
               <div style={{ paddingTop: 'var(--nav-height)' }}>
                 {children}
               </div>
+              <Toaster 
+                position="bottom-right"
+                toastOptions={{
+                  style: {
+                    background: 'var(--surface-hover)',
+                    color: 'var(--foreground)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '12px',
+                    fontWeight: 600,
+                  },
+                }}
+              />
             </StoreWrapper>
           </SessionProvider>
         </ThemeProvider>
-
       </body>
     </html>
   );

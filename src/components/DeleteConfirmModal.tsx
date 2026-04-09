@@ -23,9 +23,12 @@ export default function DeleteConfirmModal({ isOpen, deckName, onConfirm, onCanc
         >
           <motion.div
             style={{
-              background: 'var(--surface)', border: '1px solid var(--border)',
-              borderRadius: '24px', padding: '2rem', width: '90%', maxWidth: '420px',
-              textAlign: 'center', boxShadow: '0 24px 48px rgba(0,0,0,0.4)',
+              background: 'rgba(var(--surface-rgb), 0.75)',
+              backdropFilter: 'blur(25px)', WebkitBackdropFilter: 'blur(25px)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderTop: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '28px', padding: '2rem', width: '90%', maxWidth: '420px',
+              textAlign: 'center', boxShadow: '0 40px 100px rgba(0,0,0,0.3)',
               position: 'relative', overflow: 'hidden'
             }}
             initial={{ scale: 0.88, y: 30 }}

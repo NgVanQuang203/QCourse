@@ -6,6 +6,7 @@ import { useStore } from '@/lib/store';
 import { Card } from '@/lib/mockData';
 import styles from './flashcard.module.css';
 import { BrainCircuit, ArrowLeft, Keyboard } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 export default function FlashcardMode() {
   const params = useParams();
@@ -17,6 +18,8 @@ export default function FlashcardMode() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isDone, setIsDone] = useState(false);
   const [showHints, setShowHints] = useState(false);
+  const [swipeAnim, setSwipeAnim] = useState<'left' | 'right' | 'up' | 'down' | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
 
   // Thống kê phiên học
   const [stats, setStats] = useState({ correct: 0, wrong: 0 });
@@ -49,17 +52,15 @@ export default function FlashcardMode() {
   }, []);
 
   const handleEvaluate = useCallback(async (quality: number) => {
-    if (!currentCard || !isFlipped) return;
+    if (!currentCard || !isFlipped || swipeAnim) return;
 
     // Submit review to API
     try {
-      await fetch(`/api/cards/${currentCard.id}/review`, {
+      fetch(`/api/cards/${currentCard.id}/review`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quality, minutesSession: 1 }), // Mặc định 1p học/thẻ hoặc tính toán thực tế
-      });
-      // Synchronize stats so profile page shows updated heatmap and metrics immediately
-      refreshStats();
+        body: JSON.stringify({ quality, minutesSession: 1 }),
+      }).then(() => refreshStats());
     } catch (err) {
       console.error("Failed to save review:", err);
     }
@@ -69,26 +70,46 @@ export default function FlashcardMode() {
       wrong: prev.wrong + (quality < 3 ? 1 : 0)
     }));
 
-    setIsFlipped(false);
+    // Determine swipe direction
+    let dir: 'down'|'left'|'up'|'right' = 'up';
+    if (quality === 1) dir = 'down';
+    else if (quality === 3) dir = 'left';
+    else if (quality === 4) dir = 'up';
+    else if (quality === 5) dir = 'right';
+    
+    setSwipeAnim(dir);
 
-    // If quality is poor ("học lại"), append it to the end of the queue so user must review it again
+    // If quality is poor ("học lại"), append it to the end of the queue
     if (quality < 3) {
       setQueue(prev => [...prev, currentCard]);
     }
 
     setTimeout(() => {
-      // Because we may have just appended to the queue, queue length could have increased.
-      // But setState in React is async, so we use a functional update to safely check the updated queue.
+      setIsResetting(true);
+      setSwipeAnim(null);
+      setIsFlipped(false);
+      
       setQueue(updatedQueue => {
-        if (currentIndex + 1 < updatedQueue.length) {
-          setCurrentIndex(currentIndex + 1);
+        const nextIdx = currentIndex + 1;
+        if (nextIdx < updatedQueue.length) {
+          setCurrentIndex(nextIdx);
         } else {
           setIsDone(true);
+          // Trigger confetti on finish
+          confetti({
+            particleCount: 150,
+            spread: 80,
+            origin: { y: 0.6 },
+            colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+          });
         }
         return updatedQueue;
       });
-    }, 400);
-  }, [currentCard, currentIndex, isFlipped, refreshStats]);
+
+      // Restore transitions after DOM update
+      setTimeout(() => setIsResetting(false), 50);
+    }, 400); // 400ms matches the CSS transition duration
+  }, [currentCard, currentIndex, isFlipped, swipeAnim, refreshStats]);
 
   // ── KEYBOARD SHORTCUTS ──────────────────────────────────────────
   useEffect(() => {
@@ -141,7 +162,29 @@ export default function FlashcardMode() {
     );
   }
 
-  if (!deck) return <div>Không tìm thấy bộ bài</div>;
+  if (!deck) {
+    return (
+      <div className={styles.container} style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', maxWidth: 400, padding: '2rem' }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem', filter: 'grayscale(1)', opacity: 0.5 }}>📭</div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '0.5rem' }}>Không tìm thấy bộ bài</h2>
+          <p style={{ opacity: 0.5, marginBottom: '2.5rem', lineHeight: 1.5 }}>
+            Bộ thẻ này không tồn tại hoặc có thể đã bị xóa. Vui lòng kiểm tra lại đường dẫn.
+          </p>
+          <button
+            onClick={() => router.push('/library/flashcard')}
+            style={{ 
+              background: 'var(--primary)', color: 'white', padding: '0.85rem 1.5rem', 
+              borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 14px rgba(37,99,235,0.3)'
+            }}
+          >
+            <ArrowLeft size={16} /> Quay lại thư viện
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -224,8 +267,13 @@ export default function FlashcardMode() {
 
             <div className={styles.scene}>
               <div
-                className={`${styles.card} ${isFlipped ? styles.isFlipped : ''}`}
-                onClick={handleFlip}
+                className={`
+                  ${styles.card} 
+                  ${isFlipped ? styles.isFlipped : ''} 
+                  ${swipeAnim ? styles[`swipe-${swipeAnim}`] : ''} 
+                  ${isResetting ? styles['no-transition'] : ''}
+                `}
+                onClick={!swipeAnim ? handleFlip : undefined}
               >
                 <div className={`${styles.cardFace} ${styles.cardFront}`}>
                   <div className={styles.cardQuestion}>{currentCard.front}</div>

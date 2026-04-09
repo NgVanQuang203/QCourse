@@ -105,63 +105,6 @@ export default function QuizLibrary() {
       : quizDecks.find(d => d.id === deleteDeckId)?.name ?? 'Đề thi này'
     : '';
 
-  if (isLoading) {
-    return (
-      <div className={loadingStyles.skeletonContainer}>
-        <div className={loadingStyles.skeletonHero} />
-        <div className={loadingStyles.skeletonGrid}>
-          <div className={loadingStyles.skeletonCard} />
-          <div className={loadingStyles.skeletonCard} />
-        </div>
-      </div>
-    );
-  }
-
-  // Empty state
-  if (quizDecks.length === 0 && quizFolders.length === 0) {
-    return (
-      <div className={lib.libraryPage} onClick={() => setMenuOpenId(null)}
-        style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <div className={lib.emptyState} style={{ paddingTop: '8rem' }}>
-          <div className={lib.emptyIcon}>🎯</div>
-          <div className={lib.emptyTitle}>Chưa có đề thi nào</div>
-          <div className={lib.emptySub}>Tạo danh mục để phân loại môn học, sau đó soạn các đề thi trắc nghiệm.</div>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button className={lib.btnSecondary} onClick={() => { setFolderForm({ name: '', icon: '📝' }); setIsFolderModalOpen(true); }}>
-              Tạo danh mục
-            </button>
-            <button className={lib.btnCreate} onClick={() => setEditDeck('new')}>
-              <Plus size={15} /> Tạo đề thi
-            </button>
-          </div>
-        </div>
-
-        {isFolderModalOpen && (
-          <div className={lib.modalOverlay} onClick={() => setIsFolderModalOpen(false)}>
-            <div className={lib.folderModal} onClick={e => e.stopPropagation()}>
-              <div className={lib.folderModalTitle}>Tạo danh mục mới</div>
-              <div className={lib.emojiPicker}>
-                {EMOJIS.map(icon => (
-                  <button key={icon} className={`${lib.emojiBtn} ${folderForm.icon === icon ? lib.emojiActive : ''}`} onClick={() => setFolderForm(p => ({ ...p, icon }))}>
-                    {icon}
-                  </button>
-                ))}
-              </div>
-              <input autoFocus className={lib.modalInput} placeholder="Tên danh mục"
-                value={folderForm.name} onChange={e => setFolderForm({ ...folderForm, name: e.target.value.slice(0, 60) })}
-                onKeyDown={e => e.key === 'Enter' && handleSaveFolder()} />
-              <div className={lib.modalActions}>
-                <button className={lib.modalCancel} onClick={() => setIsFolderModalOpen(false)}>Hủy</button>
-                <button className={lib.modalSave} onClick={handleSaveFolder} disabled={!folderForm.name.trim()}>Tạo</button>
-              </div>
-            </div>
-          </div>
-        )}
-        {editDeck && <EditQuizModal deckId={null} onClose={() => setEditDeck(null)} />}
-      </div>
-    );
-  }
-
   return (
     <div className={lib.libraryPage} onClick={() => setMenuOpenId(null)}>
       <div className={lib.quizLayout}>
@@ -239,14 +182,25 @@ export default function QuizLibrary() {
           </div>
 
           <div className={lib.quizPanelBody}>
-            {visibleDecks.length === 0 && visibleFolders.length === 0 ? (
+            {isLoading ? (
+              <div className={loadingStyles.skeletonGrid} style={{ marginTop: '1rem' }}>
+                <div className={loadingStyles.skeletonCard} />
+                <div className={loadingStyles.skeletonCard} />
+                <div className={loadingStyles.skeletonCard} />
+              </div>
+            ) : visibleDecks.length === 0 && visibleFolders.length === 0 ? (
               <div className={lib.emptyState}>
                 <div className={lib.emptyIcon}>📝</div>
                 <div className={lib.emptyTitle}>{isAllView ? 'Chưa có đề thi' : 'Danh mục trống'}</div>
                 <div className={lib.emptySub}>{isAllView ? 'Tạo danh mục hoặc đề thi mới để bắt đầu.' : 'Tạo đề thi mới hoặc di chuyển đề thi vào danh mục này.'}</div>
-                <button className={lib.btnCreate} onClick={() => setEditDeck('new')}>
-                  <Plus size={15} /> Tạo đề thi
-                </button>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '0.75rem' }}>
+                  <button className={lib.btnSecondary} onClick={() => { setFolderForm({ name: '', icon: '📝' }); setIsFolderModalOpen(true); }}>
+                    Tạo danh mục
+                  </button>
+                  <button className={lib.btnCreate} onClick={() => setEditDeck('new')}>
+                    <Plus size={15} /> Tạo đề thi
+                  </button>
+                </div>
               </div>
             ) : (
               <>

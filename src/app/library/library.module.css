@@ -158,6 +158,44 @@
   gap: 1rem;
 }
 
+/* ── EMPTY STATES ── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-hover) 100%);
+  border: 2px dashed var(--border);
+  border-radius: 24px;
+  grid-column: 1 / -1; /* Take full width if inside grid */
+  margin-top: 2rem;
+}
+
+.emptyIcon {
+  font-size: 3.5rem;
+  margin-bottom: 1.25rem;
+  filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));
+}
+
+.emptyTitle {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--foreground);
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.5px;
+}
+
+.emptySub {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--foreground);
+  opacity: 0.5;
+  max-width: 400px;
+  line-height: 1.5;
+}
+
 /* --- COMPLETELY NEW FLASHCARD DESIGN (Friendly Stack) --- */
 .fcCardWrap {
   position: relative;

@@ -122,18 +122,7 @@ export default function FlashcardLibrary() {
       : flashDecks.find(d => d.id === deleteDeckId)?.name ?? 'Bộ bài này'
     : '';
 
-  if (isLoading) {
-    return (
-      <div className={loadingStyles.skeletonContainer}>
-        <div className={loadingStyles.skeletonHero} />
-        <div className={loadingStyles.skeletonGrid}>
-          <div className={loadingStyles.skeletonCard} />
-          <div className={loadingStyles.skeletonCard} />
-          <div className={loadingStyles.skeletonCard} />
-        </div>
-      </div>
-    );
-  }
+  // Remove early return, handle loading inside panel
 
   // ── Sidebar render ──────────────────────────────────────────────
   const sidebar = (
@@ -340,7 +329,14 @@ export default function FlashcardLibrary() {
           </div>
         )}
 
-        {visibleDecks.length === 0 && visibleFolders.length === 0 ? (
+        {isLoading ? (
+          <div className={loadingStyles.skeletonGrid} style={{ marginTop: '1rem' }}>
+            <div className={loadingStyles.skeletonCard} />
+            <div className={loadingStyles.skeletonCard} />
+            <div className={loadingStyles.skeletonCard} />
+            <div className={loadingStyles.skeletonCard} />
+          </div>
+        ) : visibleDecks.length === 0 && visibleFolders.length === 0 ? (
           <div className={lib.emptyState}>
             <div className={lib.emptyIcon}>{isAllView ? '📭' : '📂'}</div>
             <div className={lib.emptyTitle}>{isAllView ? 'Chưa có dữ liệu' : 'Thư mục trống'}</div>

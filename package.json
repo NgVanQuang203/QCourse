@@ -15,6 +15,7 @@
     "@prisma/adapter-neon": "^6.4.1",
     "@prisma/client": "^6.4.1",
     "bcryptjs": "^3.0.3",
+    "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "dotenv": "^17.4.1",
     "framer-motion": "^12.38.0",
@@ -25,11 +26,13 @@
     "prisma": "^6.4.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-hot-toast": "^2.6.0",
     "ws": "^8.20.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
