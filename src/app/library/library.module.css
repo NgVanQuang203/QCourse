@@ -201,6 +201,7 @@
   position: relative;
   cursor: pointer;
   z-index: 1;
+  transition: z-index 0s;
 }
 
 .fcCardStack1, .fcCardStack2 {
@@ -209,34 +210,44 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 20px;
-  transition: all 0.3s cubic-bezier(0.3, 1.5, 0.7, 1);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), 
+              top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+              bottom 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+              opacity 0.4s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  pointer-events: none;
 }
 
 .fcCardStack1 {
   top: 6px; bottom: -6px;
-  transform: scale(0.95);
-  z-index: 0;
-  opacity: 0.8;
-  background-color: color-mix(in srgb, var(--surface) 90%, var(--foreground));
+  transform: scale(0.96);
+  z-index: -1;
+  opacity: 0.6;
+  background-color: var(--surface-hover);
 }
 
 .fcCardStack2 {
   top: 12px; bottom: -12px;
-  transform: scale(0.9);
-  z-index: -1;
-  opacity: 0.5;
-  background-color: color-mix(in srgb, var(--surface) 80%, var(--foreground));
+  transform: scale(0.92);
+  z-index: -2;
+  opacity: 0.3;
+  background-color: var(--surface-hover);
+}
+
+.fcCardWrap:hover {
+  z-index: 10;
 }
 
 .fcCardWrap:hover .fcCardStack1 {
-  top: 8px; bottom: -8px;
-  transform: scale(0.96) rotate(-2deg);
+  top: 10px; bottom: -10px;
+  transform: scale(0.97) rotate(-1.5deg);
+  opacity: 0.8;
 }
 
 .fcCardWrap:hover .fcCardStack2 {
-  top: 16px; bottom: -16px;
-  transform: scale(0.92) rotate(2deg);
+  top: 18px; bottom: -18px;
+  transform: scale(0.94) rotate(1.5deg);
+  opacity: 0.5;
 }
 
 .fcCard {
@@ -244,20 +255,20 @@
   border: 2px solid var(--border);
   border-radius: 20px;
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   min-height: 220px;
-  transition: all 0.3s cubic-bezier(0.3, 1.5, 0.7, 1);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
   overflow: visible;
+  will-change: transform, box-shadow;
 }
 
 .fcCardWrap:hover .fcCard {
-  transform: translateY(-8px);
+  transform: translateY(-10px);
   border-color: var(--primary);
-  box-shadow: 0 15px 35px rgba(var(--primary-rgb, 37, 99, 235), 0.15);
-  z-index: 50;
+  box-shadow: 0 20px 40px rgba(var(--primary-rgb, 37, 99, 235), 0.12);
 }
 
 /* Friendly Top Color Indicator inside */
@@ -291,6 +302,13 @@
   border-style: solid;
   transform: translateY(-5px);
   box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.fcFolderCardDragOver {
+  background-color: rgba(var(--primary-rgb, 37, 99, 235), 0.1) !important;
+  border-color: var(--primary) !important;
+  border-style: solid !important;
+  transform: scale(1.02);
 }
 .fcFolderIcon {
   font-size: 4.5rem;
@@ -438,6 +456,21 @@
   border-radius: 12px; 
   z-index: 2;
   box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+}
+
+.fcNextDueBadge {
+  position: absolute; 
+  top: 12px; 
+  right: 12px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  opacity: 0.8;
+  font-size: 0.7rem; 
+  font-weight: 700;
+  padding: 0.25rem 0.6rem; 
+  border-radius: 10px; 
+  z-index: 2;
 }
 
 /* ===========================================

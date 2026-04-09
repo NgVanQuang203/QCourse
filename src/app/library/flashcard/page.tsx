@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import lib from '../library.module.css';
 import loadingStyles from '@/app/loading.module.css';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useStore, Folder } from '@/lib/store';
+import { toast } from '@/lib/toast';
 import {
   Plus, Upload, MoreVertical, Edit2, Trash2, FolderInput,
   RefreshCcw, Folder as FolderIcon, LayoutGrid,
@@ -13,6 +15,7 @@ import EditDeckModal from '@/components/EditDeckModal';
 import ImportModal from '@/components/ImportModal';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import ContextMenu, { ContextMenuItem } from '@/components/ContextMenu';
 
 const EMOJIS = ['📁', '📘', '⚛️', '🌍', '💻', '🎨', '🧬', '🎵', '🧠', '💼', '🔬', '📐'];
 
@@ -52,6 +55,8 @@ export default function FlashcardLibrary() {
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
   const [folderForm, setFolderForm] = useState({ name: '', icon: '📁' });
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
+  const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
 
   const {
     decks, folders, isLoading, deleteDeck, refreshStats,
@@ -124,7 +129,30 @@ export default function FlashcardLibrary() {
       : flashDecks.find(d => d.id === deleteDeckId)?.name ?? 'Bộ bài này'
     : '';
 
-  // Remove early return, handle loading inside panel
+  const handleDragStart = (e: React.DragEvent, deckId: string) => {
+    e.dataTransfer.setData('deckId', deckId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDropOnFolder = async (e: React.DragEvent, folderId: string | null) => {
+    e.preventDefault();
+    setDragOverFolderId(null);
+    const deckId = e.dataTransfer.getData('deckId');
+    if (deckId && deckId !== folderId) {
+      await moveDeckToFolder(deckId, folderId);
+      toast.success('Đã di chuyển bộ bài');
+    }
+  };
+
+  const formatNextDue = (ts: number | null) => {
+    if (!ts) return null;
+    const diff = ts - Date.now();
+    if (diff <= 0) return 'Hiện có';
+    const hrs = Math.ceil(diff / (1000 * 60 * 60));
+    if (hrs < 24) return `${hrs} giờ nữa`;
+    const days = Math.ceil(hrs / 24);
+    return `${days} ngày nữa`;
+  };
 
   // ── Sidebar render ──────────────────────────────────────────────
   const sidebar = (
@@ -219,6 +247,24 @@ export default function FlashcardLibrary() {
     const learningPct = total > 0 ? Math.round((learning / total) * 100) : 0;
     const isMenuOpen = menuOpenId === deck.id;
     const deckColor = deck.color?.startsWith('linear') ? 'var(--primary)' : (deck.color || 'var(--primary)');
+    const nextDueLabel = formatNextDue(deck.nextDue);
+
+    const onRightClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        items: [
+          { label: 'Học ngay', icon: <Plus size={14}/>, onClick: () => router.push(`/flashcard/${deck.id}`) },
+          { label: 'Chỉnh sửa', icon: <Edit2 size={14}/>, onClick: () => setEditDeck(deck.id) },
+          { label: 'Chuyển thư mục', icon: <FolderInput size={14}/>, onClick: () => setMoveDeckId(deck.id) },
+          { divider: true, label: '', onClick: () => {} },
+          { label: 'Làm mới tiến độ', icon: <RefreshCcw size={14}/>, onClick: () => setResetDeckId(deck.id) },
+          { label: 'Xoá bộ bài', icon: <Trash2 size={14}/>, variant: 'danger', onClick: () => setDeleteDeckId(deck.id) },
+        ]
+      });
+    };
 
     return (
       <div
@@ -226,13 +272,20 @@ export default function FlashcardLibrary() {
         className={lib.fcCardWrap}
         style={{ '--deck-color': deckColor } as React.CSSProperties}
         onClick={() => router.push(`/flashcard/${deck.id}`)}
+        onContextMenu={onRightClick}
+        draggable
+        onDragStart={(e) => handleDragStart(e, deck.id)}
       >
         <div className={lib.fcCardStack2} />
         <div className={lib.fcCardStack1} />
         <div className={lib.fcCard}>
           <div className={lib.fcCardIndicator} />
 
-          {due > 0 && <div className={lib.fcDueBadge}>🔥 {due} CẦN ÔN</div>}
+          {due > 0 ? (
+            <div className={lib.fcDueBadge}>🔥 {due} CẦN ÔN</div>
+          ) : nextDueLabel ? (
+            <div className={lib.fcNextDueBadge}>⏳ Ôn tập: {nextDueLabel}</div>
+          ) : null}
 
           <div className={lib.fcCardBody}>
             <div className={lib.fcIconBubble}>🃏</div>
@@ -325,7 +378,21 @@ export default function FlashcardLibrary() {
       </div>
 
       {/* Panel body */}
-      <div className={lib.fcPanelBody}>
+      <div className={lib.fcPanelBody} onContextMenu={(e) => {
+        if (e.target === e.currentTarget) {
+          e.preventDefault();
+          setContextMenu({
+            x: e.clientX,
+            y: e.clientY,
+            items: [
+              { label: 'Tạo bộ thẻ mới', icon: <Plus size={14}/>, onClick: () => setEditDeck('new') },
+              { label: 'Nhập bộ thẻ', icon: <Upload size={14}/>, onClick: () => setImportOpen(true) },
+              { divider: true, label: '', onClick: () => {} },
+              { label: 'Làm mới thư viện', icon: <RefreshCcw size={14}/>, onClick: () => refreshStats() },
+            ]
+          });
+        }
+      }}>
         {/* Stats — only show at "All" view */}
         {activeFolderId === 'all' && flashDecks.length > 0 && (
           <div className={lib.fcStats}>
@@ -374,7 +441,27 @@ export default function FlashcardLibrary() {
             {visibleFolders.map((f: any) => {
                const deckCount = flashDecks.filter((d: any) => d.folderId === f.id).length;
                return (
-                 <div key={`folder_${f.id}`} className={lib.fcFolderCard} onClick={() => setActiveFolderId(f.id)}>
+                 <div 
+                  key={`folder_${f.id}`} 
+                  className={`${lib.fcFolderCard} ${dragOverFolderId === f.id ? lib.fcFolderCardDragOver : ''}`} 
+                  onClick={() => setActiveFolderId(f.id)}
+                  onDragOver={(e) => { e.preventDefault(); setDragOverFolderId(f.id); }}
+                  onDragLeave={() => setDragOverFolderId(null)}
+                  onDrop={(e) => handleDropOnFolder(e, f.id)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setContextMenu({
+                      x: e.clientX,
+                      y: e.clientY,
+                      items: [
+                        { label: 'Mở thư mục', icon: <FolderIcon size={14}/>, onClick: () => setActiveFolderId(f.id) },
+                        { label: 'Đổi tên/icon', icon: <Edit2 size={14}/>, onClick: () => { setEditingFolder(f); setFolderForm({ name: f.name, icon: f.icon }); setIsFolderModalOpen(true); } },
+                        { label: 'Xóa thư mục', icon: <Trash2 size={14}/>, variant: 'danger', onClick: () => setDeleteDeckId(`f_${f.id}`) },
+                      ]
+                    });
+                  }}
+                 >
                    <div className={lib.fcFolderIcon}>{f.icon}</div>
                    <div className={lib.fcFolderName}>{f.name}</div>
                    <div className={lib.fcFolderCount}>{deckCount} bộ thẻ</div>
@@ -461,6 +548,17 @@ export default function FlashcardLibrary() {
         onConfirm={() => confirmReset(resetDeckId!)}
         onCancel={() => setResetDeckId(null)}
       />
+
+      <AnimatePresence>
+        {contextMenu && (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            items={contextMenu.items}
+            onClose={() => setContextMenu(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

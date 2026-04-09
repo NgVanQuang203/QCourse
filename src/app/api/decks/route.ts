@@ -88,11 +88,18 @@ export async function GET() {
       c.sm2Progress.length > 0 && c.sm2Progress[0].interval > 0 && c.sm2Progress[0].interval < 7
     ).length;
 
+    const futureDates = deck.cards
+      .flatMap(c => c.sm2Progress || [])
+      .map(p => new Date(p.nextDueDate).getTime())
+      .filter(t => t > now.getTime());
+    const nextDue = futureDates.length > 0 ? Math.min(...futureDates) : null;
+
     return {
       ...deck,
       dueCount,
       masteredCount: mastered,
       learningCount: learning,
+      nextDue,
       highestScore: 0,
       cards: undefined,
     };
