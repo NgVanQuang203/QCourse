@@ -5,61 +5,72 @@ import { useRouter } from 'next/navigation';
 import lib from '../library.module.css';
 import loadingStyles from '@/app/loading.module.css';
 import { useStore, Folder } from '@/lib/store';
-import { Plus, Upload, MoreVertical, Edit2, Trash2, FolderInput, RefreshCcw, Folder as FolderIcon, X, Check, ChevronRight } from 'lucide-react';
+import {
+  Plus, Upload, MoreVertical, Edit2, Trash2, FolderInput,
+  RefreshCcw, Folder as FolderIcon, LayoutGrid,
+} from 'lucide-react';
 import EditDeckModal from '@/components/EditDeckModal';
 import ImportModal from '@/components/ImportModal';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
-// Leftover import removed
 
-const EMOJIS = ['📁', '📘', '⚛️', '🌍', '💻', '🎨', '🧬', '🎵', '🧠', '💼'];
+const EMOJIS = ['📁', '📘', '⚛️', '🌍', '💻', '🎨', '🧬', '🎵', '🧠', '💼', '🔬', '📐'];
 
 export default function FlashcardLibrary() {
   const router = useRouter();
-  
-  // Navigation State
-  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
-  
-  // Menu matching
+
+  // null = show all decks; string = show decks in that folder
+  const [activeFolderId, setActiveFolderId] = useState<string | null | 'all'>('all');
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-  
-  // Modals state
   const [editDeck, setEditDeck] = useState<string | null>(null);
-  const [importDeck, setImportDeck] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [deleteDeckId, setDeleteDeckId] = useState<string | null>(null);
   const [moveDeckId, setMoveDeckId] = useState<string | null>(null);
-
-  // Folder modal state
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
   const [folderForm, setFolderForm] = useState({ name: '', icon: '📁' });
 
-  const { decks, folders, isLoading, deleteDeck, refreshStats, moveDeckToFolder, addFolder, updateFolder, deleteFolder } = useStore();
-  
+  const {
+    decks, folders, isLoading, deleteDeck, refreshStats,
+    moveDeckToFolder, addFolder, updateFolder, deleteFolder,
+  } = useStore();
+
   const flashDecks = decks.filter(d => !d.type || d.type === 'FLASHCARD');
-  
-  // Select which items to show based on current folder
   const flashFolders = folders.filter(f => f.type === 'FLASHCARD' || !f.type);
-  const visibleFolders = currentFolderId === null ? flashFolders : [];
-  const visibleDecks = flashDecks.filter(d => d.folderId === currentFolderId);
-  const currentFolder = currentFolderId ? folders.find(f => f.id === currentFolderId) : null;
+
+  // Which decks to show in the right panel
+  const isAllView = activeFolderId === 'all';
+  const visibleDecks = isAllView
+    ? flashDecks.filter((d: any) => !d.folderId)
+    : flashDecks.filter((d: any) => d.folderId === activeFolderId);
+
+  const visibleFolders = isAllView ? flashFolders : [];
+
+  const activeFolder = isAllView ? null : flashFolders.find((f: any) => f.id === activeFolderId);
+
+  // Deck count per folder for sidebar badge
+  const countForFolder = (fid: string) => flashDecks.filter(d => d.folderId === fid).length;
+  const uncategorizedCount = flashDecks.filter(d => !d.folderId).length;
+
+  const totalCards = flashDecks.reduce((s, d) => s + (d._count?.cards ?? 0), 0);
+  const dueTotal = flashDecks.reduce((s, d) => s + (d.dueCount ?? 0), 0);
+  const masteredTotal = flashDecks.reduce((s, d) => s + (d.masteredCount ?? 0), 0);
 
   const confirmDelete = async () => {
-    if (deleteDeckId) {
-      // If it's a folder:
-      if (deleteDeckId.startsWith('f_')) {
-        await deleteFolder(deleteDeckId.replace('f_', ''));
-      } else {
-        await deleteDeck(deleteDeckId);
-      }
-      setDeleteDeckId(null);
+    if (!deleteDeckId) return;
+    if (deleteDeckId.startsWith('f_')) {
+      const fid = deleteDeckId.replace('f_', '');
+      await deleteFolder(fid);
+      if (activeFolderId === fid) setActiveFolderId('all');
+    } else {
+      await deleteDeck(deleteDeckId);
     }
+    setDeleteDeckId(null);
   };
 
   const confirmReset = async (deckId: string) => {
-    if (confirm('Làm mới toàn bộ tiến độ học tập (về 0%) của bộ bài này?')) {
-      await fetch(`/api/decks/${deckId}/reset`, { method: 'POST' });
-      await refreshStats();
-    }
+    if (!confirm('Làm mới toàn bộ tiến độ về 0%?')) return;
+    await fetch(`/api/decks/${deckId}/reset`, { method: 'POST' });
+    await refreshStats();
   };
 
   const handleSaveFolder = async () => {
@@ -67,9 +78,12 @@ export default function FlashcardLibrary() {
     if (editingFolder) {
       await updateFolder(editingFolder.id, folderForm);
     } else {
-      await addFolder(folderForm.name, folderForm.icon, 'FLASHCARD');
+      const f = await addFolder(folderForm.name, folderForm.icon, 'FLASHCARD');
+      if (f) setActiveFolderId(f.id); // auto-navigate to new folder
     }
     setIsFolderModalOpen(false);
+    setFolderForm({ name: '', icon: '📁' });
+    setEditingFolder(null);
   };
 
   const openEditFolder = (e: React.MouseEvent, f: Folder) => {
@@ -80,194 +94,273 @@ export default function FlashcardLibrary() {
     setIsFolderModalOpen(true);
   };
 
+  const deleteName = deleteDeckId
+    ? deleteDeckId.startsWith('f_')
+      ? flashFolders.find(f => f.id === deleteDeckId.replace('f_', ''))?.name ?? 'Thư mục này'
+      : flashDecks.find(d => d.id === deleteDeckId)?.name ?? 'Bộ bài này'
+    : '';
+
   if (isLoading) {
     return (
       <div className={loadingStyles.skeletonContainer}>
         <div className={loadingStyles.skeletonHero} />
         <div className={loadingStyles.skeletonGrid}>
           <div className={loadingStyles.skeletonCard} />
+          <div className={loadingStyles.skeletonCard} />
+          <div className={loadingStyles.skeletonCard} />
         </div>
       </div>
     );
   }
 
-  return (
-    <div className={lib.libraryPage} onClick={() => setMenuOpenId(null)}>
-      
-      <main className={lib.mainArea}>
-        
-        {/* ── HEADER BREADCRUMB ── */}
-        <div className={lib.headerBar}>
-          <div className={lib.breadcrumb}>
-            <button className={lib.breadcrumbLink} onClick={() => setCurrentFolderId(null)}>
-              🗂️ Tất cả bộ bài
+  // ── Sidebar render ──────────────────────────────────────────────
+  const sidebar = (
+    <aside className={lib.fcSidebar}>
+      <div className={lib.fcSidebarLogo}>
+        <div className={lib.fcSidebarTitle}>📚 Flashcard</div>
+        <div className={lib.fcSidebarSub}>{flashDecks.length} bộ · {totalCards} thẻ</div>
+      </div>
+
+      {/* "All decks" button */}
+      <button
+        className={`${lib.fcFolderBtn} ${activeFolderId === 'all' ? lib.fcFolderBtnActive : ''}`}
+        onClick={() => setActiveFolderId('all')}
+      >
+        <LayoutGrid size={15} /> Tất cả
+        <span className={lib.fcFolderBtnCount}>{flashDecks.length}</span>
+      </button>
+
+      {/* Folder list */}
+      {flashFolders.map(f => {
+        const fMenuOpen = menuOpenId === `f_${f.id}`;
+        return (
+          <div key={f.id} style={{ position: 'relative' }}>
+            <button
+              className={`${lib.fcFolderBtn} ${activeFolderId === f.id ? lib.fcFolderBtnActive : ''}`}
+              onClick={() => setActiveFolderId(f.id)}
+              style={{ paddingRight: '2.6rem' }}
+            >
+              {f.icon} {f.name}
+              <span className={lib.fcFolderBtnCount}>{countForFolder(f.id)}</span>
             </button>
-            {currentFolder && (
-              <>
-                <ChevronRight className={lib.breadcrumbSep} />
-                <span style={{ color: 'var(--primary)' }}>{currentFolder.icon} {currentFolder.name}</span>
-              </>
+            {/* Folder kebab */}
+            <div
+              style={{
+                position: 'absolute', right: '0.4rem', top: '50%', transform: 'translateY(-50%)',
+                zIndex: fMenuOpen ? 9999 : 20,
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <button
+                className={lib.kebabBtn}
+                onClick={() => setMenuOpenId(fMenuOpen ? null : `f_${f.id}`)}
+              >
+                <MoreVertical size={14} />
+              </button>
+              {fMenuOpen && (
+                <div className={lib.menuDropdown}>
+                  <button className={lib.menuItem} onClick={e => openEditFolder(e, f)}>
+                    <Edit2 size={13} /> Sửa thư mục
+                  </button>
+                  <button className={`${lib.menuItem} ${lib.menuItemDanger}`} onClick={() => { setDeleteDeckId(`f_${f.id}`); setMenuOpenId(null); }}>
+                    <Trash2 size={13} /> Xóa thư mục
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Uncategorized if there are any */}
+      {uncategorizedCount > 0 && (
+        <button
+          className={`${lib.fcFolderBtn} ${activeFolderId === null ? lib.fcFolderBtnActive : ''}`}
+          onClick={() => setActiveFolderId(null)}
+        >
+          🗂️ Chưa phân loại
+          <span className={lib.fcFolderBtnCount}>{uncategorizedCount}</span>
+        </button>
+      )}
+
+      <div className={lib.fcSidebarSep} />
+
+      <button
+        className={lib.fcAddFolderBtn}
+        onClick={() => { setEditingFolder(null); setFolderForm({ name: '', icon: '📁' }); setIsFolderModalOpen(true); }}
+      >
+        + Thư mục mới
+      </button>
+    </aside>
+  );
+
+  // ── Render deck card ─────────────────────────────────────────────
+  const renderCard = (deck: any) => {
+    const total = deck._count?.cards ?? 0;
+    const due = deck.dueCount ?? 0;
+    const mastered = deck.masteredCount ?? 0;
+    const pct = total > 0 ? Math.round((mastered / total) * 100) : 0;
+    const isMenuOpen = menuOpenId === deck.id;
+    const deckColor = deck.color?.startsWith('linear') ? 'var(--primary)' : (deck.color || 'var(--primary)');
+
+    return (
+      <div
+        key={deck.id}
+        className={lib.fcCardWrap}
+        style={{ '--deck-color': deckColor } as React.CSSProperties}
+        onClick={() => router.push(`/flashcard/${deck.id}`)}
+      >
+        <div className={lib.fcCardStack2} />
+        <div className={lib.fcCardStack1} />
+        <div className={lib.fcCard}>
+          <div className={lib.fcCardIndicator} />
+
+          {due > 0 && <div className={lib.fcDueBadge}>🔥 {due} CẦN ÔN</div>}
+
+          <div className={lib.fcCardBody}>
+            <div className={lib.fcIconBubble}>🃏</div>
+            <div className={lib.fcCardTitle}>{deck.name}</div>
+            <div className={lib.fcCardDesc}>{deck.description || 'Chưa có mô tả'}</div>
+          </div>
+
+          <div className={lib.fcCardFooter}>
+            <div className={lib.fcCardPill} style={{ color: pct >= 100 ? 'var(--success)' : pct > 0 ? 'var(--primary)' : 'var(--foreground)' }}>
+              {pct}% HOÀN THÀNH
+            </div>
+            
+            <div className={lib.fcCardCount}>
+              {total} thẻ
+            </div>
+
+          {/* Kebab — relative position in footer row */}
+          <div
+            className={lib.kebabWrap}
+            onClick={e => e.stopPropagation()}
+            style={{ zIndex: isMenuOpen ? 9999 : undefined }}
+          >
+            <button
+              className={lib.kebabBtn}
+              onClick={() => setMenuOpenId(isMenuOpen ? null : deck.id)}
+              title="Tùy chọn"
+            >
+              <MoreVertical size={15} />
+            </button>
+            {isMenuOpen && (
+              <div className={lib.menuDropdown} style={{ bottom: 'calc(100% + 6px)', top: 'auto' }}>
+                <button className={lib.menuItem} onClick={() => { setEditDeck(deck.id); setMenuOpenId(null); }}>
+                  <Edit2 size={13} /> Chỉnh sửa
+                </button>
+                <button className={lib.menuItem} onClick={() => { setMoveDeckId(deck.id); setMenuOpenId(null); }}>
+                  <FolderInput size={13} /> Chuyển thư mục
+                </button>
+                <div className={lib.menuDivider} />
+                <button className={lib.menuItem} onClick={() => { confirmReset(deck.id); setMenuOpenId(null); }}>
+                  <RefreshCcw size={13} /> Làm mới tiến độ
+                </button>
+                <button className={`${lib.menuItem} ${lib.menuItemDanger}`} onClick={() => { setDeleteDeckId(deck.id); setMenuOpenId(null); }}>
+                  <Trash2 size={13} /> Xóa bộ bài
+                </button>
+              </div>
             )}
           </div>
-          
-          <div className={lib.headerActions}>
-            {currentFolderId === null && (
-              <button className={lib.btnImport} onClick={() => {
-                setEditingFolder(null); setFolderForm({ name: '', icon: '📁' }); setIsFolderModalOpen(true);
-              }}>
-                <FolderIcon size={14} /> Thêm thư mục
-              </button>
-            )}
-            <button className={lib.btnImport} onClick={() => setImportDeck('__pick')}>
-              <Upload size={14} /> Import
-            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ── Right panel ──────────────────────────────────────────────────
+  const panelTitle = activeFolderId === 'all'
+    ? 'Tất cả bộ thẻ'
+    : activeFolderId === null
+      ? '🗂️ Chưa phân loại'
+      : `${activeFolder?.icon} ${activeFolder?.name}`;
+
+  const panel = (
+    <div className={lib.fcPanel}>
+      {/* Panel header */}
+      <div className={lib.fcPanelHeader}>
+        <div>
+          <div className={lib.fcPanelTitle}>{panelTitle}</div>
+          <div className={lib.fcPanelMeta}>{visibleDecks.length} bộ thẻ</div>
+        </div>
+        <div className={lib.fcPanelActions}>
+          <button className={lib.btnImport} onClick={() => setImportOpen(true)}>
+            <Upload size={15} /> Nhập
+          </button>
+          <button className={lib.btnCreate} onClick={() => setEditDeck('new')}>
+            <Plus size={15} /> Tạo
+          </button>
+        </div>
+      </div>
+
+      {/* Panel body */}
+      <div className={lib.fcPanelBody}>
+        {/* Stats — only show at "All" view */}
+        {activeFolderId === 'all' && flashDecks.length > 0 && (
+          <div className={lib.fcStats}>
+            <div className={lib.fcStatItem}>
+              <div className={lib.fcStatVal}>{flashDecks.length}</div>
+              <div className={lib.fcStatLbl}>Bộ thẻ</div>
+            </div>
+            <div className={lib.fcStatItem}>
+              <div className={lib.fcStatVal}>{totalCards}</div>
+              <div className={lib.fcStatLbl}>Tổng thẻ</div>
+            </div>
+            <div className={lib.fcStatItem}>
+              <div className={lib.fcStatVal} style={{ color: dueTotal > 0 ? '#ef4444' : undefined }}>{dueTotal}</div>
+              <div className={lib.fcStatLbl}>Cần ôn</div>
+            </div>
+            <div className={lib.fcStatItem}>
+              <div className={lib.fcStatVal} style={{ color: '#10b981' }}>{masteredTotal}</div>
+              <div className={lib.fcStatLbl}>Đã thuộc</div>
+            </div>
+          </div>
+        )}
+
+        {visibleDecks.length === 0 && visibleFolders.length === 0 ? (
+          <div className={lib.emptyState}>
+            <div className={lib.emptyIcon}>{isAllView ? '📭' : '📂'}</div>
+            <div className={lib.emptyTitle}>{isAllView ? 'Chưa có dữ liệu' : 'Thư mục trống'}</div>
+            <div className={lib.emptySub}>
+              {isAllView
+                ? 'Tạo thư mục hoặc bộ thẻ đầu tiên để bắt đầu.'
+                : 'Tạo bộ thẻ mới vào thư mục này, hoặc di chuyển bộ thẻ có sẵn vào đây.'}
+            </div>
             <button className={lib.btnCreate} onClick={() => setEditDeck('new')}>
               <Plus size={15} /> Tạo bộ thẻ
             </button>
           </div>
-        </div>
-
-        {/* ── FOLDERS GRID (Only at root) ── */}
-        {currentFolderId === null && visibleFolders.length > 0 && (
-          <div>
-            <div className={lib.sectionTitle}>📁 Thư mục của bạn</div>
-            <div className={lib.folderGrid}>
-              {visibleFolders.map(f => (
-                <div key={f.id} className={lib.folderCard} onClick={() => setCurrentFolderId(f.id)}>
-                  <div className={lib.folderIcon}>{f.icon}</div>
-                  <div className={lib.folderInfo}>
-                    <div className={lib.folderName}>{f.name}</div>
-                    <div className={lib.folderMeta}>{f._count?.decks || 0} mục</div>
-                  </div>
-                  
-                  {/* Folder Menu */}
-                  <div className={lib.kebabWrap}>
-                    <button className={lib.kebabBtn} onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === `f_${f.id}` ? null : `f_${f.id}`); }}>
-                      <MoreVertical size={16} />
-                    </button>
-                    {menuOpenId === `f_${f.id}` && (
-                      <div className={lib.menuDropdown} onClick={(e) => e.stopPropagation()}>
-                        <button className={lib.menuItem} onClick={(e) => openEditFolder(e, f)}>
-                          <Edit2 size={13} /> Sửa thư mục
-                        </button>
-                        <button className={`${lib.menuItem} ${lib.menuItemDanger}`} onClick={() => { setDeleteDeckId(`f_${f.id}`); setMenuOpenId(null); }}>
-                          <Trash2 size={13} /> Xóa thư mục
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── DECKS GRID ── */}
-        {visibleDecks.length > 0 || currentFolderId !== null ? (
-          <div>
-            <div className={lib.sectionTitle}>
-              {currentFolderId === null ? "📄 Các bộ thẻ chưa phân loại" : "📄 Các bộ thẻ trong thư mục này"}
-            </div>
-            
-            {visibleDecks.length === 0 ? (
-              <div className={lib.emptyState}>
-                <div className={lib.emptyIcon}>📭</div>
-                <div className={lib.emptyText}>Thư mục này trống</div>
-                <div className={lib.emptySub}>Bạn có thể tạo bộ thẻ mới trực tiếp vào đây.</div>
-              </div>
-            ) : (
-              <div className={lib.deckGrid}>
-                {visibleDecks.map(deck => {
-                  const totalCards = deck._count?.cards ?? 0;
-                  const due = deck.dueCount ?? 0;
-                  const mastered = deck.masteredCount ?? 0;
-                  const progressPct = totalCards === 0 ? 0 : Math.round((mastered / totalCards) * 100);
-                  
-                  // SVG calculation
-                  const radius = 16;
-                  const dasharray = 2 * Math.PI * radius;
-                  const dashoffset = dasharray - (progressPct / 100) * dasharray;
-
-                  return (
-                    <div key={deck.id} className={lib.fcCard} style={{ '--primary': deck.color } as React.CSSProperties} onClick={() => router.push(`/flashcard/${deck.id}`)}>
-                      {/* Top Accent Strip */}
-                      <div className={lib.fcGradientTop}>
-                        <div className={lib.statusWrap}>
-                          {due > 0 ? (
-                            <div className={`${lib.statusTag} ${lib.statusDue}`}>🔥 {due} thẻ cần ôn</div>
-                          ) : totalCards > 0 && mastered === totalCards ? (
-                            <div className={`${lib.statusTag} ${lib.statusDone}`}>✨ Đã hoàn thành</div>
-                          ) : null}
-                        </div>
-
-                        {/* Action Menu */}
-                        <div className={lib.kebabWrap}>
-                          <button className={`${lib.kebabBtn} ${lib.kebabBtnLight}`} onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === deck.id ? null : deck.id); }}>
-                            <MoreVertical size={16} />
-                          </button>
-                          {menuOpenId === deck.id && (
-                            <div className={lib.menuDropdown} onClick={(e) => e.stopPropagation()}>
-                              <button className={lib.menuItem} onClick={() => { setEditDeck(deck.id); setMenuOpenId(null); }}>
-                                <Edit2 size={13} /> Chỉnh sửa
-                              </button>
-                              <button className={lib.menuItem} onClick={() => { setMoveDeckId(deck.id); setMenuOpenId(null); }}>
-                                <FolderInput size={13} /> Chuyển thư mục
-                              </button>
-                              <div className={lib.menuDivider} />
-                              <button className={lib.menuItem} onClick={() => { confirmReset(deck.id); setMenuOpenId(null); }}>
-                                <RefreshCcw size={13} /> Làm mới tiến độ
-                              </button>
-                              <button className={`${lib.menuItem} ${lib.menuItemDanger}`} onClick={() => { setDeleteDeckId(deck.id); setMenuOpenId(null); }}>
-                                <Trash2 size={13} /> Xóa bộ bài
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Title & Desc */}
-                      <div className={lib.fcTitleArea}>
-                        <div className={lib.fcTitle}>{deck.name}</div>
-                        <div className={lib.fcDesc}>{deck.description || 'Chưa thiết lập mô tả cho bộ thẻ này.'}</div>
-                      </div>
-
-                      {/* Progress Section */}
-                      <div className={lib.fcProgress}>
-                        <div className={lib.ringWrap}>
-                          <svg className={lib.ringSvg} width="36" height="36" viewBox="0 0 36 36">
-                            <circle className={lib.ringBg} cx="18" cy="18" r={radius} />
-                            <circle 
-                              className={lib.ringFill} 
-                              cx="18" cy="18" r={radius} 
-                              stroke={deck.color.includes('gradient') ? 'var(--primary)' : deck.color}
-                              strokeDasharray={dasharray}
-                              strokeDashoffset={dashoffset}
-                            />
-                          </svg>
-                          <div className={lib.ringText}>{progressPct}%</div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 800 }}>Mastery</div>
-                          <div style={{ fontSize: '0.7rem', opacity: 0.5, fontWeight: 600 }}>{mastered} / {totalCards} thẻ</div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
         ) : (
-          <div className={lib.emptyState}>
-            <div className={lib.emptyIcon}>📦</div>
-            <div className={lib.emptyText}>Thư viện trống</div>
-            <div className={lib.emptySub}>Bắt đầu xây dựng dữ liệu học tập của bạn qua các thư mục và bộ thẻ thông minh.</div>
+          <div className={lib.fcGrid}>
+            {/* Render folders first in ALL view */}
+            {visibleFolders.map((f: any) => {
+               const deckCount = flashDecks.filter((d: any) => d.folderId === f.id).length;
+               return (
+                 <div key={`folder_${f.id}`} className={lib.fcFolderCard} onClick={() => setActiveFolderId(f.id)}>
+                   <div className={lib.fcFolderIcon}>{f.icon}</div>
+                   <div className={lib.fcFolderName}>{f.name}</div>
+                   <div className={lib.fcFolderCount}>{deckCount} bộ thẻ</div>
+                 </div>
+               );
+            })}
+            
+            {/* Then render visible decks */}
+            {visibleDecks.map(renderCard)}
           </div>
         )}
-      </main>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className={lib.libraryPage} onClick={() => setMenuOpenId(null)}>
+      <div className={lib.fcLayout}>
+        {sidebar}
+        {panel}
+      </div>
 
       {/* ── MODALS ── */}
-      {/* Folder CRUD */}
       {isFolderModalOpen && (
         <div className={lib.modalOverlay} onClick={() => setIsFolderModalOpen(false)}>
           <div className={lib.folderModal} onClick={e => e.stopPropagation()}>
@@ -279,60 +372,59 @@ export default function FlashcardLibrary() {
                 </button>
               ))}
             </div>
-            <input 
-              autoFocus className={lib.modalInput} placeholder="Tên thư mục (Vd: Ngoại ngữ)" 
+            <input
+              autoFocus className={lib.modalInput} placeholder="Tên thư mục (VD: Tiếng Anh, Toán học…)"
               value={folderForm.name} onChange={e => setFolderForm({ ...folderForm, name: e.target.value.slice(0, 60) })}
               onKeyDown={e => e.key === 'Enter' && handleSaveFolder()}
             />
             <div className={lib.modalActions}>
-              <button className={lib.modalCancel} onClick={() => setIsFolderModalOpen(false)}>Hủy</button>
-              <button className={lib.modalSave} onClick={handleSaveFolder} disabled={!folderForm.name.trim()}>Lưu</button>
+              <button className={lib.modalCancel} onClick={() => { setIsFolderModalOpen(false); setEditingFolder(null); }}>Hủy</button>
+              <button className={lib.modalSave} onClick={handleSaveFolder} disabled={!folderForm.name.trim()}>
+                {editingFolder ? 'Lưu thay đổi' : 'Tạo thư mục'}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Move Deck Modals */}
       {moveDeckId && (
         <div className={lib.modalOverlay} onClick={() => setMoveDeckId(null)}>
           <div className={lib.folderModal} onClick={e => e.stopPropagation()}>
-            <div className={lib.folderModalTitle}>Chuyển "{flashDecks.find(d=>d.id===moveDeckId)?.name}" tới:</div>
+            <div className={lib.folderModalTitle}>Chuyển tới thư mục</div>
             <div className={lib.moveFolderList}>
-              <button 
-                className={`${lib.moveFolderItem} ${!flashDecks.find(d=>d.id===moveDeckId)?.folderId ? lib.moveFolderItemActive : ''}`}
-                onClick={() => { moveDeckToFolder(moveDeckId, null); setMoveDeckId(null); }}
-              >
-                🗂️ Ngoài cùng (Không thư mục)
-              </button>
-              {folders.map(f => (
-                <button 
-                  key={f.id}
-                  className={`${lib.moveFolderItem} ${flashDecks.find(d=>d.id===moveDeckId)?.folderId === f.id ? lib.moveFolderItemActive : ''}`}
-                  onClick={() => { moveDeckToFolder(moveDeckId, f.id); setMoveDeckId(null); }}
-                >
+              <div className={lib.moveFolderItem} onClick={() => { moveDeckToFolder(moveDeckId!, null); setMoveDeckId(null); }}>
+                🗂️ Bỏ khỏi thư mục (ngoài)
+              </div>
+              {flashFolders.map(f => (
+                <div key={f.id} className={lib.moveFolderItem} onClick={() => { moveDeckToFolder(moveDeckId!, f.id); setMoveDeckId(null); }}>
                   {f.icon} {f.name}
-                </button>
+                </div>
               ))}
             </div>
-            <button className={lib.modalCancel} style={{width:'100%'}} onClick={() => setMoveDeckId(null)}>Đóng</button>
+            <button className={lib.modalCancel} style={{ width: '100%' }} onClick={() => setMoveDeckId(null)}>Hủy</button>
           </div>
         </div>
       )}
 
-      {editDeck !== null && (
-        <EditDeckModal mode="flashcard" initialFolderId={currentFolderId} deckId={editDeck === 'new' ? null : editDeck} onClose={() => setEditDeck(null)} />
+      {editDeck && (
+        <EditDeckModal
+          deckId={editDeck === 'new' ? null : editDeck}
+          mode="flashcard"
+          onClose={() => setEditDeck(null)}
+        />
       )}
-      {importDeck !== null && (
-        <ImportModal deckId={importDeck === '__pick' ? null : importDeck} allDecks={flashDecks} onClose={() => setImportDeck(null)} />
+      {importOpen && (
+        <ImportModal
+          deckId={null}
+          allDecks={flashDecks}
+          onClose={() => setImportOpen(false)}
+        />
       )}
-      <DeleteConfirmModal 
-        isOpen={!!deleteDeckId} 
-        deckName={
-          deleteDeckId?.startsWith('f_') 
-            ? folders.find(f => f.id === deleteDeckId.replace('f_',''))?.name || ''
-            : flashDecks.find(d => d.id === deleteDeckId)?.name || ''
-        } 
-        onConfirm={confirmDelete} onCancel={() => setDeleteDeckId(null)} 
+      <DeleteConfirmModal
+        isOpen={!!deleteDeckId}
+        deckName={deleteName}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteDeckId(null)}
       />
     </div>
   );

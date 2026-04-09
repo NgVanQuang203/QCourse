@@ -42,6 +42,8 @@ const PatchSchema = z.object({
   color:        z.string().optional(),
   timeLimitSec: z.number().min(10).max(300).optional(),
   isPublic:     z.boolean().optional(),
+  folderId:     z.string().nullable().optional(),   // ← FIX: allow moving between folders
+  type:         z.enum(['FLASHCARD', 'QUIZ']).optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: Ctx) {

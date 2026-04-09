@@ -1,432 +1,721 @@
 /* ================================================================
-   LIBRARY.MODULE.CSS — Premium File Explorer & Creative Cards
-   Shared by Flashcard & Quiz library pages
+   LIBRARY.MODULE.CSS — Dual Premium Library System
+   Flashcard  → "Study Workspace" — Left nav tree + Card grid
+   Quiz       → "Exam Control" — Sidebar category + Wide rows
    ================================================================ */
 
+/* ── BASE ────────────────────────────────────────────────────── */
 .libraryPage {
   display: flex;
   min-height: calc(100svh - var(--nav-height));
   background: var(--background);
 }
 
-.mainArea {
+/* ===========================================
+   FLASHCARD: Sidebar Tree + Card Grid
+   =========================================== */
+
+/* Full-height two-panel layout */
+.fcLayout {
+  display: flex;
   flex: 1;
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  min-width: 0;
+  min-height: calc(100svh - var(--nav-height));
+}
+
+/* Left Sidebar: Fixed folder tree */
+.fcSidebar {
+  width: 240px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  padding: 1.5rem 0.75rem;
+  gap: 0.25rem;
+  overflow-y: auto;
 }
 
-/* ── HEADER & BREADCRUMB ──────────────────────────────────────── */
-.headerBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
+.fcSidebarLogo {
+  padding: 0 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.5rem;
 }
-
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1.5rem;
+.fcSidebarTitle {
+  font-size: 0.85rem;
   font-weight: 900;
   color: var(--foreground);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.2px;
 }
-
-.breadcrumbLink {
-  color: var(--foreground);
-  opacity: 0.5;
-  cursor: pointer;
-  transition: opacity 0.2s;
-  background: none;
-  border: none;
-  font: inherit;
-  padding: 0;
-}
-.breadcrumbLink:hover { opacity: 1; }
-
-.breadcrumbSep { opacity: 0.3; font-size: 1.2rem; }
-
-.headerActions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.btnImport {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.7rem 1.1rem;
-  border-radius: 12px;
-  border: 1.5px solid var(--border);
-  background: var(--surface);
-  color: var(--foreground);
-  font-weight: 700;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.btnImport:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
-
-.btnCreate {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.7rem 1.4rem;
-  border-radius: 12px;
-  border: none;
-  background: var(--primary);
-  color: white;
-  font-weight: 800;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.15s;
-  box-shadow: 0 4px 12px rgba(99,102,241,0.25);
-}
-.btnCreate:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,102,241,0.35); }
-
-/* ── FOLDER SECTION (Google Drive style) ──────────────────────── */
-.sectionTitle {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: var(--foreground);
-  opacity: 0.8;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.folderGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1.25rem;
-}
-
-.folderCard {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-  position: relative;
-}
-.folderCard:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.06);
-  border-color: var(--primary-light);
-  background: var(--primary-light);
-}
-
-.folderIcon {
-  font-size: 1.75rem;
-  line-height: 1;
-}
-
-.folderInfo {
-  flex: 1;
-  min-width: 0;
-}
-.folderName {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--foreground);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.folderMeta {
-  font-size: 0.75rem;
+.fcSidebarSub {
+  font-size: 0.7rem;
   font-weight: 600;
+  color: var(--foreground);
   opacity: 0.5;
-  margin-top: 0.2rem;
+  margin-top: 0.1rem;
 }
 
-/* Kebab menu inside folders/decks */
-.kebabWrap { position: absolute; right: 0.75rem; top: 0.75rem; z-index: 90; }
-.kebabBtn {
-  width: 28px; height: 28px;
-  border-radius: 8px;
+/* Folder button */
+.fcFolderBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
   border: none;
   background: transparent;
   color: var(--foreground);
-  opacity: 0.4;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all 0.15s;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
 }
-.kebabBtn:hover, .kebabBtn:focus { opacity: 1; background: var(--surface-hover); }
+.fcFolderBtn:hover { background: var(--surface-hover); }
+.fcFolderBtnActive {
+  background: var(--primary-light) !important;
+  color: var(--primary) !important;
+}
+.fcFolderBtnCount {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 800;
+  background: rgba(0,0,0,0.07);
+  padding: 0.1rem 0.45rem;
+  border-radius: 99px;
+  flex-shrink: 0;
+}
 
-/* Inverted kebab for dark banners */
-.kebabBtnLight { color: white; opacity: 0.7; }
-.kebabBtnLight:hover { opacity: 1; background: rgba(255,255,255,0.2); }
+.fcSidebarSep { height: 1px; background: var(--border); margin: 0.5rem 0.5rem; }
 
-.menuDropdown {
-  position: absolute;
-  top: calc(100% + 4px); right: 0;
+.fcAddFolderBtn {
+  display: flex; align-items: center; gap: 0.5rem;
+  width: 100%; text-align: left;
+  padding: 0.55rem 0.75rem; border-radius: 10px;
+  border: 1px dashed var(--border); background: transparent;
+  color: var(--primary); font-weight: 700; font-size: 0.85rem;
+  cursor: pointer; transition: all 0.15s; margin-top: 0.25rem;
+}
+.fcAddFolderBtn:hover { background: var(--primary-light); border-style: solid; }
+
+/* Right content panel */
+.fcPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Panel header */
+.fcPanelHeader {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.fcPanelTitle { font-size: 1.25rem; font-weight: 900; color: var(--foreground); }
+.fcPanelMeta { font-size: 0.82rem; font-weight: 600; color: var(--foreground); opacity: 0.5; margin-top: 0.15rem; }
+
+.fcPanelActions { display: flex; gap: 0.5rem; align-items: center; }
+
+/* Panel scrollable body */
+.fcPanelBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem 2rem;
+}
+
+/* Stats row at top of panel */
+.fcStats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.fcStatItem {
+  display: flex; flex-direction: column; gap: 0.1rem;
+  padding: 0.8rem 1.25rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 0.4rem;
-  display: flex; flex-direction: column; gap: 0.1rem;
-  min-width: 180px;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.25);
-  z-index: 99999;
-  animation: popDown 0.15s cubic-bezier(0.16,1,0.3,1);
+  min-width: 90px;
 }
-@keyframes popDown {
-  from { opacity: 0; transform: translateY(-5px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
+.fcStatVal { font-size: 1.35rem; font-weight: 900; color: var(--foreground); }
+.fcStatLbl { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--foreground); opacity: 0.5; }
 
-.menuItem {
-  display: flex; align-items: center; gap: 0.6rem;
-  padding: 0.6rem 0.8rem;
-  border-radius: 8px; border: none; background: transparent;
-  color: var(--foreground); font-weight: 600; font-size: 0.85rem;
-  cursor: pointer; text-align: left; transition: all 0.12s;
-}
-.menuItem:hover { background: var(--surface-hover); }
-.menuDivider { height: 1px; background: var(--border); margin: 0.2rem 0.5rem; }
-.menuItemDanger { color: var(--danger) !important; }
-.menuItemDanger:hover { background: rgba(239,68,68,0.08) !important; }
-
-
-/* ── DECK GRID ────────────────────────────────────────────────── */
-.deckGrid {
+/* Deck card grid */
+.fcGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
 }
 
-/* ── PREMIUM CLEAN UI FLASHCARD DESIGN ────────────────── */
-.fcCard {
+/* --- COMPLETELY NEW FLASHCARD DESIGN (Friendly Stack) --- */
+.fcCardWrap {
+  position: relative;
+  min-height: 220px;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.fcCardStack1, .fcCardStack2 {
+  position: absolute;
+  left: 0; right: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 20px;
-  cursor: pointer;
-  position: relative;
+  transition: all 0.3s cubic-bezier(0.3, 1.5, 0.7, 1);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.fcCardStack1 {
+  top: 6px; bottom: -6px;
+  transform: scale(0.95);
+  z-index: 0;
+  opacity: 0.8;
+  background-color: color-mix(in srgb, var(--surface) 90%, var(--foreground));
+}
+
+.fcCardStack2 {
+  top: 12px; bottom: -12px;
+  transform: scale(0.9);
+  z-index: -1;
+  opacity: 0.5;
+  background-color: color-mix(in srgb, var(--surface) 80%, var(--foreground));
+}
+
+.fcCardWrap:hover .fcCardStack1 {
+  top: 8px; bottom: -8px;
+  transform: scale(0.96) rotate(-2deg);
+}
+
+.fcCardWrap:hover .fcCardStack2 {
+  top: 16px; bottom: -16px;
+  transform: scale(0.92) rotate(2deg);
+}
+
+.fcCard {
+  background-color: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  height: 200px;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 8px 24px -8px rgba(0,0,0,0.06);
+  transition: all 0.3s cubic-bezier(0.3, 1.5, 0.7, 1);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
   z-index: 1;
+  overflow: visible;
 }
-/* Elevate z-index on hover or when active so dropdown naturally falls over siblings */
-.fcCard:hover, .fcCard:focus-within {
-  transform: translateY(-5px);
-  border-color: rgba(0,0,0,0.1);
-  box-shadow: 0 20px 40px -12px rgba(0,0,0,0.12);
+
+.fcCardWrap:hover .fcCard {
+  transform: translateY(-8px);
+  border-color: var(--primary);
+  box-shadow: 0 15px 35px rgba(var(--primary-rgb, 37, 99, 235), 0.15);
   z-index: 50;
 }
 
-/* Subtle left elegant border derived from color rather than full top bar */
-.fcGradientTop {
-  height: auto;
-  padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+/* Friendly Top Color Indicator inside */
+.fcCardIndicator {
+  position: absolute;
+  top: 12px; left: 16px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--deck-color, var(--primary));
+  box-shadow: 0 0 10px var(--deck-color, var(--primary));
+}
+
+/* Folder Card (New) */
+.fcFolderCard {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 2px dashed var(--border);
+  border-radius: 20px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.3, 1.5, 0.7, 1);
+  min-height: 220px;
+}
+.fcFolderCard:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: var(--primary);
+  border-style: solid;
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+.fcFolderIcon {
+  font-size: 4.5rem;
+  margin-bottom: 0.25rem;
+  transition: transform 0.3s ease;
+}
+.fcFolderCard:hover .fcFolderIcon {
+  transform: scale(1.1) rotate(-5deg);
+}
+.fcFolderName {
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: var(--foreground);
+  text-align: center;
+  letter-spacing: -0.2px;
+}
+.fcFolderCount {
+  font-size: 0.85rem;
+  opacity: 0.6;
+  font-weight: 700;
+  color: var(--foreground);
+  background: var(--surface-hover);
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+}
+
+/* Card body - friendly centered layout */
+.fcCardBody {
+  padding: 2.5rem 1.5rem 1rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.6rem;
+}
+
+.fcIconBubble {
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  background: var(--surface-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  margin-bottom: 0.25rem;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.fcCardTitle {
+  font-size: 1.3rem; 
+  font-weight: 900; 
+  color: var(--foreground);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.fcCardDesc {
+  font-size: 0.9rem; 
+  color: var(--foreground); 
+  opacity: 0.55;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  line-height: 1.45;
+}
+
+/* Card footer with progress */
+.fcCardFooter {
+  padding: 1rem 1.25rem;
+  border-top: 1px dashed var(--border);
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  flex-shrink: 0;
-  border-bottom: none;
-  background: transparent !important; /* override inline style */
-}
-/* We use a pseudo element for the color accent to keep it extremely elegant */
-.fcCard::after {
-  content: '';
-  position: absolute;
-  top: 1.5rem; left: 0;
-  width: 4px; height: 28px;
-  border-radius: 0 4px 4px 0;
-  background: var(--primary); /* To be overridden via inline style in React if needed */
-  transition: height 0.3s ease;
-}
-.fcCard:hover::after {
-  height: 40px;
+  align-items: center;
+  margin-top: auto;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  background: rgba(128, 128, 128, 0.05);
 }
 
-/* Elegant Title typography */
-.fcTitleArea {
-  padding: 0 1.5rem;
+.fcCardPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--foreground);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.fcCardCount {
+  font-size: 0.85rem;
+  font-weight: 700;
+  opacity: 0.6;
+}
+
+/* Floating Due Badge */
+.fcDueBadge {
+  position: absolute; 
+  top: 12px; 
+  right: 12px;
+  background: var(--warning);
+  color: #fff;
+  font-size: 0.75rem; 
+  font-weight: 800;
+  padding: 0.35rem 0.7rem; 
+  border-radius: 12px; 
+  z-index: 2;
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+}
+
+/* ===========================================
+   QUIZ: Sidebar + Banner List
+   =========================================== */
+.quizLayout {
   flex: 1;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: calc(100svh - var(--nav-height));
+}
+
+/* Sidebar */
+.quizSidebar {
+  border-right: 1px solid var(--border);
+  background: var(--surface);
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-}
-.fcTitle {
-  font-family: inherit;
-  font-size: 1.25rem;
-  font-weight: 800;
-  line-height: 1.35;
-  color: var(--foreground);
-  letter-spacing: -0.3px;
-}
-.fcDesc {
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: var(--foreground);
-  opacity: 0.5;
-  font-weight: 500;
-  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  padding: 1.5rem 0.75rem;
+  gap: 0.25rem;
+  overflow-y: auto;
 }
 
-/* Minimalist Progress Section */
-.fcProgress {
+.quizSidebarLogo { padding: 0 0.75rem 1rem; border-bottom: 1px solid var(--border); margin-bottom: 0.5rem; }
+.quizSidebarTitle { font-size: 0.85rem; font-weight: 900; color: var(--foreground); letter-spacing: -0.2px; }
+.quizSidebarSub { font-size: 0.7rem; font-weight: 600; color: var(--foreground); opacity: 0.5; margin-top: 0.1rem; }
+
+.quizFolderBtn {
+  display: flex; align-items: center; gap: 0.55rem;
+  width: 100%; text-align: left;
+  padding: 0.55rem 0.75rem; border-radius: 10px;
+  border: none; background: transparent;
+  color: var(--foreground); font-weight: 700; font-size: 0.88rem;
+  cursor: pointer; transition: all 0.15s; position: relative;
+}
+.quizFolderBtn:hover { background: var(--surface-hover); }
+.quizFolderBtnActive {
+  background: var(--primary-light) !important;
+  color: var(--primary) !important;
+}
+.quizFolderBtnCount {
+  margin-left: auto; font-size: 0.68rem; font-weight: 800;
+  background: rgba(0,0,0,0.07); padding: 0.1rem 0.45rem;
+  border-radius: 99px; flex-shrink: 0;
+}
+
+.quizSidebarSep { height: 1px; background: var(--border); margin: 0.5rem; }
+
+.quizAddFolderBtn {
+  display: flex; align-items: center; gap: 0.5rem;
+  width: 100%; text-align: left;
+  padding: 0.55rem 0.75rem; border-radius: 10px;
+  border: 1px dashed var(--border); background: transparent;
+  color: var(--primary); font-weight: 700; font-size: 0.85rem;
+  cursor: pointer; transition: all 0.15s; margin-top: 0.25rem;
+}
+.quizAddFolderBtn:hover { background: var(--primary-light); border-style: solid; }
+
+/* Right panel */
+.quizPanel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.quizPanelHeader {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.5rem 1.5rem 1.5rem;
-  background: transparent;
-  border-top: none;
-}
-
-
-/* ── PREMIUM QUIZ DESIGN ──────────────────────────────────────── */
-.quizCard {
+  justify-content: space-between;
   background: var(--surface);
-  border: 2px solid var(--border);
-  border-radius: 16px;
-  cursor: pointer;
-  position: relative;
-  height: 220px;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+.quizPanelTitle { font-size: 1.25rem; font-weight: 900; color: var(--foreground); }
+.quizPanelMeta { font-size: 0.82rem; font-weight: 600; color: var(--foreground); opacity: 0.5; margin-top: 0.15rem; }
+
+.quizPanelBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem 2rem;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  gap: 0.75rem;
+}
+
+.quizBanner {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+  position: relative;
   z-index: 1;
 }
-.quizCard:hover, .quizCard:focus-within {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-  border-color: rgba(0,0,0,0.2);
+.quizBanner:hover {
+  border-color: var(--primary);
+  box-shadow: 0 6px 24px rgba(99,102,241,0.1);
+  transform: translateX(3px);
   z-index: 50;
 }
 
-/* A subtle grid/blueprint background to give a "test paper" vibe */
-.quizBgGrid {
-  position: absolute; inset: 0; z-index: 0; opacity: 0.05;
-  background-image: linear-gradient(var(--foreground) 1px, transparent 1px), linear-gradient(90deg, var(--foreground) 1px, transparent 1px);
-  background-size: 16px 16px;
-  pointer-events: none;
-}
-
-.quizTop {
-  padding: 1.25rem;
-  border-bottom: 2px solid var(--border);
-  background: var(--background);
+.quizFolderBanner {
   display: flex;
-  gap: 1rem;
+  align-items: center;
+  gap: 1.25rem;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
   position: relative;
   z-index: 1;
 }
+.quizFolderBanner:hover {
+  background-color: var(--surface);
+  border-color: var(--primary);
+  border-style: solid;
+  box-shadow: 0 6px 24px rgba(99,102,241,0.08);
+  transform: translateX(4px);
+  z-index: 50;
+}
 
-.quizIconBox {
-  width: 48px; height: 48px;
-  border-radius: 10px;
+.quizBannerIcon {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: var(--foreground); color: var(--background);
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.5rem; color: white; font-weight: 900;
-  box-shadow: inset 0 -3px 0 rgba(0,0,0,0.15);
+  font-size: 1.3rem; flex-shrink: 0;
+}
+
+.quizBannerMain { flex: 1; min-width: 0; }
+.quizBannerTitle {
+  font-size: 1rem; font-weight: 800; color: var(--foreground);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 0.2rem;
+}
+.quizBannerMeta { font-size: 0.78rem; font-weight: 700; color: var(--foreground); opacity: 0.55; }
+
+.quizBannerSep { width: 1px; height: 32px; background: var(--border); flex-shrink: 0; }
+
+.quizBannerScore { text-align: right; flex-shrink: 0; min-width: 56px; }
+.quizBannerScoreVal { font-size: 1.4rem; font-weight: 900; color: var(--foreground); line-height: 1; font-family: monospace; }
+.quizBannerScoreLbl { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--foreground); opacity: 0.4; }
+
+.quizBannerArrow {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--primary); color: white;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: transform 0.2s;
+}
+.quizBanner:hover .quizBannerArrow { transform: translateX(3px); }
+
+/* ===========================================
+   SHARED: Buttons, Dropdowns, Modals
+   =========================================== */
+
+.btnImport {
+  display: flex; align-items: center; gap: 0.45rem;
+  padding: 0.6rem 1rem; border-radius: 9px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--foreground); font-weight: 700; font-size: 0.85rem;
+  cursor: pointer; transition: all 0.18s; white-space: nowrap;
+}
+.btnImport:hover { border-color: var(--primary); color: var(--primary); }
+
+.btnCreate {
+  display: flex; align-items: center; gap: 0.45rem;
+  padding: 0.6rem 1.1rem; border-radius: 9px; border: none;
+  background: var(--primary); color: white;
+  font-weight: 800; font-size: 0.85rem;
+  cursor: pointer; transition: all 0.18s; white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+}
+.btnCreate:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(99,102,241,0.4); }
+
+.btnSecondary {
+  display: flex; align-items: center; gap: 0.45rem;
+  padding: 0.6rem 1rem; border-radius: 9px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--foreground); font-weight: 700; font-size: 0.85rem;
+  cursor: pointer; transition: all 0.18s; white-space: nowrap;
+}
+.btnSecondary:hover { background: var(--surface); }
+
+/* Context menu system — z-index fully isolated via React state */
+.kebabWrap {
+  position: relative;
   flex-shrink: 0;
 }
 
-.quizInfo { flex: 1; min-width: 0; }
-.quizTitle { font-size: 1.1rem; font-weight: 900; letter-spacing: -0.3px; color: var(--foreground); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.quizMeta { font-size: 0.75rem; font-weight: 700; color: var(--foreground); opacity: 0.5; font-family: monospace; }
-
-.quizBody {
-  padding: 1.25rem;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  z-index: 1;
-}
-.quizScoreLabel { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--foreground); opacity: 0.4; margin-bottom: 0.25rem; }
-.quizScoreValue { font-size: 2rem; font-weight: 900; color: var(--foreground); font-family: monospace; line-height: 1; }
-
-.quizAction {
-  position: absolute; right: 1.25rem; bottom: 1.25rem;
+.kebabBtn {
+  width: 30px; height: 30px; border-radius: 8px; border: none;
+  background: transparent; color: var(--foreground); opacity: 0.4;
   display: flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px; border-radius: 50%;
-  background: var(--foreground); color: var(--background);
-  transition: transform 0.2s;
+  cursor: pointer; transition: all 0.15s;
 }
-.quizCard:hover .quizAction { transform: scale(1.15); }
+.kebabBtn:hover { opacity: 1; background: var(--surface-hover); }
 
-
-/* ── DUE NOTIFICATION (SLICK STATUS TAG) ──────────────────────── */
-.statusTag {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.3rem 0.7rem;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 800;
-  backdrop-filter: blur(8px);
-  z-index: 10;
+/* Dropdown always wins — never clipped */
+.menuDropdown {
+  position: absolute;
+  top: calc(100% + 6px); right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.35rem;
+  display: flex; flex-direction: column; gap: 0.1rem;
+  min-width: 195px;
+  box-shadow: 0 16px 50px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.08);
+  z-index: 99999;
+  animation: menuIn 0.14s cubic-bezier(0.16,1,0.3,1) both;
 }
-.statusDue { background: rgba(239,68,68,0.9); color: white; border: 1px solid rgba(255,100,100,0.4); box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
-.statusDone { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); }
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-5px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
 
-/* SVG Progress Ring */
-.ringWrap { position: relative; width: 36px; height: 36px; flex-shrink: 0; }
-.ringSvg { transform: rotate(-90deg); overflow: visible; }
-.ringBg { fill: none; stroke: var(--border); stroke-width: 3.5; }
-.ringFill { fill: none; stroke-width: 3.5; stroke-linecap: round; transition: stroke-dashoffset 0.6s cubic-bezier(0.4,0,0.2,1); }
-.ringText { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 800; color: var(--foreground); }
+.menuItem {
+  display: flex; align-items: center; gap: 0.55rem;
+  padding: 0.65rem 0.85rem; border-radius: 8px;
+  border: none; background: transparent; color: var(--foreground);
+  font-weight: 600; font-size: 0.88rem; cursor: pointer;
+  text-align: left; width: 100%; transition: background 0.1s;
+}
+.menuItem:hover { background: var(--surface-hover); }
+.menuDivider { height: 1px; background: var(--border); margin: 0.25rem 0.5rem; }
+.menuItemDanger { color: var(--danger) !important; }
+.menuItemDanger:hover { background: rgba(239,68,68,0.07) !important; }
 
-/* ── MODALS (For new folder etc) ──────────────────────────────── */
+/* ── EMPTY STATE ── */
+.emptyState {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 5rem 2rem; text-align: center;
+}
+.emptyIcon { font-size: 3.5rem; margin-bottom: 1rem; opacity: 0.35; }
+.emptyTitle { font-size: 1.2rem; font-weight: 800; margin-bottom: 0.5rem; }
+.emptySub { font-size: 0.9rem; font-weight: 500; opacity: 0.5; max-width: 300px; line-height: 1.6; margin-bottom: 1.5rem; }
+
+/* ── MODALS ── */
 .modalOverlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
-  z-index: 200; display: flex; align-items: center; justify-content: center;
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(6px); z-index: 200;
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
 }
 .folderModal {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
-  padding: 2rem; width: 90%; max-width: 400px;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+  padding: 1.75rem; width: 100%; max-width: 420px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.3); animation: modalIn 0.2s cubic-bezier(0.16,1,0.3,1);
 }
-.folderModalTitle { font-size: 1.25rem; font-weight: 900; margin-bottom: 1.5rem; color: var(--foreground); }
-.emojiPicker { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
-.emojiBtn { width: 44px; height: 44px; border-radius: 12px; border: 2px solid var(--border); background: var(--surface-hover); font-size: 1.4rem; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.93) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.folderModalTitle { font-size: 1.2rem; font-weight: 900; margin-bottom: 1.25rem; color: var(--foreground); }
+.emojiPicker { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+.emojiBtn { width: 40px; height: 40px; border-radius: 10px; border: 2px solid var(--border); background: var(--surface-hover); font-size: 1.25rem; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
 .emojiBtn:hover { transform: scale(1.1); }
 .emojiActive { border-color: var(--primary) !important; background: var(--primary-light) !important; transform: scale(1.1); }
-.modalInput { width: 100%; padding: 0.9rem 1rem; border-radius: 12px; border: 2px solid var(--border); background: var(--background); color: var(--foreground); font-size: 1rem; font-weight: 700; font-family: inherit; margin-bottom: 1.5rem; box-sizing: border-box; transition: border-color 0.15s; }
+.modalInput {
+  width: 100%; padding: 0.85rem 1rem; border-radius: 10px;
+  border: 1.5px solid var(--border); background: var(--background);
+  color: var(--foreground); font-size: 0.95rem; font-weight: 700;
+  font-family: inherit; margin-bottom: 1.25rem; box-sizing: border-box; transition: border-color 0.15s;
+}
 .modalInput:focus { outline: none; border-color: var(--primary); }
-.modalActions { display: flex; gap: 0.75rem; }
-.modalCancel { flex: 1; padding: 0.85rem; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface-hover); color: var(--foreground); font-weight: 800; cursor: pointer; transition: all 0.15s; }
-.modalSave { flex: 1; padding: 0.85rem; border-radius: 12px; border: none; background: var(--primary); color: white; font-weight: 800; cursor: pointer; transition: all 0.15s; box-shadow: 0 4px 12px rgba(99,102,241,0.2); }
-.modalSave:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(99,102,241,0.3); }
+.modalActions { display: flex; gap: 0.65rem; }
+.modalCancel { flex: 1; padding: 0.75rem; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--foreground); font-weight: 800; cursor: pointer; transition: all 0.15s; }
+.modalCancel:hover { background: var(--surface-hover); }
+.modalSave { flex: 1; padding: 0.75rem; border-radius: 10px; border: none; background: var(--primary); color: white; font-weight: 800; cursor: pointer; }
+.modalSave:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* Move Deck List */
-.moveFolderList { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; max-height: 280px; overflow-y: auto; }
-.moveFolderItem { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 1rem; border-radius: 12px; border: 1px solid var(--border); background: var(--background); cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.15s; }
+.moveFolderList { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.1rem; max-height: 260px; overflow-y: auto; }
+.moveFolderItem { display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 1rem; border-radius: 10px; border: 1px solid var(--border); background: var(--background); cursor: pointer; font-weight: 700; font-size: 0.9rem; transition: all 0.15s; }
 .moveFolderItem:hover { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
-.moveFolderItemActive { border-color: var(--primary) !important; background: var(--primary-light) !important; color: var(--primary) !important; font-weight: 800; }
 
-/* Empty state */
-.emptyState { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 1rem; text-align: center; opacity: 0.7; }
-.emptyIcon { font-size: 4rem; margin-bottom: 1rem; filter: grayscale(1) opacity(0.5); }
-.emptyText { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.5rem; }
-.emptySub { font-size: 0.9rem; font-weight: 600; opacity: 0.6; margin-bottom: 1.5rem; max-width: 300px; }
+/* ===========================================
+   RESPONSIVE — MOBILE
+   =========================================== */
 
-/* ── RESPONSIVE ───────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .mainArea { padding: 1.25rem 1rem; gap: 1.5rem; }
-  .headerBar { flex-direction: column; align-items: flex-start; gap: 1rem; }
-  .breadcrumb { font-size: 1.2rem; }
-  .headerActions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
-  .btnImport, .btnCreate { justify-content: center; }
-  .folderGrid, .deckGrid { grid-template-columns: 1fr; }
+/* Tablet: shrink sidebars */
+@media (max-width: 960px) {
+  .fcSidebar, .quizSidebar { width: 200px; padding: 1.25rem 0.6rem; }
+  .quizLayout { grid-template-columns: 200px 1fr; }
+}
+
+/* Mobile: collapse sidebars to top tabs */
+@media (max-width: 700px) {
+  .libraryPage { flex-direction: column; }
+  
+  /* FC Layout: stack vertically */
+  .fcLayout { flex-direction: column; flex: 1; }
+  .fcSidebar {
+    width: 100%; border-right: none; border-bottom: 1px solid var(--border);
+    flex-direction: row; align-items: center; overflow-x: auto; 
+    padding: 0.75rem 1rem;
+    gap: 0.5rem; height: auto; flex-shrink: 0;
+  }
+  .fcSidebar::-webkit-scrollbar { display: none; } /* hide scrollbar for clean tabs */
+  .fcSidebarLogo { display: none; }
+  .fcSidebarSep { display: none; }
+  .fcAddFolderBtn { flex-shrink: 0; white-space: nowrap; margin-top: 0; padding: 0.5rem 0.8rem; width: auto; }
+  .fcFolderBtn { flex-shrink: 0; white-space: nowrap; padding: 0.5rem 0.8rem; width: auto; }
+  .fcFolderBtnCount { display: none; }
+
+  /* Make panel headers full width and wrap properly */
+  .fcPanelHeader { padding: 1rem; flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .fcPanelActions { width: 100%; justify-content: flex-start; }
+  
+  .fcPanelBody { padding: 1rem; }
+  .fcGrid { grid-template-columns: 1fr; gap: 0.85rem; }
+  .fcStats { gap: 0.75rem; margin-bottom: 1rem; }
+  .fcStatItem { padding: 0.8rem 1rem; flex: 1; min-width: 45%; }
+  
+  .fcDueBadge { top: 1rem; right: 2rem; }
+
+  /* Quiz Layout: stack vertically */
+  .quizLayout { display: flex; flex-direction: column; }
+  .quizSidebar {
+    width: 100%; border-right: none; border-bottom: 1px solid var(--border);
+    flex-direction: row; align-items: center; overflow-x: auto; 
+    padding: 0.75rem 1rem;
+    gap: 0.5rem; height: auto; flex-shrink: 0;
+  }
+  .quizSidebar::-webkit-scrollbar { display: none; }
+  .quizSidebarLogo { display: none; }
+  .quizSidebarSep { display: none; }
+  .quizAddFolderBtn { flex-shrink: 0; white-space: nowrap; margin-top: 0; padding: 0.5rem 0.8rem; width: auto; }
+  .quizFolderBtn { flex-shrink: 0; white-space: nowrap; padding: 0.5rem 0.8rem; width: auto; }
+  .quizFolderBtnCount { display: none; }
+
+  .quizPanelHeader { padding: 1rem; flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .quizPanelHeader > button { width: 100%; justify-content: center; } /* Add test button full width on mobile */
+  
+  .quizPanelBody { padding: 1rem; gap: 0.75rem; }
+
+  /* Banner: hide score column on mobile */
+  .quizBannerSep, .quizBannerScore { display: none; }
+  .quizBanner { padding: 1rem; gap: 0.75rem; border-radius: 16px; }
+  .quizBannerIcon { font-size: 1.8rem; width: 45px; height: 45px; }
+  .quizBannerTitle { font-size: 1rem; }
+  .quizBannerMeta { font-size: 0.75rem; }
+
+  /* Dropdown: right-align protection on small screens */
+  .menuDropdown { right: auto; left: -10vw; bottom: calc(100% + 5px); top: auto; }
 }
