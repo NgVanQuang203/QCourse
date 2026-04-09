@@ -863,6 +863,41 @@
     font-size: 0.82rem;
   }
 
+  /* ── STATS SECTION ── */
+  .statsContainer {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .statItem {
+    padding: 1.5rem 1rem;
+  }
+  .statItem:nth-child(2) {
+    border-right: none;
+  }
+  .statItem:nth-child(1), .statItem:nth-child(2) {
+    border-bottom: 1px solid var(--border);
+  }
+  .statValue {
+    font-size: 1.7rem;
+  }
+
+  /* ── HOW IT WORKS SECTION ── */
+  .howSection {
+    padding: 3rem 1.25rem;
+  }
+  .sectionTitle {
+    font-size: 1.75rem;
+  }
+  .sectionHeader {
+    margin-bottom: 2rem;
+  }
+  .stepsGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .stepCard {
+    padding: 1.75rem 1.25rem;
+  }
+
   /* ── LIBRARY HERO ── */
   .hero {
     padding: 1.75rem 1.5rem;
@@ -962,6 +997,10 @@
   .homeCard {
     flex-direction: column;
     text-align: center;
+  }
+
+  .stepsGrid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
