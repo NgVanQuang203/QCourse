@@ -290,9 +290,9 @@
 
 /* Folder Card (New) */
 .fcFolderCard {
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 5px solid var(--primary);
+  background-color: hsla(var(--folder-hue, 0), 80%, 95%, 0.6);
+  border: 1px solid hsla(var(--folder-hue, 0), 80%, 85%, 0.8);
+  border-left: 5px solid hsla(var(--folder-hue, 0), 70%, 60%, 1);
   border-radius: 20px;
   padding: 1.5rem;
   display: flex;
@@ -304,12 +304,19 @@
   transition: all 0.3s cubic-bezier(0.3, 1.5, 0.7, 1);
   min-height: 220px;
 }
+:global(html.dark) .fcFolderCard {
+  background-color: hsla(var(--folder-hue, 0), 30%, 14%, 0.8);
+  border-color: hsla(var(--folder-hue, 0), 30%, 20%, 0.8);
+  border-left-color: hsla(var(--folder-hue, 0), 60%, 50%, 1);
+}
 .fcFolderCard:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: var(--primary);
-  border-style: solid;
+  background-color: hsla(var(--folder-hue, 0), 80%, 92%, 0.8);
+  border-color: hsla(var(--folder-hue, 0), 70%, 50%, 0.5);
   transform: translateY(-5px);
   box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+:global(html.dark) .fcFolderCard:hover {
+  background-color: hsla(var(--folder-hue, 0), 30%, 18%, 1);
 }
 
 .fcFolderCardDragOver {

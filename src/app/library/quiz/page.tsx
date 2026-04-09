@@ -45,6 +45,7 @@ export default function QuizLibrary() {
   };
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [editDeck, setEditDeck] = useState<string | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [deleteDeckId, setDeleteDeckId] = useState<string | null>(null);
   const [resetDeckId, setResetDeckId] = useState<string | null>(null);
@@ -60,6 +61,22 @@ export default function QuizLibrary() {
     moveDeckToFolder, addFolder, updateFolder, deleteFolder,
     addDeck, fetchDeckCards, importCards,
   } = useStore();
+
+  const PASTEL_COLORS = [
+    'rgba(255, 209, 220, 0.4)', // Pink
+    'rgba(224, 247, 250, 0.4)', // Cyan
+    'rgba(232, 245, 233, 0.4)', // Green
+    'rgba(255, 249, 196, 0.4)', // Yellow
+    'rgba(243, 229, 245, 0.4)', // Purple
+    'rgba(255, 243, 224, 0.4)', // Orange
+    'rgba(225, 190, 231, 0.4)', // Deep Purple
+    'rgba(187, 222, 251, 0.4)', // Blue
+  ];
+  const getFolderColor = (id: string) => {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    return PASTEL_COLORS[Math.abs(hash) % PASTEL_COLORS.length];
+  };
 
   const quizDecks = decks.filter((d: any) => d.type === 'QUIZ');
   const quizFolders = folders.filter((f: any) => f.type === 'QUIZ');
@@ -203,7 +220,7 @@ export default function QuizLibrary() {
           </button>
 
           {quizFolders.map(f => {
-            const fMenuOpen = menuOpenId === `f_${f.id}`;
+            const fMenuOpen = menuOpenId === `qs_${f.id}`;
             const count = quizDecks.filter(d => d.folderId === f.id).length;
             return (
               <div key={f.id} style={{ position: 'relative' }}>
@@ -222,9 +239,9 @@ export default function QuizLibrary() {
                       y: e.clientY,
                       items: [
                         { label: 'Mở danh mục', icon: <Plus size={14}/>, onClick: () => setCurrentFolderId(f.id) },
-                        { label: 'Sửa danh mục', icon: <Edit2 size={14}/>, onClick: () => openEditFolder(e, f) },
+                        { label: 'Sửa danh mục', icon: <Edit2 size={14}/>, onClick: () => { setEditingFolder(f); setFolderForm({ name: f.name, icon: f.icon }); setIsFolderModalOpen(true); } },
                         { divider: true, label: '', onClick: () => {} },
-                        { label: 'Xóa danh mục', icon: <Trash2 size={14}/>, variant: 'danger', onClick: () => setDeleteDeckId(`f_${f.id}`) },
+                        { label: 'Xóa danh mục', icon: <Trash2 size={14}/>, variant: 'danger', onClick: () => { setDeleteDeckId(`f_${f.id}`); setMenuOpenId(null); } },
                       ]
                     });
                   }}
@@ -236,7 +253,7 @@ export default function QuizLibrary() {
                   style={{ position: 'absolute', right: '0.4rem', top: 0, bottom: 0, display: 'flex', alignItems: 'center', zIndex: fMenuOpen ? 9999 : 20 }}
                   onClick={e => e.stopPropagation()}
                 >
-                  <button className={lib.kebabBtn} onClick={() => setMenuOpenId(fMenuOpen ? null : `f_${f.id}`)}>
+                  <button className={lib.kebabBtn} onClick={() => setMenuOpenId(fMenuOpen ? null : `qs_${f.id}`)}>
                     <MoreVertical size={14} />
                   </button>
                   {fMenuOpen && (
@@ -322,6 +339,7 @@ export default function QuizLibrary() {
               <>
                 {visibleFolders.map((f: any) => {
                   const deckCount = quizDecks.filter((d: any) => d.folderId === f.id).length;
+                  const fMenuOpen = menuOpenId === `qg_${f.id}`;
                   return (
                     <div 
                       key={`folder_${f.id}`} 
@@ -330,6 +348,7 @@ export default function QuizLibrary() {
                       onDragOver={(e) => { e.preventDefault(); setDragOverFolderId(f.id); }}
                       onDragLeave={() => setDragOverFolderId(null)}
                       onDrop={(e) => handleDropOnFolder(e, f.id)}
+                      style={{ backgroundColor: getFolderColor(f.id) }}
                       onContextMenu={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -349,8 +368,35 @@ export default function QuizLibrary() {
                         <div className={lib.quizBannerTitle}>{f.name}</div>
                         <div className={lib.quizBannerMeta}>{deckCount} đề thi trong mục này</div>
                       </div>
-                      <div className={lib.quizPlayBtn}>
-                        <ChevronRight size={16} />
+
+                      {/* Kebab and Play aligned */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div
+                          className={lib.kebabWrap}
+                          onClick={e => e.stopPropagation()}
+                          style={{ zIndex: fMenuOpen ? 9999 : 20 }}
+                        >
+                          <button
+                            className={lib.kebabBtn}
+                            onClick={() => setMenuOpenId(fMenuOpen ? null : `qg_${f.id}`)}
+                          >
+                            <MoreVertical size={16} />
+                          </button>
+                          {fMenuOpen && (
+                            <div className={lib.menuDropdown} style={{ right: 0 }}>
+                              <button className={lib.menuItem} onClick={e => openEditFolder(e, f)}>
+                                <Edit2 size={13} /> Sửa danh mục
+                              </button>
+                              <button className={`${lib.menuItem} ${lib.menuItemDanger}`} onClick={() => { setDeleteDeckId(`f_${f.id}`); setMenuOpenId(null); }}>
+                                <Trash2 size={13} /> Xóa danh mục
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className={lib.quizPlayBtn}>
+                          <ChevronRight size={16} />
+                        </div>
                       </div>
                     </div>
                   );

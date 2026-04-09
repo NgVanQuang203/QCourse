@@ -48,7 +48,23 @@ export default function FlashcardLibrary() {
   };
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [editDeck, setEditDeck] = useState<string | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const PASTEL_COLORS = [
+    'rgba(255, 209, 220, 0.4)', // Pink
+    'rgba(224, 247, 250, 0.4)', // Cyan
+    'rgba(232, 245, 233, 0.4)', // Green
+    'rgba(255, 249, 196, 0.4)', // Yellow
+    'rgba(243, 229, 245, 0.4)', // Purple
+    'rgba(255, 243, 224, 0.4)', // Orange
+    'rgba(225, 190, 231, 0.4)', // Deep Purple
+    'rgba(187, 222, 251, 0.4)', // Blue
+  ];
+  const getFolderColor = (id: string) => {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    return PASTEL_COLORS[Math.abs(hash) % PASTEL_COLORS.length];
+  };
   const [deleteDeckId, setDeleteDeckId] = useState<string | null>(null);
   const [resetDeckId, setResetDeckId] = useState<string | null>(null);
   const [moveDeckId, setMoveDeckId] = useState<string | null>(null);
@@ -215,7 +231,7 @@ export default function FlashcardLibrary() {
 
       {/* Folder list */}
       {flashFolders.map(f => {
-        const fMenuOpen = menuOpenId === `f_${f.id}`;
+        const fMenuOpen = menuOpenId === `fs_${f.id}`;
         return (
           <div key={f.id} style={{ position: 'relative' }}>
             <button
@@ -254,7 +270,7 @@ export default function FlashcardLibrary() {
             >
               <button
                 className={lib.kebabBtn}
-                onClick={() => setMenuOpenId(fMenuOpen ? null : `f_${f.id}`)}
+                onClick={() => setMenuOpenId(fMenuOpen ? null : `fs_${f.id}`)}
               >
                 <MoreVertical size={14} />
               </button>
@@ -513,32 +529,58 @@ export default function FlashcardLibrary() {
             {/* Render folders first in ALL view */}
             {visibleFolders.map((f: any) => {
                const deckCount = flashDecks.filter((d: any) => d.folderId === f.id).length;
+               const fMenuOpen = menuOpenId === `fg_${f.id}`;
                return (
-                 <div 
-                  key={`folder_${f.id}`} 
-                  className={`${lib.fcFolderCard} ${dragOverFolderId === f.id ? lib.fcFolderCardDragOver : ''}`} 
-                  onClick={() => setActiveFolderId(f.id)}
-                  onDragOver={(e) => { e.preventDefault(); setDragOverFolderId(f.id); }}
-                  onDragLeave={() => setDragOverFolderId(null)}
-                  onDrop={(e) => handleDropOnFolder(e, f.id)}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setContextMenu({
-                      x: e.clientX,
-                      y: e.clientY,
-                      items: [
-                        { label: 'Mở thư mục', icon: <FolderIcon size={14}/>, onClick: () => setActiveFolderId(f.id) },
-                        { label: 'Đổi tên/icon', icon: <Edit2 size={14}/>, onClick: () => { setEditingFolder(f); setFolderForm({ name: f.name, icon: f.icon }); setIsFolderModalOpen(true); } },
-                        { label: 'Xóa thư mục', icon: <Trash2 size={14}/>, variant: 'danger', onClick: () => setDeleteDeckId(`f_${f.id}`) },
-                      ]
-                    });
-                  }}
-                 >
-                   <div className={lib.fcFolderIcon}>{f.icon}</div>
-                   <div className={lib.fcFolderName}>{f.name}</div>
-                   <div className={lib.fcFolderCount}>{deckCount} bộ thẻ</div>
-                 </div>
+                  <div 
+                   key={`folder_${f.id}`} 
+                   className={`${lib.fcFolderCard} ${dragOverFolderId === f.id ? lib.fcFolderCardDragOver : ''}`} 
+                   onClick={() => setActiveFolderId(f.id)}
+                   onDragOver={(e) => { e.preventDefault(); setDragOverFolderId(f.id); }}
+                   onDragLeave={() => setDragOverFolderId(null)}
+                   onDrop={(e) => handleDropOnFolder(e, f.id)}
+                   style={{ position: 'relative', backgroundColor: getFolderColor(f.id) }}
+                   onContextMenu={(e) => {
+                     e.preventDefault();
+                     e.stopPropagation();
+                     setContextMenu({
+                       x: e.clientX,
+                       y: e.clientY,
+                       items: [
+                         { label: 'Mở thư mục', icon: <FolderIcon size={14}/>, onClick: () => setActiveFolderId(f.id) },
+                         { label: 'Đổi tên/icon', icon: <Edit2 size={14}/>, onClick: () => { setEditingFolder(f); setFolderForm({ name: f.name, icon: f.icon }); setIsFolderModalOpen(true); } },
+                         { label: 'Xóa thư mục', icon: <Trash2 size={14}/>, variant: 'danger', onClick: () => setDeleteDeckId(`f_${f.id}`) },
+                       ]
+                     });
+                   }}
+                  >
+                    <div className={lib.fcFolderIcon}>{f.icon}</div>
+                    <div className={lib.fcFolderName}>{f.name}</div>
+                    <div className={lib.fcFolderCount}>{deckCount} bộ thẻ</div>
+
+                    {/* Kebab */}
+                    <div
+                      className={lib.kebabWrap}
+                      onClick={e => e.stopPropagation()}
+                      style={{ position: 'absolute', top: '1rem', right: '1rem', zIndex: fMenuOpen ? 9999 : 20 }}
+                    >
+                      <button
+                        className={lib.kebabBtn}
+                        onClick={() => setMenuOpenId(fMenuOpen ? null : `fg_${f.id}`)}
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+                      {fMenuOpen && (
+                        <div className={lib.menuDropdown} style={{ right: 0 }}>
+                          <button className={lib.menuItem} onClick={e => openEditFolder(e, f)}>
+                            <Edit2 size={13} /> Sửa thư mục
+                          </button>
+                          <button className={`${lib.menuItem} ${lib.menuItemDanger}`} onClick={() => { setDeleteDeckId(`f_${f.id}`); setMenuOpenId(null); }}>
+                            <Trash2 size={13} /> Xóa thư mục
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                );
             })}
             
