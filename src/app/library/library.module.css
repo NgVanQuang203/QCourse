@@ -598,9 +598,9 @@
   display: flex;
   align-items: center;
   gap: 1.25rem;
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 4px solid var(--primary); /* Distinguished folder left border */
+  background-color: hsla(var(--folder-hue, 0), 80%, 96%, 0.6);
+  border: 1px solid hsla(var(--folder-hue, 0), 80%, 90%, 0.8);
+  border-left: 4px solid hsla(var(--folder-hue, 0), 70%, 55%, 1); /* Distinguished folder left border */
   border-radius: 14px;
   padding: 1.1rem 1.25rem;
   cursor: pointer;
@@ -608,12 +608,20 @@
   position: relative;
   z-index: 1;
 }
+:global(html.dark) .quizFolderBanner {
+  background-color: hsla(var(--folder-hue, 0), 30%, 12%, 0.7);
+  border-color: hsla(var(--folder-hue, 0), 30%, 18%, 0.8);
+  border-left-color: hsla(var(--folder-hue, 0), 60%, 45%, 1);
+}
 .quizFolderBanner:hover {
-  background-color: rgba(99, 102, 241, 0.05);
-  border-color: var(--primary);
-  box-shadow: 0 6px 24px rgba(99,102,241,0.12);
+  background-color: hsla(var(--folder-hue, 0), 80%, 94%, 0.8);
+  border-color: hsla(var(--folder-hue, 0), 70%, 50%, 0.5);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.08);
   transform: translateX(4px);
   z-index: 50;
+}
+:global(html.dark) .quizFolderBanner:hover {
+  background-color: hsla(var(--folder-hue, 0), 30%, 16%, 1);
 }
 
 .quizFolderIcon {

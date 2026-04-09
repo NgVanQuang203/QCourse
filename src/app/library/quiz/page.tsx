@@ -62,20 +62,10 @@ export default function QuizLibrary() {
     addDeck, fetchDeckCards, importCards,
   } = useStore();
 
-  const PASTEL_COLORS = [
-    'rgba(255, 209, 220, 0.4)', // Pink
-    'rgba(224, 247, 250, 0.4)', // Cyan
-    'rgba(232, 245, 233, 0.4)', // Green
-    'rgba(255, 249, 196, 0.4)', // Yellow
-    'rgba(243, 229, 245, 0.4)', // Purple
-    'rgba(255, 243, 224, 0.4)', // Orange
-    'rgba(225, 190, 231, 0.4)', // Deep Purple
-    'rgba(187, 222, 251, 0.4)', // Blue
-  ];
-  const getFolderColor = (id: string) => {
+  const getFolderHue = (id: string) => {
     let hash = 0;
     for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
-    return PASTEL_COLORS[Math.abs(hash) % PASTEL_COLORS.length];
+    return Math.abs(hash) % 360;
   };
 
   const quizDecks = decks.filter((d: any) => d.type === 'QUIZ');
@@ -348,7 +338,7 @@ export default function QuizLibrary() {
                       onDragOver={(e) => { e.preventDefault(); setDragOverFolderId(f.id); }}
                       onDragLeave={() => setDragOverFolderId(null)}
                       onDrop={(e) => handleDropOnFolder(e, f.id)}
-                      style={{ backgroundColor: getFolderColor(f.id) }}
+                      style={{ '--folder-hue': getFolderHue(f.id) } as any}
                       onContextMenu={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
