@@ -54,7 +54,7 @@ export default function FlashcardLibrary() {
   const [moveDeckId, setMoveDeckId] = useState<string | null>(null);
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
-  const [folderForm, setFolderForm] = useState({ name: '', icon: '📁' });
+  const [folderForm, setFolderForm] = useState({ name: '', icon: '📂' });
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
 
@@ -80,6 +80,7 @@ export default function FlashcardLibrary() {
   // Deck count per folder for sidebar badge
   const countForFolder = (fid: string) => flashDecks.filter(d => d.folderId === fid).length;
   const uncategorizedCount = flashDecks.filter(d => !d.folderId).length;
+  const totalTopEntries = flashFolders.length + uncategorizedCount;
 
   const totalCards = flashDecks.reduce((s, d) => s + (d._count?.cards ?? 0), 0);
   const dueTotal = flashDecks.reduce((s, d) => s + (d.dueCount ?? 0), 0);
@@ -209,7 +210,7 @@ export default function FlashcardLibrary() {
         onDrop={(e) => handleDropOnFolder(e, 'all')}
       >
         <LayoutGrid size={15} /> Tất cả
-        <span className={lib.fcFolderBtnCount}>{flashDecks.length}</span>
+        <span className={lib.fcFolderBtnCount}>{totalTopEntries}</span>
       </button>
 
       {/* Folder list */}
@@ -290,7 +291,7 @@ export default function FlashcardLibrary() {
 
       <button
         className={lib.fcAddFolderBtn}
-        onClick={() => { setEditingFolder(null); setFolderForm({ name: '', icon: '📁' }); setIsFolderModalOpen(true); }}
+        onClick={() => { setEditingFolder(null); setFolderForm({ name: '', icon: '📂' }); setIsFolderModalOpen(true); }}
       >
         + Thư mục mới
       </button>

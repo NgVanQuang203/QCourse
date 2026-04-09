@@ -72,6 +72,10 @@ export default function QuizLibrary() {
   const visibleFolders = isAllView ? quizFolders : [];
   const currentFolder = isAllView ? null : quizFolders.find((f: any) => f.id === currentFolderId);
 
+  // Count top-level items for "All" view
+  const rootDecks = quizDecks.filter(d => !d.folderId);
+  const totalTopEntries = quizFolders.length + rootDecks.length;
+
   const confirmDelete = async () => {
     if (!deleteDeckId) return;
     if (deleteDeckId.startsWith('f_')) {
@@ -171,7 +175,17 @@ export default function QuizLibrary() {
     <div className={lib.libraryPage} onClick={() => setMenuOpenId(null)}>
       <div className={lib.quizLayout}>
         {/* ── SIDEBAR ── */}
-        <aside className={lib.quizSidebar}>
+        <aside className={lib.quizSidebar} onContextMenu={(e) => {
+          e.preventDefault();
+          setContextMenu({
+            x: e.clientX,
+            y: e.clientY,
+            items: [
+              { label: 'Thêm danh mục', icon: <Plus size={14}/>, onClick: () => { setEditingFolder(null); setFolderForm({ name: '', icon: '📂' }); setIsFolderModalOpen(true); } },
+              { label: 'Làm mới thư viện', icon: <RefreshCcw size={14}/>, onClick: () => refreshStats() },
+            ]
+          });
+        }}>
           <div className={lib.quizSidebarLogo}>
             <div className={lib.quizSidebarTitle}>🎯 Trắc Nghiệm</div>
             <div className={lib.quizSidebarSub}>{quizDecks.length} đề · {quizFolders.length} danh mục</div>
@@ -185,7 +199,7 @@ export default function QuizLibrary() {
             onDrop={(e) => handleDropOnFolder(e, 'all')}
           >
             🗂️ Tất cả
-            <span className={lib.quizFolderBtnCount}>{quizDecks.length}</span>
+            <span className={lib.quizFolderBtnCount}>{totalTopEntries}</span>
           </button>
 
           {quizFolders.map(f => {
@@ -243,7 +257,7 @@ export default function QuizLibrary() {
           <div className={lib.quizSidebarSep} />
           <button
             className={lib.quizAddFolderBtn}
-            onClick={() => { setEditingFolder(null); setFolderForm({ name: '', icon: '📝' }); setIsFolderModalOpen(true); }}
+            onClick={() => { setEditingFolder(null); setFolderForm({ name: '', icon: '📂' }); setIsFolderModalOpen(true); }}
           >
             + Thêm danh mục
           </button>
@@ -330,7 +344,7 @@ export default function QuizLibrary() {
                         });
                       }}
                     >
-                      <div className={lib.quizBannerIcon}>{f.icon || '📁'}</div>
+                      <div className={lib.quizFolderIcon}>{f.icon || '📂'}</div>
                       <div className={lib.quizBannerMain}>
                         <div className={lib.quizBannerTitle}>{f.name}</div>
                         <div className={lib.quizBannerMeta}>{deckCount} đề thi trong mục này</div>
@@ -368,7 +382,7 @@ export default function QuizLibrary() {
                           { label: 'Chỉnh sửa', icon: <Edit2 size={14}/>, onClick: () => setEditDeck(deck.id) },
                           { label: 'Chuyển danh mục', icon: <FolderInput size={14}/>, onClick: () => setMoveDeckId(deck.id) },
                           { label: 'Nhân bản', icon: <RefreshCcw size={14}/>, onClick: () => duplicateQuiz(deck.id) },
-                          { label: 'Sao chép liên kết', icon: <Plus size={14}/>, onClick: () => copyQuizLink(deck.id) },
+                          { label: 'Sao chép liên kết', icon: <Copy size={14}/>, onClick: () => copyQuizLink(deck.id) },
                           { divider: true, label: '', onClick: () => {} },
                           { label: 'Xoá lịch sử thi', icon: <RefreshCcw size={14}/>, onClick: () => setResetDeckId(deck.id) },
                           { label: 'Xóa đề thi', icon: <Trash2 size={14}/>, variant: 'danger', onClick: () => setDeleteDeckId(deck.id) },
