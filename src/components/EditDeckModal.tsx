@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { Deck } from '@/lib/mockData';
 import styles from './EditDeckModal.module.css';
-import { X, Plus, Trash2, Save, Edit3, ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { X, Plus, Trash2, Save, Edit3, ChevronDown, ChevronUp, Check, RefreshCcw } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
 
 const GRADIENT_PRESETS = [
@@ -48,20 +48,26 @@ export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }
   const [saved, setSaved] = useState(false);
   const [activeSection, setActiveSection] = useState<'info' | 'cards'>('info');
   const [currentDeckId, setCurrentDeckId] = useState<string | null>(deckId);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleSaveDeck = async () => {
-    if (!deckForm.name.trim()) return;
-    if (isNew && !currentDeckId) {
-      const newId = await addDeck({ ...deckForm, folderId: initialFolderId ?? null, type: 'FLASHCARD' });
-      if (newId) {
-        setCurrentDeckId(newId);
-        setActiveSection('cards');
+    if (!deckForm.name.trim() || isSaving) return;
+    setIsSaving(true);
+    try {
+      if (isNew && !currentDeckId) {
+        const newId = await addDeck({ ...deckForm, folderId: initialFolderId ?? null, type: 'FLASHCARD' });
+        if (newId) {
+          setCurrentDeckId(newId);
+          setActiveSection('cards');
+        }
+      } else if (currentDeckId) {
+        await updateDeck(currentDeckId, deckForm);
       }
-    } else if (currentDeckId) {
-      await updateDeck(currentDeckId, deckForm);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } finally {
+      setIsSaving(false);
     }
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
   };
 
   const handleStartEditCard = (cardId: string) => {
@@ -81,21 +87,31 @@ export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }
   };
 
   const handleSaveCard = async () => {
-    if (!editingCardId || !cardForm.front.trim()) return;
-    const opts = mode === 'quiz' ? [cardForm.option1, cardForm.option2, cardForm.option3, cardForm.option4].filter(Boolean) : undefined;
-    await updateCard(editingCardId, {
-      front: cardForm.front,
-      back: cardForm.back,
-      ...(mode === 'quiz' && opts ? { options: opts, correctOptionIndex: cardForm.correct } : {}),
-    });
-    setEditingCardId(null);
+    if (!editingCardId || !cardForm.front.trim() || isSaving) return;
+    setIsSaving(true);
+    try {
+      const opts = mode === 'quiz' ? [cardForm.option1, cardForm.option2, cardForm.option3, cardForm.option4].filter(Boolean) : undefined;
+      await updateCard(editingCardId, {
+        front: cardForm.front,
+        back: cardForm.back,
+        ...(mode === 'quiz' && opts ? { options: opts, correctOptionIndex: cardForm.correct } : {}),
+      });
+      setEditingCardId(null);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAddCard = async () => {
-    if (!newCardForm.front.trim() || !currentDeckId) return;
-    await addCard({ deckId: currentDeckId, front: newCardForm.front, back: newCardForm.back });
-    setNewCardForm({ front: '', back: '' });
-    setAddingCard(false);
+    if (!newCardForm.front.trim() || !currentDeckId || isSaving) return;
+    setIsSaving(true);
+    try {
+      await addCard({ deckId: currentDeckId, front: newCardForm.front, back: newCardForm.back });
+      setNewCardForm({ front: '', back: '' });
+      setAddingCard(false);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDeleteCard = (cardId: string) => {
@@ -171,8 +187,9 @@ export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }
 
               <div className={styles.formActions}>
                 <button className={styles.btnCancel} onClick={onClose}>Huỷ</button>
-                <button className={styles.btnSave} onClick={handleSaveDeck} disabled={!deckForm.name.trim()}>
-                  <Save size={15} /> {isNew && !currentDeckId ? 'Tạo & thêm thẻ →' : 'Lưu thay đổi'}
+                <button className={styles.btnSave} onClick={handleSaveDeck} disabled={!deckForm.name.trim() || isSaving}>
+                  {isSaving ? <RefreshCcw size={15} style={{ animation: 'spin 1.2s linear infinite' }} /> : <Save size={15} />}
+                  {isSaving ? 'Đang lưu...' : (isNew && !currentDeckId ? 'Tạo & thêm thẻ →' : 'Lưu thay đổi')}
                 </button>
               </div>
             </div>
@@ -203,8 +220,9 @@ export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }
                   </div>
                   <div className={styles.newCardActions}>
                     <button className={styles.btnGhost} onClick={() => setAddingCard(false)}><X size={14} /> Huỷ</button>
-                    <button className={styles.btnSave} onClick={handleAddCard} disabled={!newCardForm.front.trim()}>
-                      <Plus size={14} /> Thêm thẻ
+                    <button className={styles.btnSave} onClick={handleAddCard} disabled={!newCardForm.front.trim() || isSaving}>
+                      {isSaving ? <RefreshCcw size={14} style={{ animation: 'spin 1.2s linear infinite' }} /> : <Plus size={14} />}
+                      {isSaving ? 'Đang thêm...' : 'Thêm thẻ'}
                     </button>
                   </div>
                 </div>
@@ -252,7 +270,10 @@ export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }
                         )}
                         <div className={styles.newCardActions}>
                           <button className={styles.btnGhost} onClick={() => setEditingCardId(null)}><X size={14} /> Huỷ</button>
-                          <button className={styles.btnSave} onClick={handleSaveCard}><Save size={14} /> Lưu thẻ</button>
+                          <button className={styles.btnSave} onClick={handleSaveCard} disabled={isSaving}>
+                            {isSaving ? <RefreshCcw size={14} style={{ animation: 'spin 1.2s linear infinite' }} /> : <Save size={14} />}
+                            {isSaving ? 'Đang lưu...' : 'Lưu thẻ'}
+                          </button>
                         </div>
                       </div>
                     ) : (

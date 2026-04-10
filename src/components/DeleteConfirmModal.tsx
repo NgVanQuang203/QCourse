@@ -1,14 +1,15 @@
-import { AlertTriangle, Trash2, ArrowLeft } from 'lucide-react';
+import { AlertTriangle, Trash2, ArrowLeft, RefreshCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
   isOpen: boolean;
   deckName: string;
+  isLoading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export default function DeleteConfirmModal({ isOpen, deckName, onConfirm, onCancel }: Props) {
+export default function DeleteConfirmModal({ isOpen, deckName, isLoading = false, onConfirm, onCancel }: Props) {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -19,7 +20,7 @@ export default function DeleteConfirmModal({ isOpen, deckName, onConfirm, onCanc
             display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          onClick={e => { if (e.target === e.currentTarget) onCancel(); }}
+          onClick={e => { if (e.target === e.currentTarget && !isLoading) onCancel(); }}
         >
           <motion.div
             style={{
@@ -46,36 +47,47 @@ export default function DeleteConfirmModal({ isOpen, deckName, onConfirm, onCanc
             </div>
 
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--foreground)', marginBottom: '0.5rem' }}>
-              Xoá bộ bài này?
+              Xoá mục này?
             </h3>
             <p style={{ fontSize: '0.95rem', color: 'var(--foreground)', opacity: 0.6, marginBottom: '2rem', lineHeight: 1.5 }}>
-              Bạn đang xoá bộ bài <strong style={{ color: 'var(--foreground)', opacity: 1 }}>"{deckName}"</strong>. Toàn bộ thẻ và dữ liệu ôn tập bên trong sẽ bị xoá vĩnh viễn và không thể khôi phục.
+              Bạn đang xoá <strong style={{ color: 'var(--foreground)', opacity: 1 }}>"{deckName}"</strong>. Toàn bộ dữ liệu bên trong sẽ bị xoá vĩnh viễn và không thể khôi phục.
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <button
                 onClick={onCancel}
+                disabled={isLoading}
                 style={{
                   background: 'var(--surface-hover)', border: '1px solid var(--border)',
                   color: 'var(--foreground)', borderRadius: '12px', padding: '0.75rem',
-                  fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                  fontWeight: 700, fontSize: '0.95rem', cursor: isLoading ? 'default' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                  opacity: isLoading ? 0.5 : 1, transition: 'all 0.2s ease',
+                  pointerEvents: isLoading ? 'none' : 'auto',
                 }}
               >
                 <ArrowLeft size={16} /> Huỷ bỏ
               </button>
               <button
                 onClick={onConfirm}
+                disabled={isLoading}
                 style={{
                   background: 'var(--danger)', border: 'none',
                   color: 'white', borderRadius: '12px', padding: '0.75rem',
-                  fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                  fontWeight: 700, fontSize: '0.95rem', cursor: isLoading ? 'default' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                  opacity: isLoading ? 0.7 : 1, transition: 'all 0.2s ease'
                 }}
               >
-                <Trash2 size={16} /> Xoá vĩnh viễn
+                {isLoading ? (
+                  <RefreshCcw size={16} style={{ animation: 'spin 1.2s linear infinite' }} />
+                ) : (
+                  <Trash2 size={16} />
+                )}
+                {isLoading ? 'Đang xoá...' : 'Xoá vĩnh viễn'}
               </button>
             </div>
+            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
           </motion.div>
         </motion.div>
       )}

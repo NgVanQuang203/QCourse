@@ -61,6 +61,7 @@ export default function FlashcardLibrary() {
   const [folderForm, setFolderForm] = useState({ name: '', icon: '📁' });
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const {
     decks, folders, isLoading, deleteDeck, refreshStats,
@@ -97,35 +98,51 @@ export default function FlashcardLibrary() {
   const masteredTotal = flashDecks.reduce((s, d) => s + (d.masteredCount ?? 0), 0);
 
   const confirmDelete = async () => {
-    if (!deleteDeckId) return;
-    if (deleteDeckId.startsWith('f_')) {
-      const fid = deleteDeckId.replace('f_', '');
-      await deleteFolder(fid);
-      if (activeFolderId === fid) setActiveFolderId('all');
-    } else {
-      await deleteDeck(deleteDeckId);
+    if (!deleteDeckId || isProcessing) return;
+    setIsProcessing(true);
+    try {
+      if (deleteDeckId.startsWith('f_')) {
+        const fid = deleteDeckId.replace('f_', '');
+        await deleteFolder(fid);
+        if (activeFolderId === fid) setActiveFolderId('all');
+      } else {
+        await deleteDeck(deleteDeckId);
+      }
+      setDeleteDeckId(null);
+    } finally {
+      setIsProcessing(false);
     }
-    setDeleteDeckId(null);
   };
 
   const confirmReset = async (deckId: string) => {
-    await fetch(`/api/decks/${deckId}/reset`, { method: 'POST' });
-    await refreshStats();
-    toast.success('Đã làm mới tiến độ học tập');
-    setResetDeckId(null);
+    if (isProcessing) return;
+    setIsProcessing(true);
+    try {
+      await fetch(`/api/decks/${deckId}/reset`, { method: 'POST' });
+      await refreshStats();
+      toast.success('Đã làm mới tiến độ học tập');
+      setResetDeckId(null);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleSaveFolder = async () => {
-    if (!folderForm.name.trim()) return;
-    if (editingFolder) {
-      await updateFolder(editingFolder.id, folderForm);
-    } else {
-      const f = await addFolder(folderForm.name, folderForm.icon, 'FLASHCARD');
-      if (f) setActiveFolderId(f.id); // auto-navigate to new folder
+    if (!folderForm.name.trim() || isProcessing) return;
+    setIsProcessing(true);
+    try {
+      if (editingFolder) {
+        await updateFolder(editingFolder.id, folderForm);
+      } else {
+        const f = await addFolder(folderForm.name, folderForm.icon, 'FLASHCARD');
+        if (f) setActiveFolderId(f.id); // auto-navigate to new folder
+      }
+      setIsFolderModalOpen(false);
+      setFolderForm({ name: '', icon: '📁' });
+      setEditingFolder(null);
+    } finally {
+      setIsProcessing(false);
     }
-    setIsFolderModalOpen(false);
-    setFolderForm({ name: '', icon: '📁' });
-    setEditingFolder(null);
   };
 
   const openEditFolder = (e: React.MouseEvent, f: Folder) => {
@@ -154,9 +171,12 @@ export default function FlashcardLibrary() {
     const deckId = e.dataTransfer.getData('deckId');
     const targetId = folderId === 'all' ? null : folderId;
     
-    if (deckId && deckId !== targetId) {
+    // Find deck to check current folder
+    const deck = flashDecks.find(d => d.id === deckId);
+    const currentFolderId = deck?.folderId || null;
+
+    if (deckId && targetId !== currentFolderId) {
       await moveDeckToFolder(deckId, targetId);
-      toast.success('Đã di chuyển bộ bài');
     }
   };
 
@@ -522,8 +542,10 @@ export default function FlashcardLibrary() {
             <div className={lib.emojiPicker}>{EMOJIS.map(icon => (<button key={icon} className={`${lib.emojiBtn} ${folderForm.icon === icon ? lib.emojiActive : ''}`} onClick={() => setFolderForm(p => ({ ...p, icon }))}>{icon}</button>))}</div>
             <input autoFocus className={lib.modalInput} placeholder="Tên thư mục..." value={folderForm.name} onChange={e => setFolderForm({ ...folderForm, name: e.target.value.slice(0, 60) })} onKeyDown={e => e.key === 'Enter' && handleSaveFolder()} />
             <div className={lib.modalActions}>
-              <button className={lib.modalCancel} onClick={() => { setIsFolderModalOpen(false); setEditingFolder(null); }}>Hủy</button>
-              <button className={lib.modalSave} onClick={handleSaveFolder} disabled={!folderForm.name.trim()}>{editingFolder ? 'Lưu' : 'Tạo'}</button>
+              <button className={lib.modalCancel} onClick={() => { setIsFolderModalOpen(false); setEditingFolder(null); }} disabled={isProcessing}>Hủy</button>
+              <button className={lib.modalSave} onClick={handleSaveFolder} disabled={!folderForm.name.trim() || isProcessing}>
+                {isProcessing ? 'Đang lưu...' : (editingFolder ? 'Lưu' : 'Tạo')}
+              </button>
             </div>
           </div>
         </div>
@@ -542,13 +564,14 @@ export default function FlashcardLibrary() {
       )}
       {editDeck && <EditDeckModal deckId={editDeck === 'new' ? null : editDeck} mode="flashcard" onClose={() => setEditDeck(null)} />}
       {importOpen && <ImportModal deckId={null} allDecks={flashDecks} onClose={() => setImportOpen(false)} />}
-      <DeleteConfirmModal isOpen={!!deleteDeckId} deckName={deleteName} onConfirm={confirmDelete} onCancel={() => setDeleteDeckId(null)} />
+      <DeleteConfirmModal isOpen={!!deleteDeckId} deckName={deleteName} isLoading={isProcessing} onConfirm={confirmDelete} onCancel={() => setDeleteDeckId(null)} />
       <ConfirmModal
         isOpen={!!resetDeckId}
         title="Làm mới tiến độ?"
         message="Toàn bộ tiến độ học tập của bộ thẻ này sẽ bị xoá và quay về trạng thái Thẻ mới (0%)."
         confirmLabel="Làm mới"
         variant="warning"
+        isLoading={isProcessing}
         onConfirm={() => confirmReset(resetDeckId!)}
         onCancel={() => setResetDeckId(null)}
       />

@@ -8,13 +8,14 @@ interface Props {
   message: string;
   confirmLabel?: string;
   variant?: 'danger' | 'warning';
+  isLoading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
 export default function ConfirmModal({
   isOpen, title, message, confirmLabel = 'Xác nhận',
-  variant = 'danger', onConfirm, onCancel
+  variant = 'danger', isLoading = false, onConfirm, onCancel
 }: Props) {
   const isDanger = variant === 'danger';
   const color = isDanger ? 'var(--danger)' : 'var(--warning)';
@@ -30,7 +31,7 @@ export default function ConfirmModal({
             display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem',
           }}
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          onClick={e => { if (e.target === e.currentTarget) onCancel(); }}
+          onClick={e => { if (e.target === e.currentTarget && !isLoading) onCancel(); }}
         >
           <motion.div
             style={{
@@ -38,6 +39,7 @@ export default function ConfirmModal({
               border: '1px solid var(--border)',
               borderRadius: '24px', padding: '2rem', width: '100%', maxWidth: '420px',
               textAlign: 'center', boxShadow: '0 32px 80px rgba(0,0,0,0.3)',
+              position: 'relative',
             }}
             initial={{ scale: 0.9, y: 24, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
@@ -45,16 +47,18 @@ export default function ConfirmModal({
             transition={{ type: 'spring', stiffness: 340, damping: 26 }}
           >
             {/* Close */}
-            <button
-              onClick={onCancel}
-              style={{
-                position: 'absolute', top: '1rem', right: '1rem',
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                opacity: 0.4, color: 'var(--foreground)', padding: '0.25rem',
-              }}
-            >
-              <X size={18} />
-            </button>
+            {!isLoading && (
+              <button
+                onClick={onCancel}
+                style={{
+                  position: 'absolute', top: '1rem', right: '1rem',
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  opacity: 0.4, color: 'var(--foreground)', padding: '0.25rem',
+                }}
+              >
+                <X size={18} />
+              </button>
+            )}
 
             {/* Icon */}
             <div style={{
@@ -76,26 +80,37 @@ export default function ConfirmModal({
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <button
                 onClick={onCancel}
+                disabled={isLoading}
                 style={{
                   background: 'var(--surface-hover)', border: '1px solid var(--border)',
                   color: 'var(--foreground)', borderRadius: '12px', padding: '0.8rem',
                   fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                  opacity: isLoading ? 0.5 : 1, pointerEvents: isLoading ? 'none' : 'auto',
                 }}
               >
                 <ArrowLeft size={15} /> Huỷ bỏ
               </button>
               <button
-                onClick={() => { onConfirm(); onCancel(); }}
+                onClick={onConfirm}
+                disabled={isLoading}
                 style={{
                   background: color, border: 'none',
                   color: 'white', borderRadius: '12px', padding: '0.8rem',
-                  fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
+                  fontWeight: 700, fontSize: '0.9rem', cursor: isLoading ? 'default' : 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                  transition: 'all 0.2s ease',
+                  opacity: isLoading ? 0.7 : 1,
                 }}
               >
-                <Icon size={15} /> {confirmLabel}
+                {isLoading ? (
+                  <RefreshCcw size={15} style={{ animation: 'spin 1.2s linear infinite' }} />
+                ) : (
+                  <Icon size={15} />
+                )}
+                {isLoading ? 'Đang xử lý...' : confirmLabel}
               </button>
+              <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
             </div>
           </motion.div>
         </motion.div>

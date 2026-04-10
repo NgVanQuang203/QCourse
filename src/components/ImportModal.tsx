@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { useStore } from '@/lib/store';
 import { Deck } from '@/lib/mockData';
 import styles from './ImportModal.module.css';
-import { X, Upload, FileText, ChevronRight, Check, AlertCircle, Eye, Download } from 'lucide-react';
+import { X, Upload, FileText, ChevronRight, Check, AlertCircle, Eye, Download, RefreshCcw } from 'lucide-react';
 
 interface ParsedPair { front: string; back: string; }
 interface Props {
@@ -67,6 +67,7 @@ export default function ImportModal({ deckId, allDecks, onClose }: Props) {
   const [showPreview, setShowPreview] = useState(false);
   const [imported, setImported] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleParseText = () => {
@@ -96,10 +97,15 @@ export default function ImportModal({ deckId, allDecks, onClose }: Props) {
   };
 
   const handleImport = async () => {
-    if (!selectedDeckId || preview.length === 0) return;
-    const count = await importCards(selectedDeckId, preview);
-    setImported(count);
-    setTimeout(() => { onClose(); }, 1800);
+    if (!selectedDeckId || preview.length === 0 || isImporting) return;
+    setIsImporting(true);
+    try {
+      const count = await importCards(selectedDeckId, preview);
+      setImported(count);
+      setTimeout(() => { onClose(); }, 1800);
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   const exampleText = `Diligence | Sự siêng năng\nEloquent | Có tài hùng biện\nResilient | Kiên cường, mau phục hồi`;
@@ -261,13 +267,19 @@ export default function ImportModal({ deckId, allDecks, onClose }: Props) {
         {/* Footer */}
         {imported === null && (
           <div className={styles.footer}>
-            <button className={styles.btnCancel} onClick={onClose}>Huỷ</button>
+            <button className={styles.btnCancel} onClick={onClose} disabled={isImporting}>Huỷ</button>
             <button
               className={styles.btnImport}
               onClick={handleImport}
-              disabled={preview.length === 0 || !selectedDeckId}
+              disabled={preview.length === 0 || !selectedDeckId || isImporting}
+              style={{ gap: '0.4rem' }}
             >
-              <Check size={15} /> Import {preview.length > 0 ? `${preview.length} thẻ` : ''}
+              {isImporting ? (
+                <RefreshCcw size={15} style={{ animation: 'spin 1.2s linear infinite' }} />
+              ) : (
+                <Check size={15} />
+              )}
+              {isImporting ? 'Đang import...' : `Import ${preview.length > 0 ? `${preview.length} thẻ` : ''}`}
             </button>
           </div>
         )}
