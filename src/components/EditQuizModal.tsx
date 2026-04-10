@@ -126,7 +126,7 @@ export default function EditQuizModal({ deckId, initialFolderId, onClose }: Prop
     name: existingDeck?.name ?? '',
     description: existingDeck?.description ?? '',
     color: existingDeck?.color ?? GRADIENT_PRESETS[0],
-    timeLimitSec: 60,    // seconds per question
+    timeLimitSec: existingDeck?.timeLimitSec ?? 600,
   });
 
   const [section, setSection] = useState<'info' | 'questions'>('info');

@@ -373,7 +373,7 @@ export default function FlashcardLibrary() {
     };
 
     return (
-      <div
+      <motion.div
         key={deck.id}
         className={lib.fcCardWrap}
         style={{ 
@@ -385,6 +385,11 @@ export default function FlashcardLibrary() {
         onContextMenu={onRightClick}
         draggable
         onDragStart={(e) => handleDragStart(e, deck.id)}
+        whileDrag={{ 
+          scale: 1.02, 
+          rotate: [0, -1, 1, -1, 0],
+          transition: { rotate: { repeat: Infinity, duration: 0.2 } }
+        }}
       >
         <div className={lib.fcCardStack2} />
         <div className={lib.fcCardStack1} />
@@ -477,7 +482,7 @@ export default function FlashcardLibrary() {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   };
 
@@ -578,15 +583,20 @@ export default function FlashcardLibrary() {
                   const fMenuId = `fg_${f.id}`;
                   const fMenuOpen = menuOpenId === fMenuId;
                   return (
-                    <div
-                      key={`folder_${f.id}`}
-                      className={`${lib.fcFolderCard} ${dragOverFolderId === f.id ? lib.fcFolderCardDragOver : ''}`}
-                      onClick={() => setActiveFolderId(f.id)}
-                      onDragOver={(e) => { e.preventDefault(); setDragOverFolderId(f.id); }}
-                      onDragLeave={() => setDragOverFolderId(null)}
-                      onDrop={(e) => handleDropOnFolder(e, f.id)}
-                      style={{ '--folder-hue': getFolderHue(f.id) } as any}
-                      onContextMenu={(e) => {
+            <motion.div
+              key={`folder_${f.id}`}
+              className={`${lib.fcFolderCard} ${dragOverFolderId === f.id ? lib.fcFolderCardDragOver : ''}`}
+              onClick={() => setActiveFolderId(f.id)}
+              onDragOver={(e) => { e.preventDefault(); setDragOverFolderId(f.id); }}
+              onDragLeave={() => setDragOverFolderId(null)}
+              onDrop={(e) => handleDropOnFolder(e, f.id)}
+              style={{ '--folder-hue': getFolderHue(f.id) } as any}
+              whileDrag={{ 
+                scale: 1.02, 
+                rotate: [0, -1.5, 1.5, -1.5, 0],
+                transition: { rotate: { repeat: Infinity, duration: 0.25 } }
+              }}
+              onContextMenu={(e) => {
                         e.preventDefault(); e.stopPropagation();
                         setContextMenu({
                           x: e.clientX, y: e.clientY,
@@ -623,7 +633,7 @@ export default function FlashcardLibrary() {
                           </div>
                         )}
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
                 {visibleDecks.map(renderCard)}

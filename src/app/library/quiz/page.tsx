@@ -92,12 +92,12 @@ export default function QuizLibrary() {
 
   const isAllView = currentFolderId === 'all';
   const isUncategorizedView = currentFolderId === 'uncategorized';
-  
+
   const visibleDecks = (isAllView
     ? quizDecks.filter((d: any) => !d.folderId)
     : isUncategorizedView
-    ? quizDecks.filter((d: any) => !d.folderId)
-    : quizDecks.filter((d: any) => d.folderId === currentFolderId))
+      ? quizDecks.filter((d: any) => !d.folderId)
+      : quizDecks.filter((d: any) => d.folderId === currentFolderId))
     .sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
@@ -251,8 +251,8 @@ export default function QuizLibrary() {
     : '';
 
   return (
-    <div 
-      className={lib.libraryPage} 
+    <div
+      className={lib.libraryPage}
       onClick={() => setMenuOpenId(null)}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -275,8 +275,8 @@ export default function QuizLibrary() {
             x: e.clientX,
             y: e.clientY,
             items: [
-              { label: 'Thêm danh mục', icon: <FolderPlus size={14}/>, onClick: () => { setEditingFolder(null); setFolderForm({ name: '', icon: '📝' }); setIsFolderModalOpen(true); } },
-              { label: 'Làm mới thư viện', icon: <RefreshCcw size={14}/>, onClick: () => refreshStats() },
+              { label: 'Thêm danh mục', icon: <FolderPlus size={14} />, onClick: () => { setEditingFolder(null); setFolderForm({ name: '', icon: '📝' }); setIsFolderModalOpen(true); } },
+              { label: 'Làm mới thư viện', icon: <RefreshCcw size={14} />, onClick: () => refreshStats() },
             ]
           });
         }}>
@@ -301,8 +301,8 @@ export default function QuizLibrary() {
             const fMenuOpen = menuOpenId === fMenuId;
             const count = quizDecks.filter(d => d.folderId === f.id).length;
             return (
-              <div 
-                key={f.id} 
+              <div
+                key={f.id}
                 className={lib.sidebarItemWrap}
               >
                 <button
@@ -381,8 +381,8 @@ export default function QuizLibrary() {
               <button className={lib.btnCreate} onClick={() => setEditDeck('new')} disabled={isProcessing}>
                 <Plus size={15} /> Tạo đề thi
               </button>
-              <button 
-                className={`${lib.btnSecondary} ${selectionMode ? lib.btnActive : ''}`} 
+              <button
+                className={`${lib.btnSecondary} ${selectionMode ? lib.btnActive : ''}`}
                 onClick={() => { setSelectionMode(!selectionMode); setSelectedIds(new Set()); }}
                 title="Chọn nhiều mục"
               >
@@ -417,7 +417,7 @@ export default function QuizLibrary() {
             ) : (
               <>
                 {visibleFolders.length > 0 && (
-                  <div 
+                  <div
                     className={lib.quizFolderGrid}
                     onContextMenu={(e) => {
                       if (e.target === e.currentTarget) {
@@ -428,61 +428,67 @@ export default function QuizLibrary() {
                           items: [
                             { label: 'Tạo đề thi mới', icon: <Plus size={14} />, onClick: () => setEditDeck('new') },
                             { label: 'Thêm danh mục mới', icon: <Plus size={14} />, onClick: () => { setEditingFolder(null); setFolderForm({ name: '', icon: '📝' }); setIsFolderModalOpen(true); } },
-                            { divider: true, label: '', onClick: () => {} },
+                            { divider: true, label: '', onClick: () => { } },
                             { label: 'Làm mới thư viện', icon: <RefreshCcw size={14} />, onClick: () => refreshStats() },
                           ]
                         });
                       }
                     }}
                   >
-                  {visibleFolders.map((f: any) => {
-                    const deckCount = quizDecks.filter((d: any) => d.folderId === f.id).length;
-                    const fMenuId = `qg_${f.id}`;
-                    const fMenuOpen = menuOpenId === fMenuId;
-                    return (
-                      <div 
-                        key={`folder_${f.id}`} 
-                        className={`${lib.quizFolderCard} ${dragOverFolderId === f.id ? lib.fcFolderCardDragOver : ''}`} 
-                        onClick={() => setCurrentFolderId(f.id)}
-                        onDragOver={(e) => { e.preventDefault(); setDragOverFolderId(f.id); }}
-                        onDragLeave={() => setDragOverFolderId(null)}
-                        onDrop={(e) => handleDropOnFolder(e, f.id)}
-                        style={{ '--folder-hue': getFolderHue(f.id) } as any}
-                        onContextMenu={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setContextMenu({
-                            x: e.clientX,
-                            y: e.clientY,
-                            items: [
-                              { label: f.isPinned ? 'Bỏ ghim danh mục' : 'Ghim danh mục', icon: <span>📌</span>, onClick: () => togglePinFolder(f.id) },
-                              { label: 'Mở danh mục', icon: <Plus size={14} />, onClick: () => setCurrentFolderId(f.id) },
-                              { label: 'Sửa danh mục', icon: <Edit2 size={14} />, onClick: () => openEditFolder(e, f) },
-                              { label: 'Xóa danh mục', icon: <Trash2 size={14} />, variant: 'danger', onClick: () => setDeleteDeckId(`f_${f.id}`) },
-                            ]
-                          });
-                        }}
-                      >
-                        {f.isPinned && (
-                          <div className={lib.pinBadge} style={{ top: '12px', right: '12px' }}>
-                            <Pin size={12} className={lib.pinIcon} fill="currentColor" />
+                    {visibleFolders.map((f: any) => {
+                      const deckCount = quizDecks.filter((d: any) => d.folderId === f.id).length;
+                      const fMenuId = `qg_${f.id}`;
+                      const fMenuOpen = menuOpenId === fMenuId;
+                      return (
+                        <motion.div
+                          key={`folder_${f.id}`}
+                          className={`${lib.quizFolderCard} ${dragOverFolderId === f.id ? lib.fcFolderCardDragOver : ''}`}
+                          onClick={() => setCurrentFolderId(f.id)}
+                          onDragOver={(e) => { e.preventDefault(); setDragOverFolderId(f.id); }}
+                          onDragLeave={() => setDragOverFolderId(null)}
+                          onDrop={(e) => handleDropOnFolder(e, f.id)}
+                          whileDrag={{ 
+                            scale: 1.02, 
+                            rotate: [0, -1.5, 1.5, -1.5, 0],
+                            transition: { rotate: { repeat: Infinity, duration: 0.25 } }
+                          }}
+                          style={{ '--folder-hue': getFolderHue(f.id) } as any}
+                          onContextMenu={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setContextMenu({
+                              x: e.clientX,
+                              y: e.clientY,
+                              items: [
+                                { label: f.isPinned ? 'Bỏ ghim danh mục' : 'Ghim danh mục', icon: <span>📌</span>, onClick: () => togglePinFolder(f.id) },
+                                { label: 'Mở danh mục', icon: <Plus size={14} />, onClick: () => setCurrentFolderId(f.id) },
+                                { label: 'Sửa danh mục', icon: <Edit2 size={14} />, onClick: () => openEditFolder(e, f) },
+                                { label: 'Xóa danh mục', icon: <Trash2 size={14} />, variant: 'danger', onClick: () => setDeleteDeckId(`f_${f.id}`) },
+                              ]
+                            });
+                          }}
+                        >
+
+                          {f.isPinned && (
+                            <div className={lib.pinBadge} style={{ top: '12px', right: '12px' }}>
+                              <Pin size={12} className={lib.pinIcon} fill="currentColor" />
+                            </div>
+                          )}
+                          <div className={lib.quizFolderIcon}>
+                            <div className={lib.pinSidebarWrap}>
+                              {f.icon || '📂'}
+                            </div>
                           </div>
-                        )}
-                        <div className={lib.quizFolderIcon}>
-                          <div className={lib.pinSidebarWrap}>
-                            {f.icon || '📂'}
+                          <div className={lib.quizFolderInfo}>
+                            <div className={lib.quizFolderName}>
+                              {f.name}
+                            </div>
+                            <div className={lib.quizFolderCount}>{deckCount} đề thi</div>
                           </div>
-                        </div>
-                        <div className={lib.quizFolderInfo}>
-                          <div className={lib.quizFolderName}>
-                            {f.name}
-                          </div>
-                          <div className={lib.quizFolderCount}>{deckCount} đề thi</div>
-                        </div>
 
                           {/* Kebab button */}
-                          <div 
-                            className={lib.kebabWrap} 
+                          <div
+                            className={lib.kebabWrap}
                             style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', zIndex: fMenuOpen ? 9999 : 20 }}
                             onClick={e => e.stopPropagation()}
                           >
@@ -507,7 +513,7 @@ export default function QuizLibrary() {
                               </div>
                             )}
                           </div>
-                        </div>
+                        </motion.div>
                       );
                     })}
                   </div>
@@ -521,7 +527,7 @@ export default function QuizLibrary() {
                   const isMenuOpen = menuOpenId === deck.id;
 
                   return (
-                    <div
+                    <motion.div
                       key={deck.id}
                       className={lib.quizBanner}
                       onClick={() => router.push(`/quiz/${deck.id}`)}
@@ -531,6 +537,11 @@ export default function QuizLibrary() {
                       }}
                       draggable
                       onDragStart={(e) => handleDragStart(e, deck.id)}
+                      whileDrag={{ 
+                        scale: 1.01, 
+                        rotate: [0, -0.8, 0.8, -0.8, 0],
+                        transition: { rotate: { repeat: Infinity, duration: 0.22 } }
+                      }}
                       onContextMenu={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -539,14 +550,14 @@ export default function QuizLibrary() {
                           y: e.clientY,
                           items: [
                             { label: deck.isPinned ? 'Bỏ ghim bài' : 'Ghim bài', icon: <span>📌</span>, onClick: () => togglePinDeck(deck.id) },
-                            { label: 'Bắt đầu thi', icon: <Plus size={14}/>, onClick: () => router.push(`/quiz/${deck.id}`) },
-                            { label: 'Chỉnh sửa', icon: <Edit2 size={14}/>, onClick: () => setEditDeck(deck.id) },
-                            { label: 'Chuyển danh mục', icon: <FolderInput size={14}/>, onClick: () => setMoveDeckId(deck.id) },
-                            { label: 'Nhân bản', icon: <RefreshCcw size={14}/>, onClick: () => duplicateQuiz(deck.id) },
-                            { label: 'Sao chép liên kết', icon: <Copy size={14}/>, onClick: () => copyQuizLink(deck.id) },
-                            { divider: true, label: '', onClick: () => {} },
-                            { label: 'Xoá lịch sử thi', icon: <RefreshCcw size={14}/>, onClick: () => setResetDeckId(deck.id) },
-                            { label: 'Xóa đề thi', icon: <Trash2 size={14}/>, variant: 'danger', onClick: () => setDeleteDeckId(deck.id) },
+                            { label: 'Bắt đầu thi', icon: <Plus size={14} />, onClick: () => router.push(`/quiz/${deck.id}`) },
+                            { label: 'Chỉnh sửa', icon: <Edit2 size={14} />, onClick: () => setEditDeck(deck.id) },
+                            { label: 'Chuyển danh mục', icon: <FolderInput size={14} />, onClick: () => setMoveDeckId(deck.id) },
+                            { label: 'Nhân bản', icon: <RefreshCcw size={14} />, onClick: () => duplicateQuiz(deck.id) },
+                            { label: 'Sao chép liên kết', icon: <Copy size={14} />, onClick: () => copyQuizLink(deck.id) },
+                            { divider: true, label: '', onClick: () => { } },
+                            { label: 'Xoá lịch sử thi', icon: <RefreshCcw size={14} />, onClick: () => setResetDeckId(deck.id) },
+                            { label: 'Xóa đề thi', icon: <Trash2 size={14} />, variant: 'danger', onClick: () => setDeleteDeckId(deck.id) },
                           ]
                         });
                       }}
@@ -558,7 +569,7 @@ export default function QuizLibrary() {
                       )}
                       <div className={lib.quizBannerIcon}>
                         {selectionMode ? (
-                          <div 
+                          <div
                             className={`${lib.checkboxWrap} ${selectedIds.has(deck.id) ? lib.checkboxActive : ''}`}
                             onClick={(e) => { e.stopPropagation(); toggleSelect(deck.id); }}
                           >
@@ -593,22 +604,22 @@ export default function QuizLibrary() {
                         </button>
                         {isMenuOpen && (
                           <div className={lib.menuDropdown} style={{ right: 0 }}>
-                             <button className={lib.menuItem} onClick={() => { togglePinDeck(deck.id); setMenuOpenId(null); }}>
-                               {deck.isPinned ? 'Bỏ ghim' : 'Ghim bài'}
-                             </button>
-                             <button className={lib.menuItem} onClick={() => { setEditDeck(deck.id); setMenuOpenId(null); }}>
-                               <Edit2 size={13} /> Chỉnh sửa
-                             </button>
-                             <button className={lib.menuItem} onClick={() => { setMoveDeckId(deck.id); setMenuOpenId(null); }}>
-                               <FolderInput size={13} /> Chuyển danh mục
-                             </button>
-                             <div className={lib.menuDivider} />
-                             <button className={lib.menuItem} onClick={() => { setResetDeckId(deck.id); setMenuOpenId(null); }}>
-                               <RefreshCcw size={13} /> Xoá lịch sử thi
-                             </button>
-                             <button className={`${lib.menuItem} ${lib.menuItemDanger}`} onClick={() => { setDeleteDeckId(deck.id); setMenuOpenId(null); }}>
-                               <Trash2 size={13} /> Xóa đề thi
-                             </button>
+                            <button className={lib.menuItem} onClick={() => { togglePinDeck(deck.id); setMenuOpenId(null); }}>
+                              {deck.isPinned ? 'Bỏ ghim' : 'Ghim bài'}
+                            </button>
+                            <button className={lib.menuItem} onClick={() => { setEditDeck(deck.id); setMenuOpenId(null); }}>
+                              <Edit2 size={13} /> Chỉnh sửa
+                            </button>
+                            <button className={lib.menuItem} onClick={() => { setMoveDeckId(deck.id); setMenuOpenId(null); }}>
+                              <FolderInput size={13} /> Chuyển danh mục
+                            </button>
+                            <div className={lib.menuDivider} />
+                            <button className={lib.menuItem} onClick={() => { setResetDeckId(deck.id); setMenuOpenId(null); }}>
+                              <RefreshCcw size={13} /> Xoá lịch sử thi
+                            </button>
+                            <button className={`${lib.menuItem} ${lib.menuItemDanger}`} onClick={() => { setDeleteDeckId(deck.id); setMenuOpenId(null); }}>
+                              <Trash2 size={13} /> Xóa đề thi
+                            </button>
                           </div>
                         )}
                       </div>
@@ -616,7 +627,7 @@ export default function QuizLibrary() {
                       <div className={lib.quizBannerArrow}>
                         <ChevronRight size={18} />
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </>
@@ -690,7 +701,7 @@ export default function QuizLibrary() {
                   setIsProcessing(false);
                 }
               }}>🗂️ Bỏ khỏi danh mục</div>
-              
+
               {quizFolders.map(f => (
                 <div key={f.id} className={lib.moveFolderItem} onClick={async () => {
                   if (isProcessing) return;
@@ -720,10 +731,10 @@ export default function QuizLibrary() {
       {editDeck && <EditQuizModal deckId={editDeck === 'new' ? null : editDeck} initialFolderId={currentFolderId} onClose={() => setEditDeck(null)} />}
       {importOpen && <ImportQuizModal deckId={null} allDecks={quizDecks} initialFolderId={currentFolderId === 'all' || currentFolderId === null ? null : currentFolderId} onClose={() => setImportOpen(false)} />}
       <DeleteConfirmModal isOpen={!!deleteDeckId} deckName={deleteName} isLoading={isProcessing} onConfirm={confirmDelete} onCancel={() => setDeleteDeckId(null)} />
-      <DeleteConfirmModal 
-        isOpen={isBulkDeleteOpen} 
-        deckName={`${selectedIds.size} đề thi đã chọn`} 
-        isLoading={isProcessing} 
+      <DeleteConfirmModal
+        isOpen={isBulkDeleteOpen}
+        deckName={`${selectedIds.size} đề thi đã chọn`}
+        isLoading={isProcessing}
         onConfirm={async () => {
           setIsProcessing(true);
           try {
@@ -734,8 +745,8 @@ export default function QuizLibrary() {
           } finally {
             setIsProcessing(false);
           }
-        }} 
-        onCancel={() => setIsBulkDeleteOpen(false)} 
+        }}
+        onCancel={() => setIsBulkDeleteOpen(false)}
       />
       <ConfirmModal
         isOpen={!!resetDeckId}
