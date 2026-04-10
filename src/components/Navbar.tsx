@@ -136,7 +136,7 @@ export default function Navbar() {
 
             {/* Account dropdown or Login button */}
             {mounted && (
-              (status === 'loading' || (status === 'authenticated' && !profile)) ? (
+              status === 'loading' ? (
                 <div className={styles.avatarSkeleton} />
               ) : status === 'authenticated' && profile ? (
                 <div

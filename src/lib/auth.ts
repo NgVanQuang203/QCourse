@@ -52,24 +52,30 @@ const config: NextAuthConfig = {
   callbacks: {
     ...authConfig.callbacks,
     async session({ session, token }) {
-      // 1. Check if user still exists in DB (Security boost)
-      if (token.sub) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.sub },
-          select: { id: true, streak: true }
-        });
+      try {
+        // 1. Check if user still exists in DB (Security boost)
+        if (token.sub) {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.sub },
+            select: { id: true, streak: true }
+          });
 
-        if (!dbUser) {
-          console.warn(`Session invalid: User ${token.sub} was deleted from database.`);
-          return null as any; 
-        }
+          if (!dbUser) {
+            console.warn(`Session invalid: User ${token.sub} was deleted from database.`);
+            // Return session with null user to signal logout without crashing API
+            return { ...session, user: null } as any; 
+          }
 
-        if (session.user) {
-          session.user.id = dbUser.id;
-          session.user.streak = dbUser.streak;
+          if (session.user) {
+            session.user.id = dbUser.id;
+            session.user.streak = dbUser.streak;
+          }
         }
+        return session;
+      } catch (error) {
+        console.error("Session callback error:", error);
+        return session; // Fallback to avoid crash
       }
-      return session;
     },
   },
 };
