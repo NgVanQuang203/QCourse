@@ -60,7 +60,7 @@ export default function QuizLibrary() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const {
-    decks, folders, isLoading, isRefreshing, refreshStats,
+    decks, folders, isLoading, isRefreshing, deleteDeck, refreshStats,
     moveDeckToFolder, addFolder, updateFolder, deleteFolder,
     addDeck, fetchDeckCards, importCards,
   } = useStore();
