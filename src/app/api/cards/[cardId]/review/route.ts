@@ -1,17 +1,19 @@
-// POST /api/cards/[cardId]/review — Record SM-2 review for a flashcard
-// Body: { quality: 0 | 3 | 4 | 5 }
-//   0 = Again (blackout), 3 = Hard, 4 = Good, 5 = Easy
+// POST /api/cards/[cardId]/review — Record FSRS review (Force Rebuild #1)
+// Body: { quality: 1 | 2 | 3 | 4 }
+//   1 = Again, 2 = Hard, 3 = Good, 4 = Easy
 import { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
-import { calculateSM2, getVNDateStr, computeNewStreak } from '@/lib/algorithms/sm2';
+import { calculateFSRS, Rating, State, initFSRSState } from '@/lib/algorithms/fsrs';
+import { getVNDateStr } from '@/lib/utils/date';
+import { computeNewStreak } from '@/lib/utils/streak';
 
 type Ctx = { params: Promise<{ cardId: string }> };
 
 const ReviewSchema = z.object({
-  quality:        z.union([z.literal(0), z.literal(3), z.literal(4), z.literal(5)]),
-  minutesSession: z.number().min(0).max(600).default(1), // Track time spent
+  quality:        z.number().min(1).max(5), // 1=Again, 2=Hard, 3=Hard (legacy), 4=Good, 5=Easy
+  minutesSession: z.number().min(0).max(600).default(1),
 });
 
 export async function POST(req: NextRequest, { params }: Ctx) {
@@ -23,46 +25,79 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   const parsed = ReviewSchema.safeParse(body);
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0].message }, { status: 400 });
 
-  const { quality, minutesSession } = parsed.data;
+  const { quality: rawQuality, minutesSession } = parsed.data;
   const userId = session.user.id;
 
-  // Get or create SM2 progress for this card
+  // Map quality to FSRS Rating
+  let rating: Rating;
+  if (rawQuality === 1) rating = Rating.Again;
+  else if (rawQuality === 2 || rawQuality === 3) rating = Rating.Hard; // 3 was 'Hard' in old SM2 UI
+  else if (rawQuality === 4) rating = Rating.Good;
+  else rating = Rating.Easy;
+
+  // Get current progress
   let progress = await prisma.sM2Progress.findUnique({
     where: { userId_cardId: { userId, cardId } },
   });
 
-  const currentState = {
-    interval:     progress?.interval    ?? 1,
-    repetitions:  progress?.repetitions ?? 0,
-    easeFactor:   progress?.easeFactor  ?? 2.5,
-    nextDueDate:  progress?.nextDueDate ?? new Date(),
-  };
+  // Initialize or Migrate from SM2
+  const currentState = progress ? {
+    stability:     progress.stability || 0,
+    difficulty:    progress.difficulty || 0,
+    elapsedDays:   progress.elapsedDays || 0,
+    scheduledDays: progress.scheduledDays || 0,
+    reps:          progress.reps || progress.repetitions || 0,
+    lapses:        progress.lapses || 0,
+    state:         (progress.state as State) || (progress.repetitions > 0 ? State.Review : State.New),
+    lastReview:    progress.lastReviewed || undefined,
+    nextDueDate:   progress.nextDueDate,
+  } : initFSRSState();
 
-  const newState = calculateSM2(currentState, quality);
+  // If this is the first FSRS review but we have SM2 history, estimate initial stability
+  if (progress && progress.stability === 0 && progress.interval > 0) {
+    currentState.stability = progress.interval; // Simple heuristic: use previous interval
+    currentState.difficulty = 5.0; // Default middle difficulty
+  }
 
-  // Upsert SM2 progress
-  progress = await prisma.sM2Progress.upsert({
+  const newState = calculateFSRS(currentState, rating, new Date());
+
+  // Update progress
+  const updatedProgress = await prisma.sM2Progress.upsert({
     where:  { userId_cardId: { userId, cardId } },
     create: {
       userId, cardId,
-      interval:     newState.interval,
-      repetitions:  newState.repetitions,
-      easeFactor:   newState.easeFactor,
-      nextDueDate:  newState.nextDueDate,
-      lastReviewed: new Date(),
-      lastQuality:  quality,
+      stability:     newState.stability,
+      difficulty:    newState.difficulty,
+      elapsedDays:   newState.elapsedDays,
+      scheduledDays: newState.scheduledDays,
+      reps:          newState.reps,
+      lapses:        newState.lapses,
+      state:         newState.state,
+      nextDueDate:   newState.nextDueDate,
+      lastReviewed:  new Date(),
+      lastQuality:   rawQuality,
+      // Keep legacy fields updated for compatibility
+      interval:      Math.round(newState.scheduledDays) || 1,
+      repetitions:   newState.reps,
+      easeFactor:    2.5, // Not used by FSRS
     },
     update: {
-      interval:     newState.interval,
-      repetitions:  newState.repetitions,
-      easeFactor:   newState.easeFactor,
-      nextDueDate:  newState.nextDueDate,
-      lastReviewed: new Date(),
-      lastQuality:  quality,
+      stability:     newState.stability,
+      difficulty:    newState.difficulty,
+      elapsedDays:   newState.elapsedDays,
+      scheduledDays: newState.scheduledDays,
+      reps:          newState.reps,
+      lapses:        newState.lapses,
+      state:         newState.state,
+      nextDueDate:   newState.nextDueDate,
+      lastReviewed:  new Date(),
+      lastQuality:   rawQuality,
+      interval:      Math.round(newState.scheduledDays) || 1,
+      repetitions:   newState.reps,
     },
   });
 
-  // ── Update daily activity log (upsert) ────────────────────────────────────
+  // ── Update daily activity log ──
   const today = getVNDateStr();
   const card = await prisma.card.findUnique({
     where: { id: cardId },
@@ -86,7 +121,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     });
   }
 
-  // ── Update streak ─────────────────────────────────────────────────────────
+  // ── Update streak ──
   const user = await prisma.user.findUnique({
     where:  { id: userId },
     select: { streak: true, maxStreak: true, lastActiveDate: true },
@@ -103,11 +138,11 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   }
 
   return Response.json({
-    sm2: {
-      interval:    newState.interval,
-      repetitions: newState.repetitions,
-      easeFactor:  Number(newState.easeFactor.toFixed(2)),
-      nextDueDate: newState.nextDueDate,
+    fsrs: {
+      stability:     newState.stability,
+      difficulty:    newState.difficulty,
+      scheduledDays: newState.scheduledDays,
+      nextDueDate:   newState.nextDueDate,
     },
   });
 }

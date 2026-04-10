@@ -1,7 +1,7 @@
 // GET /api/activity — Get heatmap data (364 days) + streak info for current user
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { getVNDateStr } from '@/lib/algorithms/sm2';
+import { getVNDateStr } from '@/lib/utils/date';
 
 export async function GET() {
   const session = await auth();

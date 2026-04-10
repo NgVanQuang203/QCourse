@@ -1,4 +1,4 @@
-import { SM2Data, sm2InitialData } from './sm2';
+import { SM2Data, sm2InitialData } from './types/sm2';
 
 export interface Card {
   id: string;

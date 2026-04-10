@@ -7,7 +7,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useSession } from 'next-auth/react';
 import { Deck, Card } from './mockData';
-import { SM2Data, sm2InitialData } from './sm2';
+import { SM2Data, sm2InitialData } from './types/sm2';
 import { toast } from './toast';
 
 // ── Types ───────────────────────────────────────────────
@@ -282,6 +282,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             interval: c.sm2Progress[0].interval,
             repetitions: c.sm2Progress[0].repetitions,
             nextReviewDate: new Date(c.sm2Progress[0].nextDueDate).getTime(),
+            stability: c.sm2Progress[0].stability,
+            difficulty: c.sm2Progress[0].difficulty,
+            state: c.sm2Progress[0].state,
+            reps: c.sm2Progress[0].reps,
+            lapses: c.sm2Progress[0].lapses,
           } : sm2InitialData()
         }));
         setState(s => {

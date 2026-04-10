@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useStore, ActivityDay } from '@/lib/store';
+import { getVNDateStr, formatVNLongDate } from '@/lib/utils/date';
 import styles from './profile.module.css';
 import {
   User, Lock, LogOut, Activity, Check,
@@ -19,16 +20,17 @@ const GAP  = 3;   // gap px — MUST be identical in month-chip row and week gri
 function Heatmap({ activity }: { activity: ActivityDay[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [tooltip, setTooltip] = useState<{ day: ActivityDay; vx: number; vy: number } | null>(null);
-  const today = useMemo(() => new Date(), []);
-  const todayStr = today.toISOString().slice(0, 10);
+  const todayStr = useMemo(() => getVNDateStr(), []);
 
   // ── 364 days ending TODAY ────────────────────────────────────────────────
   const { paddedDays, numWeeks, monthBlocks } = useMemo(() => {
     const arr: ActivityDay[] = [];
     for (let i = 363; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const s = d.toISOString().slice(0, 10);
+      const d = new Date();
+      // Adjust to VN time first to ensure relative "days ago" is correct
+      const vnD = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+      vnD.setDate(vnD.getDate() - i);
+      const s = vnD.toISOString().slice(0, 10);
       arr.push(activity.find(a => a.date === s) ?? { date: s, minutesStudied: 0, cardsStudied: 0, deckIds: [] });
     }
     // Pad start so week begins on Sunday (day 0)
@@ -112,8 +114,7 @@ function Heatmap({ activity }: { activity: ActivityDay[] }) {
     setTimeout(() => setTooltip(null), 2000);
   };
 
-  const fmtDate = (s: string) =>
-    new Date(s).toLocaleDateString('vi', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const fmtDate = (s: string) => formatVNLongDate(s);
 
   return (
     <div className={styles.heatmapWrap}>
@@ -227,9 +228,10 @@ function LearningChart({ activity }: { activity: ActivityDay[] }) {
   const last30 = useMemo(() => {
     const arr: ActivityDay[] = [];
     for (let i = 29; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const s = d.toISOString().slice(0, 10);
+      const d = new Date();
+      const vnD = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+      vnD.setDate(vnD.getDate() - i);
+      const s = vnD.toISOString().slice(0, 10);
       arr.push(activity.find(a => a.date === s) ?? { date: s, minutesStudied: 0, cardsStudied: 0, deckIds: [] });
     }
     return arr;
@@ -315,7 +317,7 @@ function LearningChart({ activity }: { activity: ActivityDay[] }) {
 // TODAY STATS
 // ─────────────────────────────────────────────────────────────────────────────
 function TodayTimer({ activity }: { activity: ActivityDay[] }) {
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = getVNDateStr();
   const t = activity.find(a => a.date === todayStr);
   const mins = t?.minutesStudied ?? 0;
   const cards = t?.cardsStudied ?? 0;

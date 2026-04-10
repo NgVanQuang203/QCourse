@@ -10,6 +10,7 @@ import confetti from 'canvas-confetti';
 import ContextMenu, { ContextMenuItem } from '@/components/ContextMenu';
 import { AnimatePresence } from 'framer-motion';
 import EditDeckModal from '@/components/EditDeckModal';
+import { predictFSRS, formatInterval, Rating, State } from '@/lib/algorithms/fsrs';
 import { toast } from '@/lib/toast';
 
 export default function FlashcardMode() {
@@ -24,6 +25,7 @@ export default function FlashcardMode() {
   const [showHints, setShowHints] = useState(false);
   const [swipeAnim, setSwipeAnim] = useState<'left' | 'right' | 'up' | 'down' | null>(null);
   const [isResetting, setIsResetting] = useState(false);
+  const [initialQueueLength, setInitialQueueLength] = useState(0);
 
   // Thống kê phiên học
   const [stats, setStats] = useState({ correct: 0, wrong: 0 });
@@ -44,6 +46,7 @@ export default function FlashcardMode() {
           const now = Date.now();
           const due = cards.filter(c => c.sm2Data.nextReviewDate <= now);
           setQueue(due);
+          setInitialQueueLength(due.length);
         }
         setLoading(false);
       }
@@ -56,6 +59,19 @@ export default function FlashcardMode() {
   const handleFlip = useCallback(() => {
     setIsFlipped(prev => !prev);
   }, []);
+
+  // Calculate FSRS predictions for the current card
+  const predictions = currentCard?.sm2Data ? predictFSRS({
+    stability: currentCard.sm2Data.stability || 0,
+    difficulty: currentCard.sm2Data.difficulty || 0,
+    elapsedDays: 0,
+    scheduledDays: 0,
+    reps: currentCard.sm2Data.reps || currentCard.sm2Data.repetitions || 0,
+    lapses: currentCard.sm2Data.lapses || 0,
+    state: (currentCard.sm2Data.state as State) || (currentCard.sm2Data.repetitions > 0 ? State.Review : State.New),
+    lastReview: currentCard.sm2Data.nextReviewDate ? new Date(currentCard.sm2Data.nextReviewDate - (currentCard.sm2Data.interval || 0) * 24 * 60 * 60 * 1000) : undefined,
+    nextDueDate: new Date(currentCard.sm2Data.nextReviewDate),
+  }) : null;
 
   const handleEvaluate = useCallback(async (quality: number) => {
     if (!currentCard || !isFlipped || swipeAnim) return;
@@ -86,7 +102,7 @@ export default function FlashcardMode() {
     setSwipeAnim(dir);
 
     // If quality is poor ("học lại"), append it to the end of the queue
-    if (quality < 3) {
+    if (quality === Rating.Again) {
       setQueue(prev => [...prev, currentCard]);
     }
 
@@ -130,22 +146,23 @@ export default function FlashcardMode() {
           break;
         case 'Digit1':
         case 'Numpad1':
-          if (isFlipped) handleEvaluate(1); // Quên hẳn
+          if (isFlipped) handleEvaluate(Rating.Again); // Quên hẳn
           break;
         case 'Digit2':
         case 'Numpad2':
-          if (isFlipped) handleEvaluate(3); // Khó
+          if (isFlipped) handleEvaluate(Rating.Hard); // Khó
           break;
         case 'Digit3':
         case 'Numpad3':
-          if (isFlipped) handleEvaluate(4); // Tốt
+          if (isFlipped) handleEvaluate(Rating.Good); // Tốt
           break;
         case 'Digit4':
         case 'Numpad4':
-          if (isFlipped) handleEvaluate(5); // Dễ
+          if (isFlipped) handleEvaluate(Rating.Easy); // Dễ
           break;
         case 'Escape':
-          router.push('/library/flashcard');
+          const backPath = deck?.folderId ? `/library/flashcard?folder=${deck.folderId}` : '/library/flashcard';
+          router.push(backPath);
           break;
       }
     };
@@ -176,16 +193,16 @@ export default function FlashcardMode() {
           <p style={{ opacity: 0.5, marginBottom: '2.5rem', lineHeight: 1.5 }}>
             Bộ thẻ này không tồn tại hoặc có thể đã bị xóa. Vui lòng kiểm tra lại đường dẫn.
           </p>
-          <button
-            onClick={() => router.push('/library/flashcard')}
-            style={{ 
-              background: 'var(--primary)', color: 'white', padding: '0.85rem 1.5rem', 
-              borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer',
-              display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 14px rgba(37,99,235,0.3)'
-            }}
-          >
-            <ArrowLeft size={16} /> Quay lại thư viện
-          </button>
+            <button
+              onClick={() => router.push(deck?.folderId ? `/library/flashcard?folder=${deck.folderId}` : '/library/flashcard')}
+              style={{ 
+                background: 'var(--primary)', color: 'white', padding: '0.85rem 1.5rem', 
+                borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 14px rgba(37,99,235,0.3)'
+              }}
+            >
+              <ArrowLeft size={16} /> Quay lại thư viện
+            </button>
         </div>
       </div>
     );
@@ -203,7 +220,7 @@ export default function FlashcardMode() {
         { label: 'Sao chép mặt trước', icon: <Copy size={14}/>, onClick: () => { navigator.clipboard.writeText(currentCard.front); toast.success('Đã sao chép'); } },
         { label: 'Bỏ qua thẻ này', icon: <SkipForward size={14}/>, onClick: () => { handleEvaluate(4); } }, // Skip as "Good" or add a dedicated skip logic
         { divider: true, label: '', onClick: () => {} },
-        { label: 'Thoát học tập', icon: <ArrowLeft size={14}/>, variant: 'danger', onClick: () => router.push('/library/flashcard') },
+        { label: 'Thoát học tập', icon: <ArrowLeft size={14}/>, variant: 'danger', onClick: () => router.push(deck?.folderId ? `/library/flashcard?folder=${deck.folderId}` : '/library/flashcard') },
       ]
     });
   };
@@ -213,7 +230,7 @@ export default function FlashcardMode() {
       <header className={styles.header}>
         <button
           className={styles.backBtn}
-          onClick={() => router.push('/library/flashcard')}
+          onClick={() => router.push(deck?.folderId ? `/library/flashcard?folder=${deck.folderId}` : '/library/flashcard')}
           title="Quay lại thư viện"
         >
           <ArrowLeft size={16} />
@@ -232,7 +249,9 @@ export default function FlashcardMode() {
           <div className={styles.progressBar}>
             <div
               className={styles.progressFill}
-              style={{ width: `${queue.length === 0 ? 100 : ((isDone ? queue.length : currentIndex) / queue.length) * 100}%` }}
+              style={{ 
+                width: `${initialQueueLength === 0 ? 100 : Math.min(100, (currentIndex / initialQueueLength) * 100)}%` 
+              }}
             />
           </div>
         </div>
@@ -262,9 +281,9 @@ export default function FlashcardMode() {
 
             <button
               style={{ background: 'var(--primary)', color: 'white', padding: '1rem 2rem', borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }}
-              onClick={() => router.push('/library/flashcard')}
+              onClick={() => router.push(deck?.folderId ? `/library/flashcard?folder=${deck.folderId}` : '/library/flashcard')}
             >
-              Về thư viện Flashcard
+              Về vị trí bộ thẻ
             </button>
           </div>
         ) : (
@@ -314,38 +333,38 @@ export default function FlashcardMode() {
             <div className={`${styles.controls} ${isFlipped ? styles.visible : ''}`}>
               <button 
                 className={`${styles.evalBtn} ${styles.btnFail}`} 
-                onClick={() => handleEvaluate(1)}
+                onClick={() => handleEvaluate(Rating.Again)}
                 title="Học lại: Thẻ sẽ xuất hiện lại ngay lập tức"
               >
                 <span className={styles.evalKey}>1</span>
-                Lại (1m)
+                Lại ({predictions ? formatInterval(predictions.again.scheduledDays) : '1m'})
                 <span className={styles.evalDesc}>Quên hẳn</span>
               </button>
               <button 
                 className={`${styles.evalBtn} ${styles.btnHard}`} 
-                onClick={() => handleEvaluate(3)}
+                onClick={() => handleEvaluate(Rating.Hard)}
                 title="Khó: Bạn mất nhiều thời gian để nhớ ra"
               >
                 <span className={styles.evalKey}>2</span>
-                Khó (10m)
+                Khó ({predictions ? formatInterval(predictions.hard.scheduledDays) : '10m'})
                 <span className={styles.evalDesc}>Nghĩ lâu</span>
               </button>
               <button 
                 className={`${styles.evalBtn} ${styles.btnGood}`} 
-                onClick={() => handleEvaluate(4)}
+                onClick={() => handleEvaluate(Rating.Good)}
                 title="Tốt: Bạn nhớ rõ nhưng cần ôn lại sớm"
               >
                 <span className={styles.evalKey}>3</span>
-                Tốt (1d)
+                Tốt ({predictions ? formatInterval(predictions.good.scheduledDays) : '1d'})
                 <span className={styles.evalDesc}>Nhớ rõ</span>
               </button>
               <button 
                 className={`${styles.evalBtn} ${styles.btnPerfect}`} 
-                onClick={() => handleEvaluate(5)}
+                onClick={() => handleEvaluate(Rating.Easy)}
                 title="Dễ: Rất dễ dàng, thẻ sẽ lặp lại sau vài ngày"
               >
                 <span className={styles.evalKey}>4</span>
-                Dễ (4d)
+                Dễ ({predictions ? formatInterval(predictions.easy.scheduledDays) : '4d'})
                 <span className={styles.evalDesc}>Rất dễ</span>
               </button>
             </div>

@@ -3,7 +3,9 @@ import { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
-import { scoreQuizAttempt, getVNDateStr, computeNewStreak } from '@/lib/algorithms/sm2';
+import { scoreQuizAttempt } from '@/lib/algorithms/sm2';
+import { getVNDateStr } from '@/lib/utils/date';
+import { computeNewStreak } from '@/lib/utils/streak';
 
 const AnswerSchema = z.object({
   cardId:       z.string(),

@@ -111,6 +111,7 @@ export default function FlashcardLibrary() {
   const confirmReset = async (deckId: string) => {
     await fetch(`/api/decks/${deckId}/reset`, { method: 'POST' });
     await refreshStats();
+    toast.success('Đã làm mới tiến độ học tập');
     setResetDeckId(null);
   };
 
@@ -163,8 +164,13 @@ export default function FlashcardLibrary() {
     if (!ts) return null;
     const diff = ts - Date.now();
     if (diff <= 0) return 'Hiện có';
+    
+    const totalMinutes = Math.ceil(diff / (1000 * 60));
+    if (totalMinutes < 60) return `${totalMinutes} phút nữa`;
+    
     const hrs = Math.ceil(diff / (1000 * 60 * 60));
     if (hrs < 24) return `${hrs} giờ nữa`;
+    
     const days = Math.ceil(hrs / 24);
     return `${days} ngày nữa`;
   };
@@ -389,7 +395,7 @@ export default function FlashcardLibrary() {
           items: [
             { label: 'Tạo bộ thẻ mới', icon: <Plus size={14}/>, onClick: () => setEditDeck('new') },
             { label: 'Thêm thư mục mới', icon: <Plus size={14}/>, divider: true, onClick: () => { setEditingFolder(null); setFolderForm({ name: '', icon: '📁' }); setIsFolderModalOpen(true); } },
-            { label: 'Làm mới thư viện', icon: <RefreshCcw size={14}/>, onClick: () => refreshStats() },
+            { label: 'Làm mới thư viện', icon: <RefreshCcw size={14}/>, onClick: () => { refreshStats(); toast.success('Đã làm mới thư viện'); } },
           ]
         });
       }}
