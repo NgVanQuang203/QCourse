@@ -1711,3 +1711,17 @@
 :global(.dark) .quizSidebar .menuDropdown {
   background: rgba(var(--surface-rgb, 22, 27, 34), 0.95) !important;
 }
+
+.refreshingIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  opacity: 0.6;
+  animation: spinRefreshing 1s linear infinite;
+}
+
+@keyframes spinRefreshing {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

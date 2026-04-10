@@ -60,7 +60,7 @@ export default function QuizLibrary() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const {
-    decks, folders, isLoading, deleteDeck, refreshStats,
+    decks, folders, isLoading, isRefreshing, refreshStats,
     moveDeckToFolder, addFolder, updateFolder, deleteFolder,
     addDeck, fetchDeckCards, importCards,
   } = useStore();
@@ -70,6 +70,11 @@ export default function QuizLibrary() {
     const handleFocus = () => refreshStats();
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
+  }, [refreshStats]);
+
+  // Also refresh whenever this component mounts (e.g. after navigation)
+  useEffect(() => {
+    refreshStats();
   }, [refreshStats]);
 
   const getFolderHue = (id: string) => {
@@ -326,9 +331,14 @@ export default function QuizLibrary() {
         <div className={lib.quizPanel}>
           <div className={lib.quizPanelHeader}>
             <div>
-              <div className={lib.quizPanelTitle}>
+              <div className={lib.quizPanelTitle} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 {currentFolderId === 'all' ? 'Tất cả đề thi' : currentFolderId === null ? '🗂️ Chưa phân loại' : (
                   activeFolder ? `${activeFolder.icon || '📁'} ${activeFolder.name}` : (isLoading ? 'Đang tải...' : 'Không tìm thấy thư mục')
+                )}
+                {isRefreshing && (
+                  <div className={lib.refreshingIcon} title="Đang cập nhật dữ liệu...">
+                    <RefreshCcw size={14} />
+                  </div>
                 )}
               </div>
               <div className={lib.quizPanelMeta}>{visibleDecks.length + visibleFolders.length} mục dữ liệu</div>

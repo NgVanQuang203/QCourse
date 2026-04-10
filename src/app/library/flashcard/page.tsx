@@ -64,7 +64,7 @@ export default function FlashcardLibrary() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const {
-    decks, folders, isLoading, deleteDeck, refreshStats,
+    decks, folders, isLoading, isRefreshing, deleteDeck, refreshStats,
     moveDeckToFolder, addFolder, updateFolder, deleteFolder,
   } = useStore();
   
@@ -73,6 +73,11 @@ export default function FlashcardLibrary() {
     const handleFocus = () => refreshStats();
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
+  }, [refreshStats]);
+
+  // Also refresh whenever this component mounts (e.g. after navigation)
+  useEffect(() => {
+    refreshStats();
   }, [refreshStats]);
 
   const flashDecks = decks.filter(d => !d.type || d.type === 'FLASHCARD');
@@ -452,9 +457,14 @@ export default function FlashcardLibrary() {
                 </button>
               )}
               <div>
-                <div className={lib.fcPanelTitle}>
+                <div className={lib.fcPanelTitle} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   {isAllView ? 'Tất cả bộ thẻ' : isUncategorizedView ? '🗂️ Chưa phân loại' : (
                     activeFolder ? `${activeFolder.icon} ${activeFolder.name}` : (isLoading ? 'Đang tải...' : 'Không tìm thấy thư mục')
+                  )}
+                  {isRefreshing && (
+                    <div className={lib.refreshingIcon} title="Đang cập nhật dữ liệu...">
+                      <RefreshCcw size={14} />
+                    </div>
                   )}
                 </div>
                 <div className={lib.fcPanelMeta}>{visibleDecks.length + visibleFolders.length} mục dữ liệu</div>

@@ -50,6 +50,7 @@ export interface StoreState {
   streak: number;
   maxStreak: number;
   isLoading: boolean;
+  isRefreshing: boolean;
 }
 
 export interface StoreActions {
@@ -80,6 +81,7 @@ const INITIAL_STATE: StoreState = {
   streak: 0,
   maxStreak: 0,
   isLoading: true,
+  isRefreshing: false,
 };
 
 // ── Context ─────────────────────────────────────────────────────
@@ -103,10 +105,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, isLoading: true }));
     try {
       const [decksRes, profileRes, activityRes, foldersRes] = await Promise.all([
-        fetch('/api/decks'),
-        fetch('/api/user/profile'),
-        fetch('/api/activity'),
-        fetch('/api/folders'),
+        fetch('/api/decks', { cache: 'no-store' }),
+        fetch('/api/user/profile', { cache: 'no-store' }),
+        fetch('/api/activity', { cache: 'no-store' }),
+        fetch('/api/folders', { cache: 'no-store' }),
       ]);
 
       const [decksData, profileData, activityData, foldersData] = await Promise.all([
@@ -125,6 +127,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         streak: activityData.streak || 0,
         maxStreak: activityData.maxStreak || 0,
         isLoading: false,
+        isRefreshing: false,
       });
     } catch (error) {
       console.error('Failed to fetch store data:', error);
@@ -138,24 +141,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // ── Helper: Refresh counts/activity ──────────────────────────
   const refreshStats = useCallback(async () => {
+    setState(s => ({ ...s, isRefreshing: true }));
     try {
       const [decksRes, activityRes] = await Promise.all([
-        fetch('/api/decks'),
-        fetch('/api/activity')
+        fetch('/api/decks', { cache: 'no-store' }),
+        fetch('/api/activity', { cache: 'no-store' })
       ]);
-      const [decksData, activityData] = await Promise.all([
-        decksRes.json(),
-        activityRes.json()
-      ]);
+      const decksData = await decksRes.json();
+      const activityData = await activityRes.json();
+      
       setState(s => ({
         ...s,
         decks: decksData.decks || [],
         activity: activityData.activity || [],
         streak: activityData.streak || 0,
         maxStreak: activityData.maxStreak || 0,
+        isRefreshing: false,
       }));
     } catch (e) {
       console.error('refreshStats failed:', e);
+      setState(s => ({ ...s, isRefreshing: false }));
     }
   }, []);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
 import { Card } from '@/lib/mockData';
@@ -42,6 +42,18 @@ export default function FlashcardMode() {
     const backPath = deck?.folderId ? `/library/flashcard?folder=${deck.folderId}` : '/library/flashcard';
     router.push(backPath);
   }, [deck?.folderId, refreshStats, router]);
+
+  // Pre-fetch stats as soon as study is done to hide latency
+  const refreshCalled = useRef(false);
+  useEffect(() => {
+    if (isDone && !refreshCalled.current) {
+      // Small delay to ensure DB write is fully finished
+      setTimeout(() => {
+        refreshStats();
+      }, 500);
+      refreshCalled.current = true;
+    }
+  }, [isDone, refreshStats]);
 
   const [loading, setLoading] = useState(true);
 
