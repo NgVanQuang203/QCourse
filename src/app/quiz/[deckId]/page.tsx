@@ -67,6 +67,7 @@ export default function QuizMode() {
   const [highScore, setHighScore] = useState(0);
   const [histLoading, setHistLoading] = useState(true);
   const [selectedAttempt, setSelectedAttempt] = useState<any | null>(null);
+  const [showHistoryList, setShowHistoryList] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -314,47 +315,94 @@ export default function QuizMode() {
               </div>
             </div>
 
-            <div className={styles.lobbyHistory}>
-              <h3 className={styles.historyTitle}>Lịch sử 5 lần thi gần nhất</h3>
-              {histLoading ? (
-                <div style={{ opacity: 0.5, fontSize: '0.9rem' }}>Đang tải lịch sử...</div>
-              ) : history.length > 0 ? (
-                <div className={styles.historyList}>
-                  {history.slice(0, 5).map((h, i) => {
-                    const dateStr = new Date(h.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                    return (
-                      <div 
-                        key={i} 
-                        className={`${styles.historyItem} ${styles.historyItemClickable}`}
-                        onClick={() => setSelectedAttempt(h)}
-                      >
-                        <div className={styles.historyItemDate}>{dateStr}</div>
-                        <div className={styles.historyItemScore}>{h.score}/{h.totalQuestions}</div>
-                        <div className={`${styles.historyItemGrade} ${styles['grade' + h.grade]}`}>{h.grade}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className={styles.historyEmpty}>Bạn chưa thi bài này lần nào.</div>
-              )}
-            </div>
+            <div className={styles.lobbyButtons}>
+              <button 
+                className={styles.btnHistoryTrigger}
+                onClick={() => setShowHistoryList(true)}
+              >
+                📜 Xem lịch sử thi (5 lần gần nhất)
+              </button>
 
-            <button 
-              className={styles.btnStartQuiz} 
-              onClick={() => {
-                const newQuiz = generateQuizCards(cards);
-                setQuizCards(newQuiz);
-                const perQuestion = (deck as any)?.timeLimitSec || 60;
-                setTimeLeft(newQuiz.length * perQuestion);
-                setIsLobby(false);
-                setTimerStarted(true);
-              }}
-            >
-              🚀 BẮT ĐẦU LÀM BÀI
-            </button>
+              <button 
+                className={styles.btnStartQuiz} 
+                onClick={() => {
+                  const newQuiz = generateQuizCards(cards);
+                  setQuizCards(newQuiz);
+                  const perQuestion = (deck as any)?.timeLimitSec || 60;
+                  setTimeLeft(newQuiz.length * perQuestion);
+                  setIsLobby(false);
+                  setTimerStarted(true);
+                }}
+              >
+                🚀 BẮT ĐẦU LÀM BÀI
+              </button>
+            </div>
           </motion.div>
         </div>
+        {/* ── DANH SÁCH LỊCH SỬ THI (MODAL) ── */}
+        <AnimatePresence>
+          {showHistoryList && (
+            <motion.div 
+              className={styles.modalOverlay}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowHistoryList(false)}
+            >
+              <motion.div 
+                className={styles.historyListCard}
+                initial={{ y: 50, opacity: 0, scale: 0.95 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                exit={{ y: 20, opacity: 0, scale: 0.95 }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div className={styles.historyDetailHeader}>
+                  <h2>Lịch sử 5 lần gần nhất</h2>
+                  <button className={styles.closeBtn} onClick={() => setShowHistoryList(false)}><X size={20} /></button>
+                </div>
+                
+                <div className={styles.historyListBody}>
+                  {histLoading ? (
+                    <div className={styles.loadingHistory}>
+                      <Loader2 size={24} className={styles.spinner} />
+                      <p>Đang tải lịch sử...</p>
+                    </div>
+                  ) : history.length > 0 ? (
+                    <div className={styles.historyListPopup}>
+                      {history.slice(0, 5).map((h, i) => {
+                        const dateStr = new Date(h.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        return (
+                          <div 
+                            key={i} 
+                            className={styles.historyItemPopup}
+                            onClick={() => {
+                              setSelectedAttempt(h);
+                              // Keep list open or close it? Let's keep it open for easy back-and-forth
+                              // or close it to focus. I'll keep it open but detail will be on top.
+                            }}
+                          >
+                            <div className={styles.historyItemInfo}>
+                              <div className={styles.historyItemDate}>{dateStr}</div>
+                              <div className={styles.historyItemScore}>{h.score}/{h.totalQuestions} câu đúng</div>
+                            </div>
+                            <div className={`${styles.historyItemGradePopup} ${styles['grade' + h.grade]}`}>
+                              {h.grade}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className={styles.historyEmptyPopup}>
+                      <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📜</div>
+                      <p>Bạn chưa thi bài này lần nào.</p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ── CHI TIẾT LỊCH SỬ THI (MODAL) ── */}
         <AnimatePresence>
