@@ -138,17 +138,21 @@ export default function Navbar() {
             {mounted && (
               status === 'loading' ? (
                 <div className={styles.avatarSkeleton} />
-              ) : status === 'authenticated' && profile ? (
+              ) : status === 'authenticated' ? (
                 <div
                   className={styles.accountWrapper}
                   onMouseEnter={() => setIsDropdownOpen(true)}
                   onMouseLeave={() => setIsDropdownOpen(false)}
                 >
-                  <button className={styles.avatarBtn} title="Tài khoản" style={{ background: profile.avatarColor }}>
-                    {initials}
+                  <button 
+                    className={styles.avatarBtn} 
+                    title="Tài khoản" 
+                    style={{ background: profile?.avatarColor || 'var(--primary-light)' }}
+                  >
+                    {profile ? initials : <User size={18} />}
                   </button>
 
-                  {isDropdownOpen && (
+                  {isDropdownOpen && profile && (
                     <div className={styles.dropdown}>
                       <div className={styles.dropdownHeader}>
                         <div className={styles.dropdownAvatar} style={{ background: profile.avatarColor }}>
@@ -173,6 +177,7 @@ export default function Navbar() {
                     </div>
                   )}
                 </div>
+
               ) : (
                 <button className={styles.loginBtn} onClick={() => signIn()}>
                   <LogIn size={16} /> <span>Đăng nhập</span>

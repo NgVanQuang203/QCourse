@@ -7,7 +7,7 @@ import loadingStyles from '@/app/loading.module.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore, Folder } from '@/lib/store';
 import { toast } from '@/lib/toast';
-import { Plus, MoreVertical, Edit2, Trash2, FolderInput, RefreshCcw, ChevronRight, Copy, MoreHorizontal, FolderPlus, LayoutGrid } from 'lucide-react';
+import { Plus, MoreVertical, Edit2, Trash2, FolderInput, RefreshCcw, ChevronRight, Copy, MoreHorizontal, FolderPlus, LayoutGrid, Upload } from 'lucide-react';
 import EditQuizModal from '@/components/EditQuizModal';
 import ImportQuizModal from '@/components/ImportQuizModal';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
@@ -341,12 +341,18 @@ export default function QuizLibrary() {
                   </div>
                 )}
               </div>
-              <div className={lib.quizPanelMeta}>{visibleDecks.length + visibleFolders.length} mục dữ liệu</div>
             </div>
-            <button className={lib.btnCreate} onClick={() => setEditDeck('new')} disabled={isProcessing}>
-              <Plus size={15} /> Tạo đề thi
-            </button>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button className={lib.btnSecondary} onClick={() => setImportOpen(true)} style={{ gap: '0.4rem' }}>
+                <Upload size={15} /> Nhập nhanh
+              </button>
+              <button className={lib.btnCreate} onClick={() => setEditDeck('new')} disabled={isProcessing}>
+                <Plus size={15} /> Tạo đề thi
+              </button>
+            </div>
           </div>
+
+
 
           <div className={lib.quizPanelBody}>
             {isLoading ? (

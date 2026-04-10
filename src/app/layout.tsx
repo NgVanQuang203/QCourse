@@ -3,6 +3,8 @@ import { Be_Vietnam_Pro } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SessionProvider } from "@/components/SessionProvider";
+import { auth } from "@/lib/auth";
+
 import { StoreWrapper } from "@/components/StoreWrapper";
 import { ToastProvider } from "@/components/Toast";
 import "./globals.css";
@@ -19,16 +21,18 @@ export const metadata: Metadata = {
   description: "Flashcard & trắc nghiệm với thuật toán Spaced Repetition SM-2",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
   return (
     <html lang="vi" suppressHydrationWarning className={`${font.variable}`}>
       <body>
         <ThemeProvider>
-          <SessionProvider>
+          <SessionProvider session={session}>
             <StoreWrapper>
               <ToastProvider>
                 <Navbar />
@@ -44,3 +48,4 @@ export default function RootLayout({
     </html>
   );
 }
+

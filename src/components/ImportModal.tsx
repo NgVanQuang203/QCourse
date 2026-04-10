@@ -53,10 +53,30 @@ function parseJSON(raw: string): ParsedPair[] | null {
       }
     }
     return pairs.length > 0 ? pairs : null;
-  } catch (e) {
-    return null;
-  }
+  } catch (e) { return null; }
 }
+
+
+function parseBetterJSON(raw: string): ParsedPair[] | null {
+  try {
+    const data = JSON.parse(raw);
+    const results: ParsedPair[] = [];
+    const items = Array.isArray(data) ? data : [data];
+    
+    for (const item of items) {
+      if (typeof item !== 'object' || !item) continue;
+      
+      const front = item.front || item.term || item.question || item.q || item.word || Object.values(item)[0];
+      const back = item.back || item.definition || item.answer || item.a || item.meaning || Object.values(item)[1];
+      
+      if (front && back) {
+        results.push({ front: String(front).trim(), back: String(back).trim() });
+      }
+    }
+    return results.length > 0 ? results : null;
+  } catch(e) { return null; }
+}
+
 
 export default function ImportModal({ deckId, allDecks, onClose }: Props) {
   const { importCards } = useStore();
@@ -71,11 +91,12 @@ export default function ImportModal({ deckId, allDecks, onClose }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleParseText = () => {
-    let pairs = parseJSON(rawText);
+    let pairs = parseBetterJSON(rawText);
     if (!pairs) pairs = parseText(rawText);
     setPreview(pairs);
     setShowPreview(true);
   };
+
 
   const handleCsvFile = (file: File) => {
     const reader = new FileReader();

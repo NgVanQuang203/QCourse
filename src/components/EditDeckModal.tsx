@@ -4,8 +4,11 @@ import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { Deck } from '@/lib/mockData';
 import styles from './EditDeckModal.module.css';
-import { X, Plus, Trash2, Save, Edit3, ChevronDown, ChevronUp, Check, RefreshCcw } from 'lucide-react';
+import { X, Plus, Trash2, Save, Edit3, ChevronDown, ChevronUp, Check, RefreshCcw, Upload } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
+import ImportModal from './ImportModal';
+import ImportQuizModal from './ImportQuizModal';
+
 
 const GRADIENT_PRESETS = [
   'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
@@ -57,6 +60,8 @@ export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }
   const [activeSection, setActiveSection] = useState<'info' | 'cards'>('info');
   const [currentDeckId, setCurrentDeckId] = useState<string | null>(deckId);
   const [isSaving, setIsSaving] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+
 
   const handleSaveDeck = async () => {
     if (!deckForm.name.trim() || isSaving) return;
@@ -226,10 +231,16 @@ export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }
             <div className={styles.section}>
               {/* Add card button */}
               {!addingCard && (
-                <button className={styles.addCardBtn} onClick={() => setAddingCard(true)}>
-                  <Plus size={16} /> Thêm thẻ mới
-                </button>
+                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <button className={styles.addCardBtn} style={{ marginBottom: 0 }} onClick={() => setAddingCard(true)}>
+                    <Plus size={16} /> Thêm thẻ mới
+                  </button>
+                  <button className={styles.btnGhost} onClick={() => setShowImport(true)} style={{ flex: 1, padding: '0.7rem' }}>
+                    <Upload size={14} /> Nhập nhanh
+                  </button>
+                </div>
               )}
+
 
               {/* New card form */}
               {addingCard && (
@@ -352,6 +363,23 @@ export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }
         onConfirm={confirmDeleteCard}
         onCancel={() => setCardToDeleteId(null)}
       />
+
+      {showImport && currentDeckId && (
+        mode === 'quiz' ? (
+          <ImportQuizModal
+            deckId={currentDeckId}
+            allDecks={decks.filter(d => d.id === currentDeckId)}
+            onClose={() => setShowImport(false)}
+          />
+        ) : (
+          <ImportModal
+            deckId={currentDeckId}
+            allDecks={decks.filter(d => d.id === currentDeckId)}
+            onClose={() => setShowImport(false)}
+          />
+        )
+      )}
     </div>
+
   );
 }

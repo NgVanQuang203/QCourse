@@ -471,10 +471,14 @@ export default function FlashcardLibrary() {
               </div>
             </div>
             <div className={lib.fcPanelActions}>
+              <button className={lib.btnSecondary} onClick={() => setImportOpen(true)} style={{ gap: '0.4rem' }}>
+                <Upload size={16} /> Nhập nhanh
+              </button>
               <button className={lib.btnCreate} onClick={() => setEditDeck('new')}>
                 <Plus size={16} /> Tạo bộ thẻ
               </button>
             </div>
+
           </div>
 
           {/* Panel body */}
@@ -614,6 +618,8 @@ export default function FlashcardLibrary() {
       )}
       {editDeck && <EditDeckModal deckId={editDeck === 'new' ? null : editDeck} mode="flashcard" onClose={() => setEditDeck(null)} />}
       {importOpen && <ImportModal deckId={null} allDecks={flashDecks} onClose={() => setImportOpen(false)} />}
+
+
       <DeleteConfirmModal isOpen={!!deleteDeckId} deckName={deleteName} isLoading={isProcessing} onConfirm={confirmDelete} onCancel={() => setDeleteDeckId(null)} />
       <ConfirmModal
         isOpen={!!resetDeckId}

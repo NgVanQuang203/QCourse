@@ -152,6 +152,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     fetchData();
   }, [fetchData]);
 
+  // Sync profile from session immediately to prevent UI flicker
+  useEffect(() => {
+    if (session?.user && !state.profile) {
+      const user = session.user as any;
+      setState(s => ({
+        ...s,
+        profile: s.profile || {
+          id: user.id || '',
+          name: user.name || '',
+          nickname: user.name || '',
+          email: user.email || '',
+          bio: '',
+          avatarColor: 'var(--primary-light)',
+          mood: '🎯 Đang tập trung',
+          streak: 0,
+          maxStreak: 0,
+          createdAt: new Date().toISOString(),
+        }
+      }));
+    }
+  }, [session, state.profile]);
+
   // ── Helper: Refresh counts/activity ──────────────────────────
   const refreshStats = useCallback(async () => {
     setState(s => ({ ...s, isRefreshing: true }));

@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import styles from './EditDeckModal.module.css';
 import qStyles from './EditQuizModal.module.css';
-import { X, Plus, Trash2, Save, Edit3, Check, RefreshCcw } from 'lucide-react';
+import { X, Plus, Trash2, Save, Edit3, Check, RefreshCcw, Upload } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
+import ImportQuizModal from './ImportQuizModal';
+
 
 const GRADIENT_PRESETS = [
   'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
@@ -130,6 +132,8 @@ export default function EditQuizModal({ deckId, initialFolderId, onClose }: Prop
   const [currentDeckId, setCurrentDeckId] = useState<string | null>(deckId);
   const [saved, setSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+
 
   // Questions draft (only populated this session for new questions)
   // For existing: load from cards
@@ -321,10 +325,16 @@ export default function EditQuizModal({ deckId, initialFolderId, onClose }: Prop
             <div className={styles.section}>
               {/* Add question */}
               {!addingNew && (
-                <button className={styles.addCardBtn} onClick={() => { setAddingNew(true); setNewQ(emptyQuestion()); }}>
-                  <Plus size={15}/> Thêm câu hỏi mới
-                </button>
+                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <button className={styles.addCardBtn} style={{ marginBottom: 0 }} onClick={() => { setAddingNew(true); setNewQ(emptyQuestion()); }}>
+                    <Plus size={15}/> Thêm câu hỏi mới
+                  </button>
+                  <button className={styles.btnGhost} onClick={() => setShowImport(true)} style={{ flex: 1, padding: '0.7rem' }}>
+                    <Upload size={14} /> Nhập nhanh
+                  </button>
+                </div>
               )}
+
 
               {addingNew && (
                 <div className={qStyles.newQWrap}>
@@ -397,6 +407,15 @@ export default function EditQuizModal({ deckId, initialFolderId, onClose }: Prop
         onConfirm={confirmDeleteQuestion}
         onCancel={() => setQuestionToDeleteId(null)}
       />
+
+      {showImport && currentDeckId && (
+        <ImportQuizModal
+          deckId={currentDeckId}
+          allDecks={decks.filter(d => d.id === currentDeckId)}
+          onClose={() => setShowImport(false)}
+        />
+      )}
     </div>
+
   );
 }

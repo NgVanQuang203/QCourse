@@ -54,6 +54,51 @@ function parseQuizJSON(raw: string): ParsedQ[] | null {
     return results.length > 0 ? results : null;
   } catch(e) { return null; }
 }
+
+function parseBetterQuizJSON(raw: string): ParsedQ[] | null {
+  try {
+    const data = JSON.parse(raw);
+    const results: ParsedQ[] = [];
+    const items = Array.isArray(data) ? data : [data];
+
+    for (const item of items) {
+      if (typeof item !== 'object' || !item) continue;
+
+      const question = item.question || item.q || item.text || item.content;
+      let options = item.options || item.choices;
+      let correct = item.correct !== undefined ? item.correct : (item.answer !== undefined ? item.answer : item.ans);
+
+      // If options are separate fields a, b, c, d
+      if (!options && item.a && item.b && item.c && item.d) {
+        options = [item.a, item.b, item.c, item.d];
+      }
+
+      if (question && Array.isArray(options) && options.length >= 2) {
+        // Ensure at least 4 options, pad if needed
+        const fullOptions: [string, string, string, string] = [
+          String(options[0] || ''),
+          String(options[1] || ''),
+          String(options[2] || ''),
+          String(options[3] || '')
+        ];
+
+        let correctIdx: 0|1|2|3 = 0;
+        if (typeof correct === 'string') {
+          const u = correct.toUpperCase();
+          if (['A','B','C','D'].includes(u)) correctIdx = ['A','B','C','D'].indexOf(u) as 0|1|2|3;
+          else if (['1','2','3','4'].includes(u)) correctIdx = (parseInt(u) - 1) as 0|1|2|3;
+        } else if (typeof correct === 'number') {
+          if (correct >= 0 && correct <= 3) correctIdx = correct as 0|1|2|3;
+          else if (correct >= 1 && correct <= 4) correctIdx = (correct - 1) as 0|1|2|3;
+        }
+
+        results.push({ question: String(question), options: fullOptions, correct: correctIdx });
+      }
+    }
+    return results.length > 0 ? results : null;
+  } catch(e) { return null; }
+}
+
 function parseQuiz(raw: string): ParsedQ[] {
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
   const results: ParsedQ[] = [];
@@ -96,11 +141,12 @@ Sông dài nhất Việt Nam? | Sông Hồng | Sông Mê Kông | Sông Đà | S�
   const EXAMPLE_JSON = `[\n  {\n    "question": "Thủ đô của Việt Nam là gì?",\n    "options": ["Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Huế"],\n    "correct": 0\n  }\n]`;
 
   const handleParse = () => {
-    let q = parseQuizJSON(rawText);
+    let q = parseBetterQuizJSON(rawText);
     if (!q) q = parseQuiz(rawText);
     setPreview(q);
     setShowPreview(true);
   };
+
 
   const handleFile = (file: File) => {
     const r = new FileReader();
