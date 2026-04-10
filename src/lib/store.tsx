@@ -42,7 +42,7 @@ export interface ActivityDay {
 }
 
 export interface StoreState {
-  decks: (Deck & { dueCount?: number; masteredCount?: number; _count?: { cards: number } })[];
+  decks: (Deck & { dueCount?: number; masteredCount?: number; nextDue?: number; _count?: { cards: number } })[];
   folders: Folder[];
   cards: Card[];
   profile: UserProfile | null;
