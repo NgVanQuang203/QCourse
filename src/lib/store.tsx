@@ -5,7 +5,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { Deck, Card } from './mockData';
 import { SM2Data, sm2InitialData } from './types/sm2';
 import { toast } from './toast';
