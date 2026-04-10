@@ -65,6 +65,13 @@ export default function QuizLibrary() {
     addDeck, fetchDeckCards, importCards,
   } = useStore();
 
+  // Refresh stats when user returns to this tab
+  useEffect(() => {
+    const handleFocus = () => refreshStats();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [refreshStats]);
+
   const getFolderHue = (id: string) => {
     let hash = 0;
     for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
@@ -320,7 +327,9 @@ export default function QuizLibrary() {
           <div className={lib.quizPanelHeader}>
             <div>
               <div className={lib.quizPanelTitle}>
-                {currentFolderId === 'all' ? 'Tất cả đề thi' : currentFolderId === null ? '🗂️ Chưa phân loại' : `${activeFolder?.icon || '📁'} ${activeFolder?.name}`}
+                {currentFolderId === 'all' ? 'Tất cả đề thi' : currentFolderId === null ? '🗂️ Chưa phân loại' : (
+                  activeFolder ? `${activeFolder.icon || '📁'} ${activeFolder.name}` : (isLoading ? 'Đang tải...' : 'Không tìm thấy thư mục')
+                )}
               </div>
               <div className={lib.quizPanelMeta}>{visibleDecks.length + visibleFolders.length} mục dữ liệu</div>
             </div>

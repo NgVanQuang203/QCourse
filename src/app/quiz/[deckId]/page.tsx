@@ -26,6 +26,11 @@ export default function QuizMode() {
   const router = useRouter();
   const deckId = params.deckId as string;
   const { decks, fetchDeckCards, isLoading: storeLoading, refreshStats } = useStore();
+  
+  const handleBackToLibrary = () => {
+    refreshStats();
+    router.push('/library/quiz');
+  };
   const [cards, setCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -175,7 +180,7 @@ export default function QuizMode() {
     if (!isSubmitted && Object.keys(answers).length > 0) {
       setShowExitConfirm(true);
     } else {
-      router.push('/library/quiz');
+      handleBackToLibrary();
     }
   };
 
@@ -200,7 +205,7 @@ export default function QuizMode() {
             Đề thi trắc nghiệm này không tồn tại hoặc có thể đã bị xóa. Vui lòng kiểm tra lại đường dẫn.
           </p>
           <button
-            onClick={() => router.push('/library/quiz')}
+            onClick={handleBackToLibrary}
             style={{ 
               background: 'var(--primary)', color: 'white', padding: '0.85rem 1.5rem', 
               borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer',
@@ -219,7 +224,7 @@ export default function QuizMode() {
     return (
       <div className={styles.pageWrapper}>
         <div className={styles.quizHeader}>
-          <button className={styles.backBtn} onClick={() => router.push('/library/quiz')}>
+          <button className={styles.backBtn} onClick={handleBackToLibrary}>
             <ArrowLeft size={16} />
             <span className={styles.backLabel}>Quay lại</span>
           </button>
@@ -247,13 +252,13 @@ export default function QuizMode() {
             <div className={styles.emptyActions}>
               <button
                 className={styles.emptyBtnPrimary}
-                onClick={() => router.push('/library/quiz')}
+                onClick={handleBackToLibrary}
               >
                 <ArrowLeft size={15} /> Quay lại thư viện
               </button>
               <button
                 className={styles.emptyBtnSecondary}
-                onClick={() => router.push('/library/quiz')}
+                onClick={handleBackToLibrary}
               >
                 <BookOpen size={15} /> Thư viện trắc nghiệm
               </button>
@@ -269,7 +274,7 @@ export default function QuizMode() {
     return (
       <div className={styles.pageWrapper}>
         <div className={styles.quizHeader}>
-          <button className={styles.backBtn} onClick={() => router.push('/library/quiz')}>
+          <button className={styles.backBtn} onClick={handleBackToLibrary}>
             <ArrowLeft size={16} />
             <span className={styles.backLabel}>Quay lại</span>
           </button>
@@ -642,7 +647,7 @@ export default function QuizMode() {
                 </button>
                 <button
                   className={styles.confirmBtnExit}
-                  onClick={() => router.push('/library/quiz')}
+                  onClick={handleBackToLibrary}
                 >
                   <ArrowLeft size={14} /> Thoát bài thi
                 </button>
@@ -703,7 +708,7 @@ export default function QuizMode() {
                   <button className={styles.modalBtnSecondary} onClick={() => setShowResultModal(false)}>
                     <RotateCcw size={14} /> Xem lại lỗi
                   </button>
-                  <button className={styles.modalBtnPrimary} onClick={() => router.push('/library/quiz')}>
+                  <button className={styles.modalBtnPrimary} onClick={handleBackToLibrary}>
                     <BookOpen size={14} /> Thư viện
                   </button>
                 </div>
