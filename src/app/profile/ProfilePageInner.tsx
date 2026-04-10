@@ -20,17 +20,19 @@ const GAP  = 3;   // gap px — MUST be identical in month-chip row and week gri
 function Heatmap({ activity }: { activity: ActivityDay[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [tooltip, setTooltip] = useState<{ day: ActivityDay; vx: number; vy: number } | null>(null);
-  const todayStr = useMemo(() => getVNDateStr(), []);
+  const today = useMemo(() => getVNDateStr(), []);
 
   // ── 364 days ending TODAY ────────────────────────────────────────────────
   const { paddedDays, numWeeks, monthBlocks } = useMemo(() => {
     const arr: ActivityDay[] = [];
+    const now = new Date();
+    // Use VN time reference
+    const baseDate = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+
     for (let i = 363; i >= 0; i--) {
-      const d = new Date();
-      // Adjust to VN time first to ensure relative "days ago" is correct
-      const vnD = new Date(d.getTime() + 7 * 60 * 60 * 1000);
-      vnD.setDate(vnD.getDate() - i);
-      const s = vnD.toISOString().slice(0, 10);
+      const d = new Date(baseDate);
+      d.setDate(d.getDate() - i);
+      const s = d.toISOString().slice(0, 10);
       arr.push(activity.find(a => a.date === s) ?? { date: s, minutesStudied: 0, cardsStudied: 0, deckIds: [] });
     }
     // Pad start so week begins on Sunday (day 0)
@@ -160,7 +162,7 @@ function Heatmap({ activity }: { activity: ActivityDay[] }) {
                   const day = paddedDays[wi * 7 + di] ?? null;
                   if (!day) return <div key={di} className={styles.hmCellPad} />;
                   const lv  = getLevel(day.minutesStudied);
-                  const isTd = day.date === todayStr;
+                  const isTd = day.date === today;
                   return (
                     <div
                       key={di}
