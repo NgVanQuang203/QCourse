@@ -35,7 +35,31 @@ export default function QuizMode() {
   };
 
   const [cards, setCards] = useState<any[]>([]);
+  const [quizCards, setQuizCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Helper to generate a freshly shuffled quiz from raw cards
+  const generateQuizCards = useCallback((rawCards: any[]) => {
+    if (!rawCards.length) return [];
+    
+    // 1. Shuffle questions order
+    const shuffledQuestions = shuffle([...rawCards]);
+
+    // 2. Shuffle options for each question
+    return shuffledQuestions.map(c => {
+      if (c.options && Array.isArray(c.options) && c.options.length > 0) {
+        // Explicit quiz options
+        const correctText = c.options[c.correctOptionIndex];
+        const finalOptions = shuffle([...c.options]);
+        return { ...c, options: finalOptions, correctOptionIndex: finalOptions.indexOf(correctText) };
+      }
+      // Fallback for flashcard-style quiz (generate 3 random distractors)
+      const otherAnswers = rawCards.filter(o => o.id !== c.id).map(o => o.back);
+      const optionsStr = [c.back, ...shuffle(otherAnswers).slice(0, 3)];
+      const finalOptions = shuffle(optionsStr);
+      return { ...c, options: finalOptions, correctOptionIndex: finalOptions.indexOf(c.back) };
+    });
+  }, []);
 
   // Lobby States
   const [isLobby, setIsLobby] = useState(true);
@@ -49,13 +73,15 @@ export default function QuizMode() {
       if (deckId) {
         setLoading(true);
         const fetchedCards = await fetchDeckCards(deckId);
-        // Shuffle the questions right away
-        if (fetchedCards) setCards(shuffle([...fetchedCards]));
+        if (fetchedCards) {
+          setCards(fetchedCards);
+          setQuizCards(generateQuizCards(fetchedCards));
+        }
         setLoading(false);
       }
     };
     load();
-  }, [deckId, fetchDeckCards]);
+  }, [deckId, fetchDeckCards, generateQuizCards]);
 
   useEffect(() => {
     if (deckId) {
@@ -70,22 +96,6 @@ export default function QuizMode() {
     }
   }, [deckId]);
 
-  const quizCards = useMemo(() => {
-    if (!cards.length) return [];
-    return cards.map(c => {
-      if (c.options && Array.isArray(c.options) && c.options.length > 0) {
-        // Shuffle explicit quiz options
-        const correctText = c.options[c.correctOptionIndex];
-        const finalOptions = shuffle([...c.options]);
-        return { ...c, options: finalOptions, correctOptionIndex: finalOptions.indexOf(correctText) };
-      }
-      // Fallback for flashcard-style quiz
-      const otherAnswers = cards.filter(o => o.id !== c.id).map(o => o.back);
-      const optionsStr = [c.back, ...shuffle(otherAnswers).slice(0, 3)];
-      const finalOptions = shuffle(optionsStr);
-      return { ...c, options: finalOptions, correctOptionIndex: finalOptions.indexOf(c.back) };
-    });
-  }, [cards]);
 
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [timeLeft, setTimeLeft] = useState(0);
@@ -170,8 +180,9 @@ export default function QuizMode() {
     setIsSubmitted(false);
     setShowResultModal(false);
     const perQuestion = (deck as any)?.timeLimitSec || 60;
-    setTimeLeft(quizCards.length * perQuestion);
-    setCards(shuffle([...cards]));
+    const newQuiz = generateQuizCards(cards);
+    setQuizCards(newQuiz);
+    setTimeLeft(newQuiz.length * perQuestion);
     setTimerStarted(true);
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -336,8 +347,11 @@ export default function QuizMode() {
             <button 
               className={styles.btnStartQuiz} 
               onClick={() => {
+                const newQuiz = generateQuizCards(cards);
+                setQuizCards(newQuiz);
+                const perQuestion = (deck as any)?.timeLimitSec || 60;
+                setTimeLeft(newQuiz.length * perQuestion);
                 setIsLobby(false);
-                setTimeLeft(quizCards.length * ((deck as any)?.timeLimitSec || 60));
                 setTimerStarted(true);
               }}
             >
