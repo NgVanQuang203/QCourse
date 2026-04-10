@@ -26,6 +26,7 @@ export default function FlashcardMode() {
   const [swipeAnim, setSwipeAnim] = useState<'left' | 'right' | 'up' | 'down' | null>(null);
   const [isResetting, setIsResetting] = useState(false);
   const [initialQueueLength, setInitialQueueLength] = useState(0);
+  const [cardsFinished, setCardsFinished] = useState(0);
 
   // Thống kê phiên học
   const [stats, setStats] = useState({ correct: 0, wrong: 0 });
@@ -104,6 +105,8 @@ export default function FlashcardMode() {
     // If quality is poor ("học lại"), append it to the end of the queue
     if (quality === Rating.Again) {
       setQueue(prev => [...prev, currentCard]);
+    } else {
+      setCardsFinished(prev => prev + 1);
     }
 
     setTimeout(() => {
@@ -244,13 +247,13 @@ export default function FlashcardMode() {
 
         <div className={styles.progressContainer}>
           <div className={styles.progressText}>
-            Thẻ {isDone ? queue.length : currentIndex + 1} / {queue.length}
+            Thẻ {Math.min(initialQueueLength, cardsFinished + 1)} / {initialQueueLength}
           </div>
           <div className={styles.progressBar}>
             <div
               className={styles.progressFill}
               style={{ 
-                width: `${initialQueueLength === 0 ? 100 : Math.min(100, (currentIndex / initialQueueLength) * 100)}%` 
+                width: `${initialQueueLength === 0 ? 100 : Math.min(100, (cardsFinished / initialQueueLength) * 100)}%` 
               }}
             />
           </div>
