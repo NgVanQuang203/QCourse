@@ -64,6 +64,24 @@ export const authConfig = {
       }
       return token;
     },
+
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const isAuthPage = nextUrl.pathname.startsWith('/auth');
+      const isPublicPage = nextUrl.pathname === '/'; // Landing page
+
+      // Redirect logged-in users away from auth pages
+      if (isAuthPage) {
+        if (isLoggedIn) return Response.redirect(new URL('/library/flashcard', nextUrl));
+        return true;
+      }
+
+      // Allow public pages
+      if (isPublicPage) return true;
+
+      // Force login for everything else
+      return isLoggedIn;
+    },
   },
   // ── Custom pages ───────────────────────────────────────────────────────────
   pages: {
