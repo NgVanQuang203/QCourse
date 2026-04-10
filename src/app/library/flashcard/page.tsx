@@ -67,6 +67,13 @@ export default function FlashcardLibrary() {
     decks, folders, isLoading, deleteDeck, refreshStats,
     moveDeckToFolder, addFolder, updateFolder, deleteFolder,
   } = useStore();
+  
+  // Refresh stats when user returns to this tab
+  useEffect(() => {
+    const handleFocus = () => refreshStats();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [refreshStats]);
 
   const flashDecks = decks.filter(d => !d.type || d.type === 'FLASHCARD');
   const flashFolders = folders.filter(f => f.type === 'FLASHCARD' || !f.type);
@@ -446,7 +453,9 @@ export default function FlashcardLibrary() {
               )}
               <div>
                 <div className={lib.fcPanelTitle}>
-                  {isAllView ? 'Tất cả bộ thẻ' : isUncategorizedView ? '🗂️ Chưa phân loại' : `${activeFolder?.icon} ${activeFolder?.name}`}
+                  {isAllView ? 'Tất cả bộ thẻ' : isUncategorizedView ? '🗂️ Chưa phân loại' : (
+                    activeFolder ? `${activeFolder.icon} ${activeFolder.name}` : (isLoading ? 'Đang tải...' : 'Không tìm thấy thư mục')
+                  )}
                 </div>
                 <div className={lib.fcPanelMeta}>{visibleDecks.length + visibleFolders.length} mục dữ liệu</div>
               </div>

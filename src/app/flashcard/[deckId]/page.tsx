@@ -34,6 +34,12 @@ export default function FlashcardMode() {
   const [editCardMode, setEditCardMode] = useState(false);
 
   const { decks, fetchDeckCards, isLoading: storeLoading, refreshStats } = useStore();
+  
+  const handleBackToLibrary = useCallback(() => {
+    refreshStats();
+    const backPath = deck?.folderId ? `/library/flashcard?folder=${deck.folderId}` : '/library/flashcard';
+    router.push(backPath);
+  }, [deck?.folderId, refreshStats, router]);
   const [loading, setLoading] = useState(true);
 
   const deck = decks.find(d => d.id === deckId);
@@ -164,8 +170,7 @@ export default function FlashcardMode() {
           if (isFlipped) handleEvaluate(Rating.Easy); // Dễ
           break;
         case 'Escape':
-          const backPath = deck?.folderId ? `/library/flashcard?folder=${deck.folderId}` : '/library/flashcard';
-          router.push(backPath);
+          handleBackToLibrary();
           break;
       }
     };
@@ -197,7 +202,7 @@ export default function FlashcardMode() {
             Bộ thẻ này không tồn tại hoặc có thể đã bị xóa. Vui lòng kiểm tra lại đường dẫn.
           </p>
             <button
-              onClick={() => router.push('/library/flashcard')}
+              onClick={handleBackToLibrary}
               style={{ 
                 background: 'var(--primary)', color: 'white', padding: '0.85rem 1.5rem', 
                 borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer',
@@ -223,7 +228,7 @@ export default function FlashcardMode() {
         { label: 'Sao chép mặt trước', icon: <Copy size={14}/>, onClick: () => { navigator.clipboard.writeText(currentCard.front); toast.success('Đã sao chép'); } },
         { label: 'Bỏ qua thẻ này', icon: <SkipForward size={14}/>, onClick: () => { handleEvaluate(4); } }, // Skip as "Good" or add a dedicated skip logic
         { divider: true, label: '', onClick: () => {} },
-        { label: 'Thoát học tập', icon: <ArrowLeft size={14}/>, variant: 'danger', onClick: () => router.push(deck?.folderId ? `/library/flashcard?folder=${deck.folderId}` : '/library/flashcard') },
+        { label: 'Thoát học tập', icon: <ArrowLeft size={14}/>, variant: 'danger', onClick: handleBackToLibrary },
       ]
     });
   };
@@ -233,7 +238,7 @@ export default function FlashcardMode() {
       <header className={styles.header}>
         <button
           className={styles.backBtn}
-          onClick={() => router.push(deck?.folderId ? `/library/flashcard?folder=${deck.folderId}` : '/library/flashcard')}
+          onClick={handleBackToLibrary}
           title="Quay lại thư viện"
         >
           <ArrowLeft size={16} />
@@ -284,7 +289,7 @@ export default function FlashcardMode() {
 
             <button
               style={{ background: 'var(--primary)', color: 'white', padding: '1rem 2rem', borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }}
-              onClick={() => router.push(deck?.folderId ? `/library/flashcard?folder=${deck.folderId}` : '/library/flashcard')}
+              onClick={handleBackToLibrary}
             >
               Về vị trí bộ thẻ
             </button>
