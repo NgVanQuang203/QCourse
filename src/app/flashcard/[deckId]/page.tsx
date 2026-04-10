@@ -35,14 +35,15 @@ export default function FlashcardMode() {
 
   const { decks, fetchDeckCards, isLoading: storeLoading, refreshStats } = useStore();
   
+  const deck = decks.find(d => d.id === deckId);
+
   const handleBackToLibrary = useCallback(() => {
     refreshStats();
     const backPath = deck?.folderId ? `/library/flashcard?folder=${deck.folderId}` : '/library/flashcard';
     router.push(backPath);
   }, [deck?.folderId, refreshStats, router]);
-  const [loading, setLoading] = useState(true);
 
-  const deck = decks.find(d => d.id === deckId);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
