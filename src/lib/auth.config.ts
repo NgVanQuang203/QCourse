@@ -67,20 +67,30 @@ export const authConfig = {
 
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
+      
       const isAuthPage = nextUrl.pathname.startsWith('/auth');
       const isPublicPage = nextUrl.pathname === '/'; // Landing page
+      
+      // Explicitly protect library, flashcard, quiz, and profile paths
+      const isProtectedRoute = 
+        nextUrl.pathname.startsWith('/library') || 
+        nextUrl.pathname.startsWith('/flashcard') || 
+        nextUrl.pathname.startsWith('/quiz') || 
+        nextUrl.pathname.startsWith('/profile');
 
-      // Redirect logged-in users away from auth pages
       if (isAuthPage) {
-        if (isLoggedIn) return Response.redirect(new URL('/library/flashcard', nextUrl));
+        // If logged in, don't show login/register pages
+        if (isLoggedIn) return Response.redirect(new URL('/', nextUrl));
         return true;
       }
 
-      // Allow public pages
-      if (isPublicPage) return true;
+      if (isProtectedRoute) {
+        if (isLoggedIn) return true;
+        return false; // Force redirect to sign in
+      }
 
-      // Force login for everything else
-      return isLoggedIn;
+      // Allow all other public pages
+      return true;
     },
   },
   // ── Custom pages ───────────────────────────────────────────────────────────
