@@ -220,32 +220,49 @@
 
 .timeBtn:hover { border-color: var(--primary); color: var(--primary); }
 
-.timeDisplay {
-  min-width: 52px;
-  text-align: center;
-  font-size: 1.05rem;
-  font-weight: 900;
+.timeInputWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  padding: 0 0.5rem;
+  min-width: 90px;
+}
+
+.manualTimeInput {
+  width: 50px;
+  border: none;
+  background: transparent;
   color: var(--primary);
-  font-variant-numeric: tabular-nums;
+  font-size: 1.1rem;
+  font-weight: 900;
+  text-align: right;
+  padding: 0.4rem 0;
+  font-family: inherit;
+  outline: none;
+}
+
+.manualTimeInput::-webkit-inner-spin-button,
+.manualTimeInput::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.timeUnit {
+  font-size: 0.85rem;
+  font-weight: 700;
+  opacity: 0.5;
+  color: var(--foreground);
 }
 
 .timePre {
-  font-size: 0.75rem;
-  opacity: 0.4;
-  font-weight: 600;
-  margin-left: 0.5rem;
+  display: none;
 }
 
 .timePreset {
-  padding: 0.3rem 0.65rem;
-  border-radius: 8px;
-  border: 1.5px solid var(--border);
-  background: var(--surface-hover);
-  color: var(--foreground);
-  font-size: 0.78rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.12s;
+  display: none;
 }
 
 .timePreset:hover { border-color: var(--primary); }

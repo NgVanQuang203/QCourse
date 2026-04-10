@@ -76,6 +76,7 @@ model Folder {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   type      DeckType @default(FLASHCARD)
+  isPinned  Boolean  @default(false)
   decks     Deck[]
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -93,6 +94,7 @@ model Deck {
   type         DeckType      @default(FLASHCARD)
   timeLimitSec Int           @default(60)
   isPublic     Boolean       @default(false)
+  isPinned     Boolean       @default(false)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   cards        Card[]

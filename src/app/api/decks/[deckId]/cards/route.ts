@@ -13,7 +13,7 @@ const CardSchema = z.object({
   hint:               z.string().optional(),
   imageUrl:           z.string().url().optional(),
   // Quiz fields
-  options:            z.array(z.string()).length(4).optional(),
+  options:            z.array(z.string()).min(2).max(4).optional(),
   correctOptionIndex: z.number().min(0).max(3).optional(),
 });
 

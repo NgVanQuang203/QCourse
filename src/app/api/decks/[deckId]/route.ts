@@ -40,8 +40,9 @@ const PatchSchema = z.object({
   name:         z.string().min(1).max(100).optional(),
   description:  z.string().max(500).optional(),
   color:        z.string().optional(),
-  timeLimitSec: z.number().min(10).max(300).optional(),
+  timeLimitSec: z.number().min(0).max(18000).optional(),
   isPublic:     z.boolean().optional(),
+  isPinned:     z.boolean().optional(),
   folderId:     z.string().nullable().optional(),   // ← FIX: allow moving between folders
   type:         z.enum(['FLASHCARD', 'QUIZ']).optional(),
 });

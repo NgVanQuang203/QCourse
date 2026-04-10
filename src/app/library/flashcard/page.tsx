@@ -9,7 +9,7 @@ import { useStore, Folder } from '@/lib/store';
 import { toast } from '@/lib/toast';
 import {
   Plus, Upload, MoreVertical, Edit2, Trash2, FolderInput,
-  RefreshCcw, Folder as FolderIcon, LayoutGrid, MoreHorizontal,
+  RefreshCcw, Folder as FolderIcon, LayoutGrid, MoreHorizontal, Check, Pin,
 } from 'lucide-react';
 import EditDeckModal from '@/components/EditDeckModal';
 import ImportModal from '@/components/ImportModal';
@@ -58,14 +58,18 @@ export default function FlashcardLibrary() {
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [dragOverSidebarId, setDragOverSidebarId] = useState<string | null>(null);
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [folderForm, setFolderForm] = useState({ name: '', icon: '📁' });
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const {
     decks, folders, isLoading, isRefreshing, deleteDeck, refreshStats,
     moveDeckToFolder, addFolder, updateFolder, deleteFolder,
+    togglePinDeck, togglePinFolder, bulkDeleteDecks, bulkMoveDecks,
   } = useStore();
   
   // Refresh stats when user returns to this tab
@@ -93,13 +97,33 @@ export default function FlashcardLibrary() {
   const isAllView = activeFolderId === 'all';
   const isUncategorizedView = activeFolderId === null || activeFolderId === 'uncategorized';
 
-  const visibleDecks = isAllView || isUncategorizedView
+  const visibleDecks = (isAllView || isUncategorizedView
     ? flashDecks.filter((d: any) => !d.folderId)
-    : flashDecks.filter((d: any) => d.folderId === activeFolderId);
+    : flashDecks.filter((d: any) => d.folderId === activeFolderId))
+    .sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
 
-  const visibleFolders = isAllView ? flashFolders : [];
+  const visibleFolders = (isAllView ? flashFolders : [])
+    .sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
 
   const activeFolder = isAllView ? null : flashFolders.find((f: any) => f.id === activeFolderId);
+
+  const toggleSelect = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   // Deck count per folder for sidebar badge
   const countForFolder = (fid: string) => flashDecks.filter(d => d.folderId === fid).length;
@@ -242,7 +266,7 @@ export default function FlashcardLibrary() {
       {flashFolders.map(f => {
         const fMenuOpen = menuOpenId === `f_${f.id}`;
         return (
-          <div key={f.id} style={{ position: 'relative' }}>
+          <motion.div key={f.id} style={{ position: 'relative' }} layout>
             <button
               className={`${lib.fcFolderBtn} ${activeFolderId === f.id ? lib.fcFolderBtnActive : ''} ${dragOverSidebarId === f.id ? lib.fcFolderBtnDragOver : ''}`}
               onClick={() => setActiveFolderId(f.id)}
@@ -251,7 +275,15 @@ export default function FlashcardLibrary() {
               onDrop={(e) => { handleDropOnFolder(e, f.id); setDragOverSidebarId(null); }}
               style={{ paddingRight: '2.6rem' }}
             >
-              {f.icon} {f.name}
+              <div className={lib.pinSidebarWrap}>
+                {f.icon}
+                {f.isPinned && (
+                  <div className={lib.pinSidebarIcon}>
+                    <Pin size={10} className={lib.pinIcon} fill="currentColor" />
+                  </div>
+                )}
+              </div>
+              <span style={{ marginLeft: '8px' }}>{f.name}</span>
               <span className={lib.fcFolderBtnCount}>{countForFolder(f.id)}</span>
             </button>
             {/* Folder kebab */}
@@ -271,6 +303,9 @@ export default function FlashcardLibrary() {
               </button>
               {fMenuOpen && (
                 <div className={lib.menuDropdown}>
+                  <button className={lib.menuItem} onClick={() => { togglePinFolder(f.id); setMenuOpenId(null); }}>
+                    {f.isPinned ? 'Bỏ ghim' : 'Ghim thư mục'}
+                  </button>
                   <button className={lib.menuItem} onClick={e => openEditFolder(e, f)}>
                     <Edit2 size={13} /> Sửa thư mục
                   </button>
@@ -280,7 +315,7 @@ export default function FlashcardLibrary() {
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
         );
       })}
 
@@ -326,6 +361,7 @@ export default function FlashcardLibrary() {
         x: e.clientX,
         y: e.clientY,
         items: [
+          { label: deck.isPinned ? 'Bỏ ghim' : 'Ghim bài', icon: <span>📌</span>, onClick: () => togglePinDeck(deck.id) },
           { label: 'Học ngay', icon: <Plus size={14} />, onClick: () => router.push(`/flashcard/${deck.id}`) },
           { label: 'Chỉnh sửa', icon: <Edit2 size={14} />, onClick: () => setEditDeck(deck.id) },
           { label: 'Chuyển thư mục', icon: <FolderInput size={14} />, onClick: () => setMoveDeckId(deck.id) },
@@ -345,7 +381,7 @@ export default function FlashcardLibrary() {
           zIndex: isMenuOpen ? 500 : undefined,
           transform: isMenuOpen ? 'none' : undefined
         } as React.CSSProperties}
-        onClick={() => router.push(`/flashcard/${deck.id}`)}
+        onClick={() => selectionMode ? toggleSelect(deck.id) : router.push(`/flashcard/${deck.id}`)}
         onContextMenu={onRightClick}
         draggable
         onDragStart={(e) => handleDragStart(e, deck.id)}
@@ -360,6 +396,22 @@ export default function FlashcardLibrary() {
           ) : nextDueLabel ? (
             <div className={lib.fcNextDueBadge}>⏳ Ôn tập: {nextDueLabel}</div>
           ) : null}
+
+          {deck.isPinned && (
+            <div className={lib.pinBadge}>
+              <Pin size={14} className={lib.pinIcon} fill="currentColor" />
+            </div>
+          )}
+          
+          {selectionMode && (
+            <div 
+              className={`${lib.checkboxWrap} ${selectedIds.has(deck.id) ? lib.checkboxActive : ''}`}
+              style={{ position: 'absolute', top: '12px', left: '12px', zIndex: 10 }}
+              onClick={(e) => toggleSelect(deck.id, e)}
+            >
+              {selectedIds.has(deck.id) && <Check size={14} />}
+            </div>
+          )}
 
           <div className={lib.fcCardBody}>
             <div className={lib.fcIconBubble}>🃏</div>
@@ -404,6 +456,9 @@ export default function FlashcardLibrary() {
               </button>
               {isMenuOpen && (
                 <div className={lib.menuDropdown} style={{ bottom: 'calc(100% + 6px)', top: 'auto' }}>
+                  <button className={lib.menuItem} onClick={() => { togglePinDeck(deck.id); setMenuOpenId(null); }}>
+                    {deck.isPinned ? 'Bỏ ghim' : 'Ghim bài'}
+                  </button>
                   <button className={lib.menuItem} onClick={() => { setEditDeck(deck.id); setMenuOpenId(null); }}>
                     <Edit2 size={13} /> Chỉnh sửa
                   </button>
@@ -477,6 +532,13 @@ export default function FlashcardLibrary() {
               <button className={lib.btnCreate} onClick={() => setEditDeck('new')}>
                 <Plus size={16} /> Tạo bộ thẻ
               </button>
+              <button 
+                className={`${lib.btnSecondary} ${selectionMode ? lib.btnActive : ''}`} 
+                onClick={() => { setSelectionMode(!selectionMode); setSelectedIds(new Set()); }}
+                title="Chọn nhiều bộ thẻ"
+              >
+                <Check size={15} /> {selectionMode ? 'Hủy chọn' : 'Chọn nhiều'}
+              </button>
             </div>
 
           </div>
@@ -529,6 +591,7 @@ export default function FlashcardLibrary() {
                         setContextMenu({
                           x: e.clientX, y: e.clientY,
                           items: [
+                            { label: f.isPinned ? 'Bỏ ghim' : 'Ghim thư mục', icon: <span>📌</span>, onClick: () => togglePinFolder(f.id) },
                             { label: 'Mở thư mục', icon: <Plus size={14} />, onClick: () => setActiveFolderId(f.id) },
                             { label: 'Đổi tên/icon', icon: <Edit2 size={14} />, onClick: () => { setEditingFolder(f); setFolderForm({ name: f.name, icon: f.icon }); setIsFolderModalOpen(true); } },
                             { divider: true, label: '', onClick: () => {} },
@@ -537,13 +600,23 @@ export default function FlashcardLibrary() {
                         });
                       }}
                     >
-                      <div className={lib.fcFolderIcon}>{f.icon}</div>
-                      <div className={lib.fcFolderName}>{f.name}</div>
+                      {f.isPinned && (
+                        <div className={lib.pinBadge}>
+                          <Pin size={14} className={lib.pinIcon} fill="currentColor" />
+                        </div>
+                      )}
+                      <div className={lib.fcFolderIcon}>
+                        {f.icon}
+                      </div>
+                      <div className={lib.fcFolderName}>
+                        {f.name}
+                      </div>
                       <div className={lib.fcFolderCount}>{deckCount} bộ thẻ</div>
                       <div className={lib.kebabWrap} style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', zIndex: fMenuOpen ? 9999 : 20 }} onClick={e => e.stopPropagation()}>
                         <button className={lib.kebabBtn} onClick={() => setMenuOpenId(fMenuOpen ? null : fMenuId)}><MoreHorizontal size={16} /></button>
                         {fMenuOpen && (
                           <div className={lib.menuDropdown} style={{ right: 0 }}>
+                            <button className={lib.menuItem} onClick={() => { togglePinFolder(f.id); setMenuOpenId(null); }}>{f.isPinned ? 'Bỏ ghim' : 'Ghim thư mục'}</button>
                             <button className={lib.menuItem} onClick={() => { setActiveFolderId(f.id); setMenuOpenId(null); }}><LayoutGrid size={13} /> Mở thư mục</button>
                             <button className={lib.menuItem} onClick={() => { setEditingFolder(f); setFolderForm({ name: f.name, icon: f.icon }); setIsFolderModalOpen(true); setMenuOpenId(null); }}><Edit2 size={13} /> Đổi tên</button>
                             <div className={lib.menuDivider} /><button className={`${lib.menuItem} ${lib.menuItemDanger}`} onClick={() => { setDeleteDeckId(`f_${f.id}`); setMenuOpenId(null); }}><Trash2 size={13} /> Xóa</button>
@@ -576,51 +649,91 @@ export default function FlashcardLibrary() {
           </div>
         </div>
       )}
+      {/* Bulk Action Toolbar */}
+      {selectionMode && selectedIds.size > 0 && (
+        <div className={lib.bulkToolbar}>
+          <div className={lib.bulkCount}>Đã chọn {selectedIds.size} bộ thẻ</div>
+          <div className={lib.bulkActions}>
+            <button className={lib.btnBulkAction} onClick={() => setMoveDeckId('bulk')}>
+              <FolderInput size={15} /> Chuyển
+            </button>
+            <button className={`${lib.btnBulkAction} ${lib.btnBulkDelete}`} onClick={() => setIsBulkDeleteOpen(true)}>
+              <Trash2 size={15} /> Xóa
+            </button>
+          </div>
+          <button className={lib.btnSecondary} onClick={() => { setSelectionMode(false); setSelectedIds(new Set()); }}>Hủy</button>
+        </div>
+      )}
+
       {moveDeckId && (
         <div className={lib.modalOverlay} onClick={() => !isProcessing && setMoveDeckId(null)}>
           <div className={lib.folderModal} onClick={e => e.stopPropagation()}>
-            <div className={lib.folderModalTitle}>Chuyển tới thư mục</div>
+            <div className={lib.folderModalTitle}>
+              {moveDeckId === 'bulk' ? `Chuyển ${selectedIds.size} bộ thẻ sang thư mục` : 'Chuyển tới thư mục'}
+            </div>
             <div className={lib.moveFolderList}>
-              {/* Only show 'Remove from folder' if it's currently IN a folder */}
-              {flashDecks.find(d => d.id === moveDeckId)?.folderId && (
-                <div className={lib.moveFolderItem} onClick={async () => { 
+              <div className={lib.moveFolderItem} onClick={async () => {
+                if (isProcessing) return;
+                setIsProcessing(true);
+                try {
+                  if (moveDeckId === 'bulk') {
+                    await bulkMoveDecks(Array.from(selectedIds), null);
+                    setSelectedIds(new Set());
+                    setSelectionMode(false);
+                  } else {
+                    await moveDeckToFolder(moveDeckId!, null);
+                  }
+                  setMoveDeckId(null);
+                } finally {
+                  setIsProcessing(false);
+                }
+              }}>🗂️ Bỏ khỏi thư mục (ngoài)</div>
+              
+              {flashFolders.map(f => (
+                <div key={f.id} className={lib.moveFolderItem} onClick={async () => {
                   if (isProcessing) return;
                   setIsProcessing(true);
                   try {
-                    await moveDeckToFolder(moveDeckId!, null); 
-                    setMoveDeckId(null); 
+                    if (moveDeckId === 'bulk') {
+                      await bulkMoveDecks(Array.from(selectedIds), f.id);
+                      setSelectedIds(new Set());
+                      setSelectionMode(false);
+                    } else {
+                      await moveDeckToFolder(moveDeckId!, f.id);
+                    }
+                    setMoveDeckId(null);
                   } finally {
                     setIsProcessing(false);
                   }
-                }}>🗂️ Bỏ khỏi thư mục (ngoài)</div>
-              )}
-
-              {flashFolders
-                .filter(f => f.id !== flashDecks.find(d => d.id === moveDeckId)?.folderId)
-                .map(f => (
-                  <div key={f.id} className={lib.moveFolderItem} onClick={async () => { 
-                    if (isProcessing) return;
-                    setIsProcessing(true);
-                    try {
-                      await moveDeckToFolder(moveDeckId!, f.id); 
-                      setMoveDeckId(null);
-                    } finally {
-                      setIsProcessing(false);
-                    }
-                  }}>
-                    {f.icon} {f.name}
-                  </div>
-                ))}
+                }}>{f.icon} {f.name}</div>
+              ))}
             </div>
             <button className={lib.modalCancel} style={{ width: '100%' }} onClick={() => setMoveDeckId(null)} disabled={isProcessing}>Hủy</button>
           </div>
         </div>
       )}
       {editDeck && <EditDeckModal deckId={editDeck === 'new' ? null : editDeck} mode="flashcard" onClose={() => setEditDeck(null)} />}
-      {importOpen && <ImportModal deckId={null} allDecks={flashDecks} onClose={() => setImportOpen(false)} />}
+      {importOpen && <ImportModal deckId={null} allDecks={flashDecks} initialFolderId={activeFolderId === 'all' || activeFolderId === 'uncategorized' ? null : activeFolderId} onClose={() => setImportOpen(false)} />}
 
 
       <DeleteConfirmModal isOpen={!!deleteDeckId} deckName={deleteName} isLoading={isProcessing} onConfirm={confirmDelete} onCancel={() => setDeleteDeckId(null)} />
+      <DeleteConfirmModal 
+        isOpen={isBulkDeleteOpen} 
+        deckName={`${selectedIds.size} mục đã chọn`} 
+        isLoading={isProcessing} 
+        onConfirm={async () => {
+          setIsProcessing(true);
+          try {
+            await bulkDeleteDecks(Array.from(selectedIds));
+            setSelectedIds(new Set());
+            setSelectionMode(false);
+            setIsBulkDeleteOpen(false);
+          } finally {
+            setIsProcessing(false);
+          }
+        }} 
+        onCancel={() => setIsBulkDeleteOpen(false)} 
+      />
       <ConfirmModal
         isOpen={!!resetDeckId}
         title="Làm mới tiến độ?"

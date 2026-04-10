@@ -8,6 +8,7 @@ import { z } from 'zod';
 const UpdateSchema = z.object({
   name: z.string().min(1).max(60).optional(),
   icon: z.string().optional(),
+  isPinned: z.boolean().optional(),
 });
 
 export async function PATCH(req: NextRequest, props: { params: Promise<{ folderId: string }> }) {

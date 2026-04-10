@@ -1,11 +1,11 @@
 "use client";
 
 import React, { createContext, useContext, useCallback, useState, useEffect, useRef } from 'react';
-import { X, CheckCircle2, XCircle, AlertTriangle, Info } from 'lucide-react';
+import { X, CheckCircle2, XCircle, AlertTriangle, Info, RefreshCcw } from 'lucide-react';
 import styles from './Toast.module.css';
 import { registerToastListener } from '@/lib/toast';
 
-type ToastType = 'success' | 'error' | 'warning' | 'info';
+type ToastType = 'success' | 'error' | 'warning' | 'info' | 'loading';
 
 interface ToastItem {
   id: string;
@@ -37,6 +37,7 @@ function ToastItemComponent({ toast, onRemove }: { toast: ToastItem; onRemove: (
     error: XCircle,
     warning: AlertTriangle,
     info: Info,
+    loading: () => <RefreshCcw size={16} className={styles.spinner} />
   }[toast.type];
 
   const typeClass = {
@@ -44,6 +45,7 @@ function ToastItemComponent({ toast, onRemove }: { toast: ToastItem; onRemove: (
     error: styles.toastError,
     warning: styles.toastWarning,
     info: styles.toastInfo,
+    loading: styles.toastLoading,
   }[toast.type];
 
   return (
@@ -81,24 +83,31 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     if (timer) { clearTimeout(timer); timersRef.current.delete(id); }
   }, []);
 
-  const add = useCallback((type: ToastType, title: string, message?: string, duration = 3500) => {
+  const add = useCallback((type: ToastType, title: string, message?: string, duration = 2500) => {
     const id = `toast_${Date.now()}_${Math.random()}`;
-    const item: ToastItem = { id, type, title, message, duration, exiting: false };
+    // If it's a loading toast, make it longer lived so it doesn't disappear before the promise finishes,
+    // or dismiss it manually.
+    const actualDuration = type === 'loading' ? 10000 : duration; 
+    const item: ToastItem = { id, type, title, message, duration: actualDuration, exiting: false };
     setToasts(prev => [...prev, item]);
-    const timer = setTimeout(() => remove(id), duration);
+    const timer = setTimeout(() => remove(id), actualDuration);
     timersRef.current.set(id, timer);
+    return id;
   }, [remove]);
 
   // Connect the singleton emitter so non-React code (e.g. store) can trigger toasts
   useEffect(() => {
-    return registerToastListener((type, title, message) => add(type, title, message));
-  }, [add]);
+    return registerToastListener(
+      (type, title, message) => add(type, title, message),
+      (id) => remove(id)
+    );
+  }, [add, remove]);
 
   const ctx: ToastContextValue = {
-    success: (t, m) => add('success', t, m),
-    error:   (t, m) => add('error',   t, m),
-    warning: (t, m) => add('warning', t, m),
-    info:    (t, m) => add('info',    t, m),
+    success: (t, m) => { add('success', t, m); },
+    error:   (t, m) => { add('error',   t, m); },
+    warning: (t, m) => { add('warning', t, m); },
+    info:    (t, m) => { add('info',    t, m); },
   };
 
   return (

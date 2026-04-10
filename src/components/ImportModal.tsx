@@ -10,6 +10,7 @@ interface ParsedPair { front: string; back: string; }
 interface Props {
   deckId: string | null; // null = pick from list
   allDecks: Deck[];
+  initialFolderId?: string | null;
   onClose: () => void;
 }
 
@@ -17,45 +18,18 @@ function parseText(raw: string): ParsedPair[] {
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
   const pairs: ParsedPair[] = [];
   for (const line of lines) {
-    // Support: tab, pipe, double dash, comma
-    const sep = line.includes('\t') ? '\t' : line.includes('|') ? '|' : line.includes('--') ? '--' : ',';
+    // Support: tab, pipe, double dash, semicolon, comma
+    const sep = line.includes('\t') ? '\t' : line.includes('|') ? '|' : line.includes('--') ? '--' : line.includes(';') ? ';' : ',';
     const idx = line.indexOf(sep);
     if (idx > 0) {
       pairs.push({ front: line.slice(0, idx).trim(), back: line.slice(idx + sep.length).trim() });
+    } else {
+      // Partial parse: treat entire line as front if no separator
+      pairs.push({ front: line, back: '...' });
     }
   }
   return pairs;
 }
-
-function parseJSON(raw: string): ParsedPair[] | null {
-  try {
-    const data = JSON.parse(raw);
-    const pairs: ParsedPair[] = [];
-    if (Array.isArray(data)) {
-      data.forEach(item => {
-        const keys = Object.keys(item);
-        if (keys.length >= 2) {
-          const vals = Object.values(item).filter(v => typeof v === 'string') as string[];
-          if (vals.length >= 2) {
-            pairs.push({ front: vals[0].trim(), back: vals[1].trim() });
-          } else if (item.front && item.back) {
-             pairs.push({ front: String(item.front).trim(), back: String(item.back).trim() });
-          } else if (item.q && item.a) {
-             pairs.push({ front: String(item.q).trim(), back: String(item.a).trim() });
-          }
-        }
-      });
-    } else if (typeof data === 'object') {
-      for (const [key, val] of Object.entries(data)) {
-        if (typeof val === 'string') {
-          pairs.push({ front: key.trim(), back: val.trim() });
-        }
-      }
-    }
-    return pairs.length > 0 ? pairs : null;
-  } catch (e) { return null; }
-}
-
 
 function parseBetterJSON(raw: string): ParsedPair[] | null {
   try {
@@ -69,61 +43,74 @@ function parseBetterJSON(raw: string): ParsedPair[] | null {
       const front = item.front || item.term || item.question || item.q || item.word || Object.values(item)[0];
       const back = item.back || item.definition || item.answer || item.a || item.meaning || Object.values(item)[1];
       
-      if (front && back) {
-        results.push({ front: String(front).trim(), back: String(back).trim() });
+      if (front) {
+        results.push({ front: String(front).trim(), back: String(back || '...').trim() });
       }
     }
     return results.length > 0 ? results : null;
   } catch(e) { return null; }
 }
 
-
-export default function ImportModal({ deckId, allDecks, onClose }: Props) {
-  const { importCards } = useStore();
+export default function ImportModal({ deckId, allDecks, initialFolderId, onClose }: Props) {
+  const { importCards, addDeck } = useStore();
   const [tab, setTab] = useState<'text' | 'csv' | 'json'>('text');
-  const [selectedDeckId, setSelectedDeckId] = useState<string>(deckId ?? allDecks[0]?.id ?? '');
+  const [selectedDeckId, setSelectedDeckId] = useState<string>(deckId ?? '');
+  const [newName, setNewName] = useState(`Bộ thẻ mới - ${new Date().toLocaleDateString('vi-VN')}`);
   const [rawText, setRawText] = useState('');
   const [preview, setPreview] = useState<ParsedPair[]>([]);
-  const [showPreview, setShowPreview] = useState(false);
   const [imported, setImported] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const handleParseText = () => {
-    let pairs = parseBetterJSON(rawText);
-    if (!pairs) pairs = parseText(rawText);
-    setPreview(pairs);
-    setShowPreview(true);
+  const handleParse = (text: string) => {
+    let pairs = parseBetterJSON(text);
+    if (!pairs) pairs = parseText(text);
+    const results = pairs || [];
+    setPreview(results);
   };
 
+  const onTextChange = (val: string) => {
+    setRawText(val);
+    let pairs = parseBetterJSON(val);
+    if (!pairs) pairs = parseText(val);
+    setPreview(pairs || []);
+  };
 
   const handleCsvFile = (file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = (e.target?.result as string) ?? '';
-      let pairs = parseJSON(text);
-      if (!pairs) pairs = parseText(text);
-      setPreview(pairs);
+      setRawText(text);
+      handleParse(text);
       setShowPreview(true);
     };
     reader.readAsText(file);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleCsvFile(file);
-  };
-
   const handleImport = async () => {
-    if (!selectedDeckId || preview.length === 0 || isImporting) return;
+    if ((!selectedDeckId && !newName) || preview.length === 0 || isImporting) return;
     setIsImporting(true);
     try {
-      const count = await importCards(selectedDeckId, preview);
+      let targetId = selectedDeckId;
+
+      if (!targetId) {
+        const newId = await addDeck({
+          name: newName,
+          description: `Đã nhập ${preview.length} thẻ từ file`,
+          color: '#8b5cf6',
+          type: 'FLASHCARD',
+          folderId: initialFolderId || undefined,
+        });
+        if (!newId) throw new Error('Failed to create deck');
+        targetId = newId;
+      }
+
+      const count = await importCards(targetId, preview);
       setImported(count);
       setTimeout(() => { onClose(); }, 1800);
+    } catch(err) {
+      console.error(err);
     } finally {
       setIsImporting(false);
     }
@@ -150,19 +137,38 @@ export default function ImportModal({ deckId, allDecks, onClose }: Props) {
             <div className={styles.successState}>
               <div className={styles.successIcon}>🎉</div>
               <h3 className={styles.successTitle}>Import thành công!</h3>
-              <p className={styles.successDesc}>Đã thêm <strong>{imported}</strong> thẻ vào bộ bài</p>
+              <p className={styles.successDesc}>Đã tạo bộ thẻ và thêm <strong>{imported}</strong> thẻ</p>
             </div>
           ) : (
             <>
-              {/* Deck selector */}
-              {!deckId && (
-                <div className={styles.deckSelect}>
-                  <label className={styles.label}>Import vào bộ bài</label>
-                  <select className={styles.select} value={selectedDeckId} onChange={e => setSelectedDeckId(e.target.value)}>
-                    {allDecks.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                  </select>
-                </div>
-              )}
+              {/* Target Selector / New Name */}
+              <div className={styles.deckSelect}>
+                {deckId ? (
+                  <div className={styles.targetInfo}>
+                    Import vào: <strong>{allDecks.find(d => d.id === deckId)?.name}</strong>
+                  </div>
+                ) : (
+                  <div className={styles.importTargetRow}>
+                    <div className={styles.field}>
+                      <label className={styles.label}>Tên bộ thẻ mới</label>
+                      <input 
+                        type="text" 
+                        className={styles.input} 
+                        value={newName} 
+                        onChange={e => setNewName(e.target.value)}
+                        placeholder="VD: Từ vựng tiếng Anh..."
+                      />
+                    </div>
+                    <div className={styles.field} style={{ flex: '0 0 200px' }}>
+                      <label className={styles.label}>Hoặc chọn bộ có sẵn</label>
+                      <select className={styles.select} value={selectedDeckId} onChange={e => setSelectedDeckId(e.target.value)}>
+                        <option value="">-- Tạo bộ mới --</option>
+                        {allDecks.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Tabs */}
               <div className={styles.tabs}>
@@ -170,57 +176,30 @@ export default function ImportModal({ deckId, allDecks, onClose }: Props) {
                   <FileText size={15} /> Nhập văn bản
                 </button>
                 <button className={`${styles.tab} ${tab === 'csv' ? styles.tabActive : ''}`} onClick={() => setTab('csv')}>
-                  <Upload size={15} /> File
+                  <Upload size={15} /> File .txt/.csv
                 </button>
                 <button className={`${styles.tab} ${tab === 'json' ? styles.tabActive : ''}`} onClick={() => setTab('json')}>
-                  <FileText size={15} /> Phân tích JSON
+                  <FileText size={15} /> JSON
                 </button>
               </div>
 
-              {/* Text import */}
-              {tab === 'text' && (
+              {/* Text / JSON area */}
+              {tab !== 'csv' && (
                 <div className={styles.textSection}>
-                  <div className={styles.formatHint}>
-                    <AlertCircle size={13} />
-                    Mỗi dòng một thẻ. Ngăn cách mặt trước/sau bằng <code>|</code>, tab, hoặc <code>--</code>
-                  </div>
                   <textarea
                     className={styles.bigTextarea}
                     value={rawText}
-                    onChange={e => { setRawText(e.target.value); setShowPreview(false); }}
-                    placeholder={exampleText}
+                    onChange={e => onTextChange(e.target.value)}
+                    placeholder={tab === 'json' ? EXAMPLE_JSON : exampleText}
                     rows={10}
                     spellCheck={false}
                   />
                   <div className={styles.textActions}>
-                    <button className={styles.btnGhost} onClick={() => setRawText(exampleText)}>Dùng mẫu</button>
-                    <button className={styles.btnPreview} onClick={handleParseText} disabled={!rawText.trim()}>
-                      <Eye size={14} /> Xem trước ({parseText(rawText).length} thẻ)
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* JSON import */}
-              {tab === 'json' && (
-                <div className={styles.textSection}>
-                  <div className={styles.formatHint}>
-                    <AlertCircle size={13} />
-                    Dán mảng hoặc object JSON trực tiếp vào đây!
-                  </div>
-                  <textarea
-                    className={styles.bigTextarea}
-                    value={rawText}
-                    onChange={e => { setRawText(e.target.value); setShowPreview(false); }}
-                    placeholder={EXAMPLE_JSON}
-                    rows={10}
-                    spellCheck={false}
-                  />
-                  <div className={styles.textActions}>
-                    <button className={styles.btnGhost} onClick={() => setRawText(EXAMPLE_JSON)}>Dùng mẫu JSON</button>
-                    <button className={styles.btnPreview} onClick={handleParseText} disabled={!rawText.trim()}>
+                    <button className={styles.btnGhost} onClick={() => onTextChange(tab === 'json' ? EXAMPLE_JSON : exampleText)}>Dùng mẫu</button>
+                    <button className={styles.btnPreview} onClick={() => handleParse(rawText)} disabled={!rawText.trim()}>
                       <Eye size={14} /> Xem trước
                     </button>
+                    <span className={styles.countInfo}>Đã nhận diện: <strong>{preview.length}</strong> thẻ</span>
                   </div>
                 </div>
               )}
@@ -232,7 +211,7 @@ export default function ImportModal({ deckId, allDecks, onClose }: Props) {
                     className={`${styles.dropZone} ${dragging ? styles.dropActive : ''}`}
                     onDragOver={e => { e.preventDefault(); setDragging(true); }}
                     onDragLeave={() => setDragging(false)}
-                    onDrop={handleDrop}
+                    onDrop={e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleCsvFile(f); }}
                     onClick={() => fileRef.current?.click()}
                   >
                     <input
@@ -243,42 +222,37 @@ export default function ImportModal({ deckId, allDecks, onClose }: Props) {
                       onChange={e => { const f = e.target.files?.[0]; if (f) handleCsvFile(f); }}
                     />
                     <div className={styles.dropIcon}>📂</div>
-                    <div className={styles.dropTitle}>Kéo thả file CSV, TXT, JSON vào đây</div>
-                    <div className={styles.dropSub}>hoặc nhấn để chọn file · Hỗ trợ nhiều định dạng</div>
-                  </div>
-                  <div className={styles.formatHint}>
-                    <AlertCircle size={13} />
-                    Định dạng: <code>Mặt trước,Mặt sau</code> hoặc <code>Mặt trước | Mặt sau</code>
+                    <div className={styles.dropTitle}>Kéo thả file .csv, .txt, .json vào đây</div>
+                    <div className={styles.dropSub}>hoặc nhấn để chọn file</div>
                   </div>
                 </div>
               )}
 
               {/* Preview */}
-              {showPreview && preview.length > 0 && (
+              {preview.length > 0 && (
                 <div className={styles.previewSection}>
                   <div className={styles.previewHeader}>
-                    <span className={styles.previewTitle}>Xem trước · {preview.length} thẻ</span>
-                    <button className={styles.btnGhost} onClick={() => setShowPreview(false)}>Ẩn</button>
+                    <span className={styles.previewTitle}>✨ Dữ liệu đã nhận diện ({preview.length})</span>
                   </div>
                   <div className={styles.previewList}>
-                    {preview.slice(0, 8).map((p, i) => (
+                    {preview.slice(0, 10).map((p, i) => (
                       <div key={i} className={styles.previewRow}>
                         <div className={styles.previewNum}>{i + 1}</div>
-                        <div className={styles.previewFront}>{p.front}</div>
+                        <div className={styles.previewFront}>{p.front || <span style={{color:'red'}}>Chưa có mặt trước</span>}</div>
                         <ChevronRight size={12} style={{ opacity: 0.3, flexShrink: 0 }} />
                         <div className={styles.previewBack}>{p.back}</div>
                       </div>
                     ))}
-                    {preview.length > 8 && (
-                      <div className={styles.previewMore}>...và {preview.length - 8} thẻ nữa</div>
+                    {preview.length > 10 && (
+                      <div className={styles.previewMore}>...và {preview.length - 10} thẻ khác</div>
                     )}
                   </div>
                 </div>
               )}
 
-              {preview.length === 0 && showPreview && (
+              {preview.length === 0 && rawText.trim() && (
                 <div className={styles.parseError}>
-                  <AlertCircle size={16} /> Không thể đọc dữ liệu. Hãy kiểm tra lại định dạng.
+                  <AlertCircle size={16} /> ⚠️ Chưa nhận diện được dữ liệu. Vui lòng check lại định dạng!
                 </div>
               )}
             </>
@@ -292,15 +266,15 @@ export default function ImportModal({ deckId, allDecks, onClose }: Props) {
             <button
               className={styles.btnImport}
               onClick={handleImport}
-              disabled={preview.length === 0 || !selectedDeckId || isImporting}
+              disabled={preview.length === 0 || (!selectedDeckId && !newName) || isImporting}
               style={{ gap: '0.4rem' }}
             >
               {isImporting ? (
-                <RefreshCcw size={15} style={{ animation: 'spin 1.2s linear infinite' }} />
+                <RefreshCcw size={15} className={styles.spinner} />
               ) : (
                 <Check size={15} />
               )}
-              {isImporting ? 'Đang import...' : `Import ${preview.length > 0 ? `${preview.length} thẻ` : ''}`}
+              {isImporting ? 'Đang xử lý...' : selectedDeckId ? `Nhập vào bộ thẻ` : `Tạo và Import ngay`}
             </button>
           </div>
         )}

@@ -3,15 +3,15 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  z-index: 400;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 3000;
 
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
+  padding: 2rem 1.5rem;
   animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -21,12 +21,12 @@
 }
 
 .modal {
-  background: rgba(var(--surface-rgb), 0.75);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-top: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 28px;
+  background: rgba(var(--surface-rgb), 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 24px;
   width: 100%;
   max-width: 580px;
   max-height: 88vh;
@@ -121,6 +121,53 @@ html.dark .modal {
 
 .select:focus { outline: none; border-color: var(--primary); }
 
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 11px;
+  border: 1.5px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 0.92rem;
+  font-weight: 700;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.input:focus { outline: none; border-color: var(--primary); }
+
+.field {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.importTargetRow {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.targetInfo {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.countInfo {
+  margin-right: auto;
+  font-size: 0.75rem;
+  opacity: 0.5;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* ── TABS ── */
 .tabs {
   display: flex;
@@ -143,7 +190,7 @@ html.dark .modal {
   transition: all 0.15s;
 }
 
-.tab:hover { opacity: 0.85; }
+.tab:hover { background: var(--surface-hover); border-color: var(--primary); opacity: 1; }
 
 .tabActive {
   opacity: 1;
@@ -224,7 +271,8 @@ html.dark .modal {
 
 .dropZone:hover, .dropActive {
   border-color: var(--primary);
-  background: var(--primary-light);
+  background: var(--surface-hover);
+  box-shadow: inset 0 0 20px rgba(var(--primary-rgb), 0.05);
 }
 
 .dropIcon { font-size: 2.5rem; margin-bottom: 0.65rem; }
@@ -233,38 +281,50 @@ html.dark .modal {
 
 /* ── PREVIEW ── */
 .previewSection {
-  background: var(--surface-hover);
-  border: 1px solid var(--border);
-  border-radius: 14px;
+  background: rgba(var(--surface-rgb), 0.5);
+  border: 1.5px solid var(--primary);
+  border-radius: 16px;
   overflow: hidden;
+  margin-top: 1rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  min-height: 120px;
 }
 
 .previewHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.65rem 1rem;
-  border-bottom: 1px solid var(--border);
+  padding: 0.8rem 1.25rem;
+  background: var(--primary-light);
+  border-bottom: 1px solid rgba(var(--primary-rgb), 0.2);
 }
 
 .previewTitle {
-  font-size: 0.8rem;
-  font-weight: 800;
+  font-size: 0.85rem;
+  font-weight: 900;
   color: var(--primary);
+  letter-spacing: 0.3px;
 }
 
 .previewList {
   display: flex;
   flex-direction: column;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .previewRow {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.55rem 1rem;
-  border-bottom: 1px solid var(--border);
+  gap: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   min-width: 0;
+  transition: background 0.15s;
+}
+
+.previewRow:hover {
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .previewRow:last-child { border-bottom: none; }

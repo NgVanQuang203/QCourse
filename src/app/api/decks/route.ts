@@ -11,7 +11,7 @@ const CreateDeckSchema = z.object({
   color:        z.string().default('#6366f1'),
   type:         z.enum(['FLASHCARD', 'QUIZ']).default('FLASHCARD'),
   folderId:     z.string().optional().nullable(),
-  timeLimitSec: z.number().min(10).max(300).default(60),
+  timeLimitSec: z.number().min(0).max(18000).default(600), // Max 5 hours
 });
 
 export async function GET() {

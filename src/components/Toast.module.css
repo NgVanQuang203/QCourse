@@ -59,6 +59,11 @@
 }
 .toastInfo::before { background: var(--primary); }
 
+.toastLoading {
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+}
+.toastLoading::before { background: var(--primary); }
+
 /* Icon circle */
 .toastIcon {
   width: 32px;
@@ -74,6 +79,16 @@
 .toastError .toastIcon   { background: rgba(248, 81, 73, 0.12); color: var(--danger); }
 .toastWarning .toastIcon { background: rgba(245, 158, 11, 0.12); color: var(--warning); }
 .toastInfo .toastIcon    { background: rgba(99, 102, 241, 0.12); color: var(--primary); }
+.toastLoading .toastIcon { background: rgba(99, 102, 241, 0.12); color: var(--primary); }
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 
 .toastBody {
   flex: 1;

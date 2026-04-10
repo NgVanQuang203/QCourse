@@ -17,6 +17,7 @@ export interface Folder {
   name: string;
   icon: string;
   type: 'FLASHCARD' | 'QUIZ';
+  isPinned: boolean;
   _count?: { decks: number };
 }
 
@@ -42,7 +43,13 @@ export interface ActivityDay {
 }
 
 export interface StoreState {
-  decks: (Deck & { dueCount?: number; masteredCount?: number; nextDue?: number; _count?: { cards: number } })[];
+  decks: (Deck & { 
+    dueCount?: number; 
+    masteredCount?: number; 
+    nextDue?: number; 
+    _count?: { cards: number };
+    isPinned: boolean;
+  })[];
   folders: Folder[];
   cards: Card[];
   profile: UserProfile | null;
@@ -70,6 +77,12 @@ export interface StoreActions {
   updateFolder: (id: string, changes: { name?: string; icon?: string }) => Promise<void>;
   deleteFolder: (id: string) => Promise<void>;
   moveDeckToFolder: (deckId: string, folderId: string | null) => Promise<void>;
+  // Pinning
+  togglePinDeck: (id: string) => Promise<void>;
+  togglePinFolder: (id: string) => Promise<void>;
+  // Bulk actions
+  bulkDeleteDecks: (ids: string[]) => Promise<void>;
+  bulkMoveDecks: (ids: string[], folderId: string | null) => Promise<void>;
 }
 
 const INITIAL_STATE: StoreState = {
@@ -504,7 +517,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setState(s => ({
           ...s,
           decks: s.decks.map(d => d.id === deckId ? { ...d, folderId } : d),
-          // Update folder deck counts
           folders: s.folders.map(f => {
             const oldDeck = s.decks.find(d => d.id === deckId);
             if (f.id === oldDeck?.folderId) return { ...f, _count: { decks: (f._count?.decks ?? 1) - 1 } };
@@ -518,7 +530,103 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       console.error('moveDeckToFolder failed:', e); 
       toast.error('Không thể di chuyển');
     }
-  }, []);
+  }, [checkAuth]);
+
+  const togglePinDeck = useCallback(async (id: string) => {
+    const deck = state.decks.find(d => d.id === id);
+    if (!deck) return;
+    const newPinned = !deck.isPinned;
+    try {
+      const res = await fetch(`/api/decks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPinned: newPinned }),
+      });
+      if (checkAuth(res)) return;
+      if (res.ok) {
+        setState(s => ({
+          ...s,
+          decks: s.decks.map(d => d.id === id ? { ...d, isPinned: newPinned } : d)
+        }));
+        toast.success(newPinned ? 'Đã ghim bài!' : 'Đã bỏ ghim bài');
+      }
+    } catch (e) {
+      console.error('togglePinDeck failed:', e);
+    }
+  }, [state.decks, checkAuth]);
+
+  const togglePinFolder = useCallback(async (id: string) => {
+    const folder = state.folders.find(f => f.id === id);
+    if (!folder) return;
+    const newPinned = !folder.isPinned;
+    try {
+      const res = await fetch(`/api/folders/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPinned: newPinned }),
+      });
+      if (checkAuth(res)) return;
+      if (res.ok) {
+        setState(s => ({
+          ...s,
+          folders: s.folders.map(f => f.id === id ? { ...f, isPinned: newPinned } : f)
+        }));
+        toast.success(newPinned ? 'Đã ghim thư mục!' : 'Đã bỏ ghim thư mục');
+      }
+    } catch (e) {
+      console.error('togglePinFolder failed:', e);
+    }
+  }, [state.folders, checkAuth]);
+
+  const bulkDeleteDecks = useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return;
+
+    const promise = fetch('/api/decks/bulk', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    }).then(async res => {
+      if (checkAuth(res)) throw new Error('Auth required');
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Server error');
+      }
+      setState(s => ({
+        ...s,
+        decks: s.decks.filter(d => !ids.includes(d.id)),
+        cards: s.cards.filter(c => !ids.includes(c.deckId || '')),
+      }));
+      return ids.length;
+    });
+
+    toast.promise(promise, {
+      loading: 'Đang xóa các mục đã chọn...',
+      success: (len) => `Đã xóa ${len} mục`,
+      error: (err) => `Lỗi: ${err.message}`,
+    });
+  }, [checkAuth, setState]);
+
+  const bulkMoveDecks = useCallback(async (ids: string[], folderId: string | null) => {
+    try {
+      const res = await fetch('/api/decks/bulk', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, folderId }),
+      });
+      if (checkAuth(res)) return;
+      if (res.ok) {
+        setState(s => ({
+          ...s,
+          decks: s.decks.map(d => ids.includes(d.id) ? { ...d, folderId } : d),
+        }));
+        toast.success(`Đã di chuyển ${ids.length} mục`);
+        refreshStats();
+      }
+    } catch (e) {
+      console.error('bulkMoveDecks failed:', e);
+      toast.error('Không thể di chuyển hàng loạt');
+    }
+  }, [checkAuth, refreshStats]);
 
   const value: StoreState & StoreActions = {
     ...state,
@@ -529,6 +637,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     fetchDeckCards,
     refreshStats,
     addFolder, updateFolder, deleteFolder, moveDeckToFolder,
+    togglePinDeck, togglePinFolder, bulkDeleteDecks, bulkMoveDecks,
   };
 
   return (

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
+import { toast } from '@/lib/toast';
 import styles from './EditDeckModal.module.css';
 import qStyles from './EditQuizModal.module.css';
 import { X, Plus, Trash2, Save, Edit3, Check, RefreshCcw, Upload } from 'lucide-react';
@@ -165,8 +166,8 @@ export default function EditQuizModal({ deckId, initialFolderId, onClose }: Prop
       } else if (currentDeckId) {
         await updateDeck(currentDeckId, { name: deckForm.name, description: deckForm.description, color: deckForm.color, timeLimitSec: deckForm.timeLimitSec });
       }
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      toast.success('Đã lưu đề thi');
+      onClose();
     } finally {
       setIsSaving(false);
     }
@@ -282,16 +283,24 @@ export default function EditQuizModal({ deckId, initialFolderId, onClose }: Prop
 
               <div className={qStyles.timeRow}>
                 <div className={styles.formGroup} style={{ flex: 1 }}>
-                  <label className={styles.label}>Thời gian / câu hỏi (giây)</label>
+                  <label className={styles.label}>Tổng thời gian làm bài (phút)</label>
                   <div className={qStyles.timeInputRow}>
-                    <button className={qStyles.timeBtn} onClick={() => setDeckForm(f => ({...f, timeLimitSec: Math.max(15, f.timeLimitSec - 15)}))}>−</button>
-                    <div className={qStyles.timeDisplay}>{deckForm.timeLimitSec}s</div>
-                    <button className={qStyles.timeBtn} onClick={() => setDeckForm(f => ({...f, timeLimitSec: Math.min(300, f.timeLimitSec + 15)}))}>+</button>
-                    <span className={qStyles.timePre}>Phổ biến:</span>
-                    {[30,60,90,120].map(s => (
-                      <button key={s} className={`${qStyles.timePreset} ${deckForm.timeLimitSec === s ? qStyles.timePresetActive : ''}`}
-                        onClick={() => setDeckForm(f => ({...f, timeLimitSec: s}))}>{s}s</button>
-                    ))}
+                    <button className={qStyles.timeBtn} onClick={() => setDeckForm(f => ({...f, timeLimitSec: Math.max(0, f.timeLimitSec - 60)}))}>−</button>
+                    <div className={qStyles.timeInputWrap}>
+                      <input 
+                        type="number" 
+                        className={qStyles.manualTimeInput}
+                        value={Math.floor(deckForm.timeLimitSec / 60)}
+                        onChange={(e) => {
+                          const mins = parseInt(e.target.value) || 0;
+                          setDeckForm(f => ({...f, timeLimitSec: mins * 60}));
+                        }}
+                        min="0"
+                        max="300"
+                      />
+                      <span className={qStyles.timeUnit}>phút</span>
+                    </div>
+                    <button className={qStyles.timeBtn} onClick={() => setDeckForm(f => ({...f, timeLimitSec: Math.min(18000, f.timeLimitSec + 60)}))}>+</button>
                   </div>
                 </div>
               </div>

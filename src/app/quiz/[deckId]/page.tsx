@@ -110,8 +110,8 @@ export default function QuizMode() {
   // Initialize timer when quizCards become available
   useEffect(() => {
     if (quizCards.length > 0 && !timerStarted) {
-      const perQuestion = (deck as any)?.timeLimitSec || 60;
-      setTimeLeft(quizCards.length * perQuestion);
+      const totalSec = (deck as any)?.timeLimitSec || 600; // Default 10 mins
+      setTimeLeft(totalSec);
       setTimerStarted(true);
     }
   }, [quizCards, timerStarted, deck]);
@@ -143,7 +143,7 @@ export default function QuizMode() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           deckId,
-          answers: formattedAnswers.filter(a => a.chosenIndex !== -1),
+          answers: formattedAnswers,
         }),
       });
       refreshStats();
@@ -176,10 +176,10 @@ export default function QuizMode() {
     setAnswers({});
     setIsSubmitted(false);
     setShowResultModal(false);
-    const perQuestion = (deck as any)?.timeLimitSec || 60;
+    const totalSec = (deck as any)?.timeLimitSec || 600;
     const newQuiz = generateQuizCards(cards);
     setQuizCards(newQuiz);
-    setTimeLeft(newQuiz.length * perQuestion);
+    setTimeLeft(totalSec);
     setTimerStarted(true);
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -328,8 +328,8 @@ export default function QuizMode() {
                 onClick={() => {
                   const newQuiz = generateQuizCards(cards);
                   setQuizCards(newQuiz);
-                  const perQuestion = (deck as any)?.timeLimitSec || 60;
-                  setTimeLeft(newQuiz.length * perQuestion);
+                  const totalSec = (deck as any)?.timeLimitSec || 600;
+                  setTimeLeft(totalSec);
                   setIsLobby(false);
                   setTimerStarted(true);
                 }}
