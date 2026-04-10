@@ -49,7 +49,7 @@ const setOpt = (form: QuizQuestion, i: number, val: string): QuizQuestion => {
   return { ...form, options: opts };
 };
 
-const QuestionForm = ({ q, setQ, onSave, onCancel, saveLabel }: {
+const QuestionForm = ({ q, setQ, onSave, onCancel, saveLabel, isSaving }: {
   q: QuizQuestion;
   setQ: (q: QuizQuestion) => void;
   onSave: () => void;
