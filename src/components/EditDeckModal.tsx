@@ -43,7 +43,15 @@ export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }
   const [cardToDeleteId, setCardToDeleteId] = useState<string | null>(null);
   const [cardForm, setCardForm] = useState({ front: '', back: '', option1: '', option2: '', option3: '', option4: '', correct: 0 });
   const [addingCard, setAddingCard] = useState(false);
-  const [newCardForm, setNewCardForm] = useState({ front: '', back: '' });
+  const [newCardForm, setNewCardForm] = useState({
+    front: '',
+    back: '',
+    option1: '',
+    option2: '',
+    option3: '',
+    option4: '',
+    correct: 0
+  });
 
   const [saved, setSaved] = useState(false);
   const [activeSection, setActiveSection] = useState<'info' | 'cards'>('info');
@@ -55,7 +63,12 @@ export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }
     setIsSaving(true);
     try {
       if (isNew && !currentDeckId) {
-        const newId = await addDeck({ ...deckForm, folderId: initialFolderId ?? null, type: 'FLASHCARD' });
+        const targetFolderId = (initialFolderId === 'all') ? null : initialFolderId;
+        const newId = await addDeck({ 
+          ...deckForm, 
+          folderId: targetFolderId ?? null, 
+          type: mode === 'quiz' ? 'QUIZ' : 'FLASHCARD' 
+        });
         if (newId) {
           setCurrentDeckId(newId);
           setActiveSection('cards');
@@ -106,10 +119,17 @@ export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }
     if (!newCardForm.front.trim() || !currentDeckId || isSaving) return;
     setIsSaving(true);
     try {
-      await addCard({ deckId: currentDeckId, front: newCardForm.front, back: newCardForm.back });
-      setNewCardForm({ front: '', back: '' });
+      const opts = mode === 'quiz' ? [newCardForm.option1, newCardForm.option2, newCardForm.option3, newCardForm.option4].filter(Boolean) : undefined;
+      await addCard({
+        deckId: currentDeckId,
+        front: newCardForm.front,
+        back: mode === 'quiz' ? (opts?.[newCardForm.correct] ?? '') : newCardForm.back,
+        ...(mode === 'quiz' && opts ? { options: opts, correctOptionIndex: newCardForm.correct } : {}),
+      });
+      setNewCardForm({ front: '', back: '', option1: '', option2: '', option3: '', option4: '', correct: 0 });
       setAddingCard(false);
     } finally {
+      setIsSaving(true); // Wait for fetchDeckCards to finish in addCard action? Actually addCard calls it internally.
       setIsSaving(false);
     }
   };
@@ -220,10 +240,29 @@ export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }
                       <textarea className={styles.cardInput} value={newCardForm.front} onChange={e => setNewCardForm(f => ({ ...f, front: e.target.value }))} placeholder="Nhập câu hỏi..." rows={2} autoFocus />
                     </div>
                     <div>
-                      <label className={styles.smallLabel}>Mặt sau (đáp án)</label>
-                      <textarea className={styles.cardInput} value={newCardForm.back} onChange={e => setNewCardForm(f => ({ ...f, back: e.target.value }))} placeholder="Nhập đáp án..." rows={2} />
+                      <label className={styles.smallLabel}>{mode === 'quiz' ? 'Giải thích (không bắt buộc)' : 'Mặt sau (đáp án)'}</label>
+                      <textarea className={styles.cardInput} value={newCardForm.back} onChange={e => setNewCardForm(f => ({ ...f, back: e.target.value }))} placeholder={mode === 'quiz' ? 'Giải thích lý do đúng...' : 'Nhập đáp án...'} rows={2} />
                     </div>
                   </div>
+
+                  {mode === 'quiz' && (
+                    <div className={styles.optionsGrid}>
+                      {(['A','B','C','D'] as const).map((letter, oi) => {
+                        const key = `option${oi + 1}` as keyof typeof newCardForm;
+                        return (
+                          <div key={letter} className={styles.optionRow}>
+                            <button
+                              className={`${styles.optionMark} ${newCardForm.correct === oi ? styles.optionCorrect : ''}`}
+                              onClick={() => setNewCardForm(f => ({ ...f, correct: oi }))}
+                              type="button"
+                            >{letter}</button>
+                            <input className={styles.optionInput} value={String(newCardForm[key])} onChange={e => setNewCardForm(f => ({ ...f, [key]: e.target.value }))} placeholder={`Đáp án ${letter}`} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
                   <div className={styles.newCardActions}>
                     <button className={styles.btnGhost} onClick={() => setAddingCard(false)}><X size={14} /> Huỷ</button>
                     <button className={styles.btnSave} onClick={handleAddCard} disabled={!newCardForm.front.trim() || isSaving}>

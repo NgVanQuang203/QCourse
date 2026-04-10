@@ -147,7 +147,15 @@ export default function EditQuizModal({ deckId, initialFolderId, onClose }: Prop
     setIsSaving(true);
     try {
       if (isNew && !currentDeckId) {
-        const id = await addDeck({ name: deckForm.name, description: deckForm.description, color: deckForm.color, timeLimitSec: deckForm.timeLimitSec, folderId: initialFolderId ?? undefined, type: 'QUIZ' });
+        const targetFolderId = (initialFolderId === 'all') ? null : initialFolderId;
+        const id = await addDeck({ 
+          name: deckForm.name, 
+          description: deckForm.description, 
+          color: deckForm.color, 
+          timeLimitSec: deckForm.timeLimitSec, 
+          folderId: targetFolderId ?? undefined, 
+          type: 'QUIZ' 
+        });
         setCurrentDeckId(id as string);
         setSection('questions');
       } else if (currentDeckId) {

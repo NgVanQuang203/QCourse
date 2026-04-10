@@ -7,7 +7,7 @@ import styles from './quiz.module.css';
 import {
   ArrowLeft, Clock, CheckCircle2, XCircle,
   Send, Trophy, RotateCcw, Home, Check, X, Flag,
-  BookOpen, AlertTriangle
+  BookOpen, AlertTriangle, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -101,6 +101,7 @@ export default function QuizMode() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [timerStarted, setTimerStarted] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
   const [highlightedIdx, setHighlightedIdx] = useState<number | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -125,13 +126,14 @@ export default function QuizMode() {
   }, [timeLeft]);
 
   const handleSubmit = async () => {
+    setIsSubmitting(true);
     const formattedAnswers = quizCards.map(c => ({
       cardId: c.id,
       front: c.front || '',
       options: c.options || [],
       chosenIndex: answers[c.id] ?? -1,
       correctIndex: c.correctOptionIndex,
-      timeSec: 10, // Tạm thời giả định 10s/câu hoặc tính toán chi tiết hơn
+      timeSec: 10,
     }));
 
     try {
@@ -143,25 +145,19 @@ export default function QuizMode() {
           answers: formattedAnswers.filter(a => a.chosenIndex !== -1),
         }),
       });
-      refreshStats(); // Update profile stats immediately
+      refreshStats();
+      setIsSubmitted(true);
+      setShowResultModal(true);
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#2563eb', '#10b981', '#f59e0b', '#3b82f6', '#ec4899']
+      });
     } catch (err) {
       console.error('Failed to submit quiz:', err);
-    }
-
-    setIsSubmitted(true);
-    setShowResultModal(true);
-
-    // Call confetti for passing visual feedback
-    const { pct } = calculateScore();
-    if (pct >= 50) {
-      setTimeout(() => {
-        confetti({
-          particleCount: 150,
-          spread: 80,
-          origin: { y: 0.6 },
-          colors: ['#2563eb', '#10b981', '#f59e0b', '#3b82f6', '#ec4899']
-        });
-      }, 300);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -619,8 +615,8 @@ export default function QuizMode() {
 
           <div className={styles.panelFooter}>
             {!isSubmitted ? (
-              <button className={styles.submitBtn} onClick={handleSubmit}>
-                <Flag size={15} /> Nộp bài thi
+              <button className={styles.submitBtn} onClick={handleSubmit} disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className={styles.spinner} size={18} /> : <><Flag size={15} /> Nộp bài thi</>}
               </button>
             ) : (
               <button className={styles.submitBtn} onClick={() => setShowResultModal(true)}>
@@ -672,60 +668,64 @@ export default function QuizMode() {
         )}
       </AnimatePresence>
 
-      {/* ── RESULT MODAL ── */}
+      {/* ── REDESIGNED RESULT MODAL ── */}
       <AnimatePresence>
         {showResultModal && (() => {
           const score = calculateScore();
           const scoreColor = score.pct >= 80 ? 'var(--success)' : score.pct >= 50 ? 'var(--warning)' : 'var(--danger)';
-          const scoreBg = score.pct >= 80 ? 'rgba(63,185,80,0.1)' : score.pct >= 50 ? 'rgba(210,153,34,0.1)' : 'rgba(248,81,73,0.1)';
-          const scoreEmoji = score.pct >= 80 ? '🏆' : score.pct >= 50 ? '📊' : '📚';
+          const scoreLabel = score.pct >= 80 ? 'Xuất sắc!' : score.pct >= 50 ? 'Khá tốt!' : 'Cần cố gắng!';
+          const scoreEmoji = score.pct >= 80 ? '🏆' : score.pct >= 50 ? '✨' : '📝';
 
           return (
             <motion.div
               className={styles.modalOverlay}
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={e => { if (e.target === e.currentTarget) setShowResultModal(false); }}
             >
               <motion.div
                 className={styles.resultCard}
-                initial={{ scale: 0.88, y: 24 }}
-                animate={{ scale: 1, y: 0 }}
-                transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+                initial={{ scale: 0.9, y: 30, opacity: 0 }}
+                animate={{ scale: 1, y: 0, opacity: 1 }}
+                exit={{ scale: 0.9, y: 30, opacity: 0 }}
+                transition={{ type: 'spring', damping: 20, stiffness: 300 }}
               >
-                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{scoreEmoji}</div>
-                <h2 style={{ fontWeight: 900, fontSize: '1.25rem', marginBottom: '0.25rem' }}>Kết quả bài thi</h2>
-                <p style={{ opacity: 0.45, fontSize: '0.82rem', marginBottom: '1.5rem' }}>{deck.name}</p>
-
-                <div className={styles.scoreCircle} style={{ background: scoreBg, borderColor: scoreColor }}>
-                  <div className={styles.scoreNumber} style={{ color: scoreColor }}>{score.point10}</div>
-                  <div className={styles.scoreDenom}>/ 10 điểm</div>
+                <div className={styles.resultHeader}>
+                  <span className={styles.resultEmoji}>{scoreEmoji}</span>
+                  <h2 className={styles.resultTitle}>{scoreLabel}</h2>
+                  <p className={styles.resultDeckName}>{deck?.name}</p>
                 </div>
 
-                <div className={styles.statRow}>
-                  <div className={`${styles.statBox} ${styles.correct}`}>
-                    <div className={styles.statBoxNum}>{score.correct}</div>
-                    <div className={styles.statBoxText}>✅ Đúng</div>
+                <div className={styles.scoreLarge}>
+                  {score.point10}
+                </div>
+                <div className={styles.scoreLabel}>Điểm bài thi</div>
+
+                <div className={styles.statsGrid}>
+                  <div className={styles.statItem} style={{ color: 'var(--success)' }}>
+                    <div className={styles.statVal}>{score.correct}</div>
+                    <div className={styles.statLbl}>Câu đúng</div>
                   </div>
-                  <div className={`${styles.statBox} ${styles.wrong}`}>
-                    <div className={styles.statBoxNum}>{score.wrong}</div>
-                    <div className={styles.statBoxText}>❌ Sai</div>
+                  <div className={styles.statItem} style={{ color: 'var(--danger)' }}>
+                    <div className={styles.statVal}>{score.wrong}</div>
+                    <div className={styles.statLbl}>Câu sai</div>
                   </div>
-                  <div className={styles.statBox} style={{ background: 'var(--surface-hover)' }}>
-                    <div className={styles.statBoxNum} style={{ color: scoreColor }}>{score.pct}%</div>
-                    <div className={styles.statBoxText}>📈 Tỉ lệ</div>
+                  <div className={styles.statItem} style={{ color: scoreColor }}>
+                    <div className={styles.statVal}>{score.pct}%</div>
+                    <div className={styles.statLbl}>Tỉ lệ</div>
                   </div>
                 </div>
 
                 <div className={styles.modalBtns}>
-                  <button className={styles.modalBtnSecondary} onClick={handleRestart}>
-                    <RotateCcw size={14} /> Thi lại
+                  <button className={styles.btnPrimary} onClick={handleRestart}>
+                    <RotateCcw size={18} /> Thi lại ngay
                   </button>
-                  <button className={styles.modalBtnSecondary} onClick={() => setShowResultModal(false)}>
-                    <RotateCcw size={14} /> Xem lại lỗi
-                  </button>
-                  <button className={styles.modalBtnPrimary} onClick={handleBackToLibrary}>
-                    <BookOpen size={14} /> Thư viện
-                  </button>
+                  <div className={styles.btnRow}>
+                    <button className={styles.btnSecondary} onClick={() => setShowResultModal(false)}>
+                      <Flag size={16} /> Xem lỗi
+                    </button>
+                    <button className={styles.btnSecondary} onClick={handleBackToLibrary}>
+                      <BookOpen size={16} /> Thư viện
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             </motion.div>
