@@ -396,7 +396,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cards }),
       });
-      if (checkAuth(res)) return;
+      if (checkAuth(res)) return 0;
       const data = await res.json();
       if (data.count) {
         await fetchDeckCards(deckId);
