@@ -197,7 +197,7 @@ export default function FlashcardMode() {
             Bộ thẻ này không tồn tại hoặc có thể đã bị xóa. Vui lòng kiểm tra lại đường dẫn.
           </p>
             <button
-              onClick={() => router.push(deck?.folderId ? `/library/flashcard?folder=${deck.folderId}` : '/library/flashcard')}
+              onClick={() => router.push('/library/flashcard')}
               style={{ 
                 background: 'var(--primary)', color: 'white', padding: '0.85rem 1.5rem', 
                 borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer',
