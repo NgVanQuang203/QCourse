@@ -428,7 +428,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setState(s => ({
           ...s,
           folders: s.folders.filter(f => f.id !== id),
-          decks: s.decks.map(d => d.folderId === id ? { ...d, folderId: null } : d),
+          decks: s.decks.filter(d => d.folderId !== id),
         }));
         toast.success('Đã xóa danh mục');
       }

@@ -43,10 +43,9 @@ export async function DELETE(_: NextRequest, props: { params: Promise<{ folderId
   });
   if (!folder) return Response.json({ error: 'Không tìm thấy thư mục' }, { status: 404 });
 
-  // Un-folder all decks first, then delete
-  await prisma.deck.updateMany({
+  // Delete all decks in this folder first (cascade delete logic)
+  await prisma.deck.deleteMany({
     where: { folderId, userId: session.user.id },
-    data: { folderId: null },
   });
   await prisma.folder.delete({ where: { id: folderId } });
 

@@ -93,9 +93,28 @@ export default function FlashcardLibrary() {
   const countForFolder = (fid: string) => flashDecks.filter(d => d.folderId === fid).length;
   const uncategorizedCount = flashDecks.filter(d => !d.folderId).length;
 
+  const formatNextDue = (ts: number | null) => {
+    if (!ts) return null;
+    const diff = ts - Date.now();
+    if (diff <= 0) return 'Hiện có';
+    
+    const totalMinutes = Math.ceil(diff / (1000 * 60));
+    if (totalMinutes < 60) return `${totalMinutes} phút nữa`;
+    
+    const hrs = Math.ceil(diff / (1000 * 60 * 60));
+    if (hrs < 24) return `${hrs} giờ nữa`;
+    
+    const days = Math.ceil(hrs / 24);
+    return `${days} ngày nữa`;
+  };
+
   const totalCards = flashDecks.reduce((s, d) => s + (d._count?.cards ?? 0), 0);
   const dueTotal = flashDecks.reduce((s, d) => s + (d.dueCount ?? 0), 0);
   const masteredTotal = flashDecks.reduce((s, d) => s + (d.masteredCount ?? 0), 0);
+
+  const nextReviewArray = flashDecks.map(d => d.nextDue).filter(Boolean) as number[];
+  const earliestNextDue = nextReviewArray.length > 0 ? Math.min(...nextReviewArray) : null;
+  const earliestNextDueLabel = formatNextDue(earliestNextDue);
 
   const confirmDelete = async () => {
     if (!deleteDeckId || isProcessing) return;
@@ -186,20 +205,6 @@ export default function FlashcardLibrary() {
     }
   };
 
-  const formatNextDue = (ts: number | null) => {
-    if (!ts) return null;
-    const diff = ts - Date.now();
-    if (diff <= 0) return 'Hiện có';
-    
-    const totalMinutes = Math.ceil(diff / (1000 * 60));
-    if (totalMinutes < 60) return `${totalMinutes} phút nữa`;
-    
-    const hrs = Math.ceil(diff / (1000 * 60 * 60));
-    if (hrs < 24) return `${hrs} giờ nữa`;
-    
-    const days = Math.ceil(hrs / 24);
-    return `${days} ngày nữa`;
-  };
 
   // ── Sidebar render ──────────────────────────────────────────────
   const sidebar = (
@@ -339,7 +344,7 @@ export default function FlashcardLibrary() {
           <div className={lib.fcCardIndicator} />
 
           {due > 0 ? (
-            <div className={lib.fcDueBadge}>🔥 {due} CẦN ÔN</div>
+            <div className={`${lib.fcDueBadge} ${lib.pulse}`}>🔥 {due} CẦN ÔN</div>
           ) : nextDueLabel ? (
             <div className={lib.fcNextDueBadge}>⏳ Ôn tập: {nextDueLabel}</div>
           ) : null}
@@ -455,24 +460,16 @@ export default function FlashcardLibrary() {
 
           {/* Panel body */}
           <div className={lib.fcPanelBody}>
-            {/* Stats — only show at "All" view */}
+            {/* Compact Stats row */}
             {isAllView && flashDecks.length > 0 && (
-              <div className={lib.fcStats}>
-                <div className={lib.fcStatItem}>
-                  <div className={lib.fcStatVal}>{flashDecks.length}</div>
-                  <div className={lib.fcStatLbl}>Bộ thẻ</div>
+              <div className={lib.fcStats} style={{ marginBottom: '1rem', gap: '1rem' }}>
+                <div className={lib.fcStatItem} style={{ padding: '0.5rem 1rem', minWidth: 'auto' }}>
+                  <div className={lib.fcStatVal} style={{ fontSize: '1.1rem' }}>{dueTotal}</div>
+                  <div className={lib.fcStatLbl} style={{ fontSize: '0.6rem' }}>Cần ôn</div>
                 </div>
-                <div className={lib.fcStatItem}>
-                  <div className={lib.fcStatVal}>{totalCards}</div>
-                  <div className={lib.fcStatLbl}>Tổng thẻ</div>
-                </div>
-                <div className={lib.fcStatItem}>
-                  <div className={lib.fcStatVal} style={{ color: dueTotal > 0 ? '#ef4444' : undefined }}>{dueTotal}</div>
-                  <div className={lib.fcStatLbl}>Cần ôn</div>
-                </div>
-                <div className={lib.fcStatItem}>
-                  <div className={lib.fcStatVal} style={{ color: '#10b981' }}>{masteredTotal}</div>
-                  <div className={lib.fcStatLbl}>Đã thuộc</div>
+                <div className={lib.fcStatItem} style={{ padding: '0.5rem 1rem', minWidth: 'auto' }}>
+                  <div className={lib.fcStatVal} style={{ fontSize: '1.1rem' }}>{totalCards}</div>
+                  <div className={lib.fcStatLbl} style={{ fontSize: '0.6rem' }}>Tổng thẻ</div>
                 </div>
               </div>
             )}

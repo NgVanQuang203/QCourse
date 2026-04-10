@@ -261,6 +261,96 @@
   line-height: 1.5;
 }
 
+/* ── Premium Study Banner ── */
+.studyBanner {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  border-radius: 24px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(79, 70, 229, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  transition: all 0.3s ease;
+}
+
+.studyBanner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -20%;
+  width: 100%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+  transform: rotate(-15deg);
+  pointer-events: none;
+}
+
+.bannerContent {
+  position: relative;
+  z-index: 1;
+}
+
+.bannerTitle {
+  font-size: 1.75rem;
+  font-weight: 900;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.bannerSub {
+  font-size: 1.05rem;
+  font-weight: 500;
+  opacity: 0.9;
+  max-width: 500px;
+  line-height: 1.5;
+}
+
+.bannerActions {
+  position: relative;
+  z-index: 1;
+}
+
+.studyBtn {
+  background: white;
+  color: #4f46e5;
+  border: none;
+  padding: 0.9rem 1.75rem;
+  border-radius: 14px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.studyBtn:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 15px 25px rgba(0,0,0,0.2);
+}
+
+.studyBtn:active {
+  transform: scale(0.98);
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
 /* --- COMPLETELY NEW FLASHCARD DESIGN (Friendly Stack) --- */
 .fcCardWrap {
   position: relative;
@@ -618,7 +708,7 @@
   padding: 0.35rem 0.7rem;
   border-radius: 12px;
   z-index: 2;
-  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4);
 }
 
 .fcNextDueBadge {
