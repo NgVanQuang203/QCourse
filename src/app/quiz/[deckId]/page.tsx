@@ -27,10 +27,13 @@ export default function QuizMode() {
   const deckId = params.deckId as string;
   const { decks, fetchDeckCards, isLoading: storeLoading, refreshStats } = useStore();
   
+  const deck = decks.find(d => d.id === deckId);
+
   const handleBackToLibrary = () => {
     refreshStats();
     router.push('/library/quiz');
   };
+
   const [cards, setCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,8 +43,6 @@ export default function QuizMode() {
   const [highScore, setHighScore] = useState(0);
   const [histLoading, setHistLoading] = useState(true);
   const [selectedAttempt, setSelectedAttempt] = useState<any | null>(null);
-
-  const deck = decks.find(d => d.id === deckId);
 
   useEffect(() => {
     const load = async () => {
