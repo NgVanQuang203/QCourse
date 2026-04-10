@@ -94,6 +94,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession();
   const [state, setState] = useState<StoreState>(INITIAL_STATE);
 
+  // ── Helper: Check for 401/Unauthorized (Account deleted in DB) ──
+  const checkAuth = useCallback((res: Response) => {
+    if (res.status === 401 || res.status === 403) {
+      console.warn('Session invalid or account deleted. Signing out...');
+      signOut({ callbackUrl: '/auth/login' });
+      return true;
+    }
+    return false;
+  }, []);
+
   // ── Fetch Initial Data ──────────────────────────────────────
   const fetchData = useCallback(async () => {
     if (status === 'loading') return;
@@ -110,6 +120,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         fetch('/api/activity', { cache: 'no-store' }),
         fetch('/api/folders', { cache: 'no-store' }),
       ]);
+
+      // Detect if account was deleted (401)
+      if (checkAuth(decksRes) || checkAuth(profileRes)) return;
 
       const [decksData, profileData, activityData, foldersData] = await Promise.all([
         decksRes.json(),
@@ -133,7 +146,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       console.error('Failed to fetch store data:', error);
       setState(s => ({ ...s, isLoading: false }));
     }
-  }, [status]);
+  }, [status, checkAuth]);
 
   useEffect(() => {
     fetchData();
@@ -147,6 +160,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         fetch('/api/decks', { cache: 'no-store' }),
         fetch('/api/activity', { cache: 'no-store' })
       ]);
+      
+      if (checkAuth(decksRes) || checkAuth(activityRes)) return;
+
       const decksData = await decksRes.json();
       const activityData = await activityRes.json();
       
@@ -172,6 +188,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profile),
       });
+      if (checkAuth(res)) return;
       const data = await res.json();
       if (data.user) {
         setState(s => ({ ...s, profile: { ...s.profile!, ...data.user } }));
@@ -189,6 +206,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(deck),
       });
+      if (checkAuth(res)) return;
+
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         console.error('Add deck failed:', res.status, errData);
@@ -247,6 +266,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const deleteDeck = useCallback(async (id: string) => {
     try {
       const res = await fetch(`/api/decks/${id}`, { method: 'DELETE' });
+      if (checkAuth(res)) return;
+
       if (res.ok) {
         setState(s => {
           const deckToDelete = s.decks.find(d => d.id === id);
@@ -278,6 +299,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const fetchDeckCards = useCallback(async (deckId: string): Promise<Card[] | undefined> => {
     try {
       const res = await fetch(`/api/decks/${deckId}`);
+      if (checkAuth(res)) return;
       const data = await res.json();
       if (data.deck?.cards) {
         const mappedCards = data.deck.cards.map((c: any) => ({
@@ -316,6 +338,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(card),
       });
+      if (checkAuth(res)) return;
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         console.error('Add card failed:', res.status, errData);
@@ -354,6 +377,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const deleteCard = useCallback(async (id: string) => {
     try {
       const res = await fetch(`/api/cards/${id}`, { method: 'DELETE' });
+      if (checkAuth(res)) return;
       if (res.ok) {
         setState(s => ({ ...s, cards: s.cards.filter(c => c.id !== id) }));
         toast.success('Đã xóa thẻ');
@@ -372,6 +396,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cards }),
       });
+      if (checkAuth(res)) return;
       const data = await res.json();
       if (data.count) {
         await fetchDeckCards(deckId);
@@ -396,6 +421,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, icon, type }),
       });
+      if (checkAuth(res)) return;
       const data = await res.json();
       if (data.folder) {
         setState(s => ({ ...s, folders: [...s.folders, data.folder] }));
@@ -429,6 +455,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const deleteFolder = useCallback(async (id: string) => {
     try {
       const res = await fetch(`/api/folders/${id}`, { method: 'DELETE' });
+      if (checkAuth(res)) return;
       if (res.ok) {
         setState(s => ({
           ...s,
@@ -450,6 +477,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ folderId }),
       });
+      if (checkAuth(res)) return;
       if (res.ok) {
         setState(s => ({
           ...s,

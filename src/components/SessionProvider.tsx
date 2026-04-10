@@ -4,5 +4,6 @@ import { SessionProvider as NextAuthSessionProvider } from 'next-auth/react';
 import { ReactNode } from 'react';
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  return <NextAuthSessionProvider>{children}</NextAuthSessionProvider>;
+  // refetchInterval: 30 seconds - to sync session state with DB deletions
+  return <NextAuthSessionProvider refetchInterval={30}>{children}</NextAuthSessionProvider>;
 }
