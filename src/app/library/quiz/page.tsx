@@ -152,7 +152,6 @@ export default function QuizLibrary() {
         setIsProcessing(true);
         try {
           await moveDeckToFolder(deckId, targetFolderId);
-          toast.success('Đã di chuyển đề thi');
         } finally {
           setIsProcessing(false);
         }
@@ -555,17 +554,27 @@ export default function QuizLibrary() {
           <div className={lib.folderModal} onClick={e => e.stopPropagation()}>
             <div className={lib.folderModalTitle}>Chuyển đề thi sang danh mục</div>
             <div className={lib.moveFolderList}>
-              <div className={lib.moveFolderItem} onClick={() => { moveDeckToFolder(moveDeckId!, null); setMoveDeckId(null); }}>
-                🗂️ Bỏ khỏi danh mục
-              </div>
-              {quizFolders.map(f => (
+              {quizDecks.find(d => d.id === moveDeckId)?.folderId && (
+                <div className={lib.moveFolderItem} onClick={async () => { 
+                  if (isProcessing) return;
+                  setIsProcessing(true);
+                  try {
+                    await moveDeckToFolder(moveDeckId!, null); 
+                    setMoveDeckId(null); 
+                  } finally {
+                    setIsProcessing(false);
+                  }
+                }}>🗂️ Bỏ khỏi danh mục</div>
+              )}
+              {quizFolders
+                .filter(f => f.id !== quizDecks.find(d => d.id === moveDeckId)?.folderId)
+                .map(f => (
                 <div key={f.id} className={lib.moveFolderItem} onClick={async () => { 
                   if (isProcessing) return;
                   setIsProcessing(true);
                   try {
                     await moveDeckToFolder(moveDeckId!, f.id);
                     setMoveDeckId(null);
-                    toast.success('Đã di chuyển đề thi');
                   } finally {
                     setIsProcessing(false);
                   }

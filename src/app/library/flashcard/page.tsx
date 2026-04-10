@@ -180,7 +180,6 @@ export default function FlashcardLibrary() {
       setIsProcessing(true);
       try {
         await moveDeckToFolder(deckId, targetId);
-        toast.success('Đã di chuyển bộ thẻ');
       } finally {
         setIsProcessing(false);
       }
@@ -562,32 +561,36 @@ export default function FlashcardLibrary() {
           <div className={lib.folderModal} onClick={e => e.stopPropagation()}>
             <div className={lib.folderModalTitle}>Chuyển tới thư mục</div>
             <div className={lib.moveFolderList}>
-              <div className={lib.moveFolderItem} onClick={async () => { 
-                if (isProcessing) return;
-                setIsProcessing(true);
-                try {
-                  await moveDeckToFolder(moveDeckId!, null); 
-                  setMoveDeckId(null); 
-                  toast.success('Đã chọn: Ngoài thư mục');
-                } finally {
-                  setIsProcessing(false);
-                }
-              }}>🗂️ Bỏ khỏi thư mục (ngoài)</div>
-              {flashFolders.map(f => (
-                <div key={f.id} className={lib.moveFolderItem} onClick={async () => { 
+              {/* Only show 'Remove from folder' if it's currently IN a folder */}
+              {flashDecks.find(d => d.id === moveDeckId)?.folderId && (
+                <div className={lib.moveFolderItem} onClick={async () => { 
                   if (isProcessing) return;
                   setIsProcessing(true);
                   try {
-                    await moveDeckToFolder(moveDeckId!, f.id); 
-                    setMoveDeckId(null);
-                    toast.success(`Đã chuyển tới: ${f.name}`);
+                    await moveDeckToFolder(moveDeckId!, null); 
+                    setMoveDeckId(null); 
                   } finally {
                     setIsProcessing(false);
                   }
-                }}>
-                  {f.icon} {f.name}
-                </div>
-              ))}
+                }}>🗂️ Bỏ khỏi thư mục (ngoài)</div>
+              )}
+
+              {flashFolders
+                .filter(f => f.id !== flashDecks.find(d => d.id === moveDeckId)?.folderId)
+                .map(f => (
+                  <div key={f.id} className={lib.moveFolderItem} onClick={async () => { 
+                    if (isProcessing) return;
+                    setIsProcessing(true);
+                    try {
+                      await moveDeckToFolder(moveDeckId!, f.id); 
+                      setMoveDeckId(null);
+                    } finally {
+                      setIsProcessing(false);
+                    }
+                  }}>
+                    {f.icon} {f.name}
+                  </div>
+                ))}
             </div>
             <button className={lib.modalCancel} style={{ width: '100%' }} onClick={() => setMoveDeckId(null)} disabled={isProcessing}>Hủy</button>
           </div>
