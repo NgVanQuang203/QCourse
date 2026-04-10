@@ -118,9 +118,15 @@ export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }
     setCardToDeleteId(cardId);
   };
   
-  const confirmDeleteCard = () => {
-    if (cardToDeleteId) deleteCard(cardToDeleteId);
-    setCardToDeleteId(null);
+  const confirmDeleteCard = async () => {
+    if (!cardToDeleteId || isSaving) return;
+    setIsSaving(true);
+    try {
+      await deleteCard(cardToDeleteId);
+      setCardToDeleteId(null);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const currentCards = currentDeckId ? cards.filter(c => c.deckId === currentDeckId) : [];
@@ -303,6 +309,7 @@ export default function EditDeckModal({ deckId, mode, initialFolderId, onClose }
         message="Nội dung thẻ này sẽ bị xoá vĩnh viễn khỏi bộ bài."
         confirmLabel="Xoá thẻ"
         variant="danger"
+        isLoading={isSaving}
         onConfirm={confirmDeleteCard}
         onCancel={() => setCardToDeleteId(null)}
       />

@@ -166,6 +166,7 @@ export default function FlashcardLibrary() {
 
   const handleDropOnFolder = async (e: React.DragEvent, folderId: string | null | 'all') => {
     e.preventDefault();
+    if (isProcessing) return;
     setDragOverFolderId(null);
     setDragOverSidebarId(null);
     const deckId = e.dataTransfer.getData('deckId');
@@ -176,7 +177,13 @@ export default function FlashcardLibrary() {
     const currentFolderId = deck?.folderId || null;
 
     if (deckId && targetId !== currentFolderId) {
-      await moveDeckToFolder(deckId, targetId);
+      setIsProcessing(true);
+      try {
+        await moveDeckToFolder(deckId, targetId);
+        toast.success('Đã di chuyển bộ thẻ');
+      } finally {
+        setIsProcessing(false);
+      }
     }
   };
 
@@ -551,14 +558,38 @@ export default function FlashcardLibrary() {
         </div>
       )}
       {moveDeckId && (
-        <div className={lib.modalOverlay} onClick={() => setMoveDeckId(null)}>
+        <div className={lib.modalOverlay} onClick={() => !isProcessing && setMoveDeckId(null)}>
           <div className={lib.folderModal} onClick={e => e.stopPropagation()}>
             <div className={lib.folderModalTitle}>Chuyển tới thư mục</div>
             <div className={lib.moveFolderList}>
-              <div className={lib.moveFolderItem} onClick={() => { moveDeckToFolder(moveDeckId!, null); setMoveDeckId(null); }}>🗂️ Bỏ khỏi thư mục (ngoài)</div>
-              {flashFolders.map(f => (<div key={f.id} className={lib.moveFolderItem} onClick={() => { moveDeckToFolder(moveDeckId!, f.id); setMoveDeckId(null); }}>{f.icon} {f.name}</div>))}
+              <div className={lib.moveFolderItem} onClick={async () => { 
+                if (isProcessing) return;
+                setIsProcessing(true);
+                try {
+                  await moveDeckToFolder(moveDeckId!, null); 
+                  setMoveDeckId(null); 
+                  toast.success('Đã chọn: Ngoài thư mục');
+                } finally {
+                  setIsProcessing(false);
+                }
+              }}>🗂️ Bỏ khỏi thư mục (ngoài)</div>
+              {flashFolders.map(f => (
+                <div key={f.id} className={lib.moveFolderItem} onClick={async () => { 
+                  if (isProcessing) return;
+                  setIsProcessing(true);
+                  try {
+                    await moveDeckToFolder(moveDeckId!, f.id); 
+                    setMoveDeckId(null);
+                    toast.success(`Đã chuyển tới: ${f.name}`);
+                  } finally {
+                    setIsProcessing(false);
+                  }
+                }}>
+                  {f.icon} {f.name}
+                </div>
+              ))}
             </div>
-            <button className={lib.modalCancel} style={{ width: '100%' }} onClick={() => setMoveDeckId(null)}>Hủy</button>
+            <button className={lib.modalCancel} style={{ width: '100%' }} onClick={() => setMoveDeckId(null)} disabled={isProcessing}>Hủy</button>
           </div>
         </div>
       )}

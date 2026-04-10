@@ -57,6 +57,7 @@ export default function QuizLibrary() {
   const [folderForm, setFolderForm] = useState({ name: '', icon: '📝' });
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const {
     decks, folders, isLoading, deleteDeck, refreshStats,
@@ -86,33 +87,50 @@ export default function QuizLibrary() {
   const activeFolder = quizFolders.find((f: any) => f.id === currentFolderId);
 
   const confirmDelete = async () => {
-    if (!deleteDeckId) return;
-    if (deleteDeckId.startsWith('f_')) {
-      const fid = deleteDeckId.replace('f_', '');
-      await deleteFolder(fid);
-      if (currentFolderId === fid) setCurrentFolderId('all');
-    } else {
-      await deleteDeck(deleteDeckId);
+    if (!deleteDeckId || isProcessing) return;
+    setIsProcessing(true);
+    try {
+      if (deleteDeckId.startsWith('f_')) {
+        const fid = deleteDeckId.replace('f_', '');
+        await deleteFolder(fid);
+        if (currentFolderId === fid) setCurrentFolderId('all');
+      } else {
+        await deleteDeck(deleteDeckId);
+      }
+      setDeleteDeckId(null);
+    } finally {
+      setIsProcessing(false);
     }
-    setDeleteDeckId(null);
   };
 
   const confirmReset = async (deckId: string) => {
-    await fetch(`/api/decks/${deckId}/reset`, { method: 'POST' });
-    await refreshStats();
-    setResetDeckId(null);
+    if (isProcessing) return;
+    setIsProcessing(true);
+    try {
+      await fetch(`/api/decks/${deckId}/reset`, { method: 'POST' });
+      await refreshStats();
+      toast.success('Đã làm mới lịch sử thi');
+      setResetDeckId(null);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleSaveFolder = async () => {
-    if (!folderForm.name.trim()) return;
-    if (editingFolder) {
-      await updateFolder(editingFolder.id, folderForm);
-    } else {
-      await addFolder(folderForm.name, folderForm.icon, 'QUIZ');
+    if (!folderForm.name.trim() || isProcessing) return;
+    setIsProcessing(true);
+    try {
+      if (editingFolder) {
+        await updateFolder(editingFolder.id, folderForm);
+      } else {
+        await addFolder(folderForm.name, folderForm.icon, 'QUIZ');
+      }
+      setIsFolderModalOpen(false);
+      setFolderForm({ name: '', icon: '📝' });
+      setEditingFolder(null);
+    } finally {
+      setIsProcessing(false);
     }
-    setIsFolderModalOpen(false);
-    setFolderForm({ name: '', icon: '📝' });
-    setEditingFolder(null);
   };
 
   const handleDragStart = (e: React.DragEvent, deckId: string) => {
@@ -122,14 +140,23 @@ export default function QuizLibrary() {
 
   const handleDropOnFolder = async (e: React.DragEvent, folderId: string | null | 'all') => {
     e.preventDefault();
+    if (isProcessing) return;
     setDragOverFolderId(null);
     setDragOverSidebarId(null);
     const deckId = e.dataTransfer.getData('deckId');
     const targetFolderId = folderId === 'all' ? null : folderId;
 
-    if (deckId && deckId !== targetFolderId) {
-      await moveDeckToFolder(deckId, targetFolderId);
-      toast.success('Đã di chuyển đề thi');
+    if (deckId) {
+      const deck = quizDecks.find(d => d.id === deckId);
+      if (deck && deck.folderId !== targetFolderId) {
+        setIsProcessing(true);
+        try {
+          await moveDeckToFolder(deckId, targetFolderId);
+          toast.success('Đã di chuyển đề thi');
+        } finally {
+          setIsProcessing(false);
+        }
+      }
     }
   };
 
@@ -141,9 +168,9 @@ export default function QuizLibrary() {
 
   const duplicateQuiz = async (quizId: string) => {
     const quiz = quizDecks.find(d => d.id === quizId);
-    if (!quiz) return;
+    if (!quiz || isProcessing) return;
 
-    toast.info('Đang sao chép đề thi...');
+    setIsProcessing(true);
     try {
       const newDeckId = await addDeck({
         name: `${quiz.name} (Bản sao)`,
@@ -162,6 +189,8 @@ export default function QuizLibrary() {
       }
     } catch (err) {
       toast.error('Không thể nhân bản');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -296,7 +325,7 @@ export default function QuizLibrary() {
               </div>
               <div className={lib.quizPanelMeta}>{visibleDecks.length + visibleFolders.length} mục dữ liệu</div>
             </div>
-            <button className={lib.btnCreate} onClick={() => setEditDeck('new')}>
+            <button className={lib.btnCreate} onClick={() => setEditDeck('new')} disabled={isProcessing}>
               <Plus size={15} /> Tạo đề thi
             </button>
           </div>
@@ -512,9 +541,9 @@ export default function QuizLibrary() {
               value={folderForm.name} onChange={e => setFolderForm({ ...folderForm, name: e.target.value.slice(0, 60) })}
               onKeyDown={e => e.key === 'Enter' && handleSaveFolder()} />
             <div className={lib.modalActions}>
-              <button className={lib.modalCancel} onClick={() => { setIsFolderModalOpen(false); setEditingFolder(null); }}>Hủy</button>
-              <button className={lib.modalSave} onClick={handleSaveFolder} disabled={!folderForm.name.trim()}>
-                {editingFolder ? 'Lưu thay đổi' : 'Tạo danh mục'}
+              <button className={lib.modalCancel} onClick={() => { setIsFolderModalOpen(false); setEditingFolder(null); }} disabled={isProcessing}>Hủy</button>
+              <button className={lib.modalSave} onClick={handleSaveFolder} disabled={!folderForm.name.trim() || isProcessing}>
+                {isProcessing ? 'Đang lưu...' : (editingFolder ? 'Lưu thay đổi' : 'Tạo danh mục')}
               </button>
             </div>
           </div>
@@ -530,7 +559,17 @@ export default function QuizLibrary() {
                 🗂️ Bỏ khỏi danh mục
               </div>
               {quizFolders.map(f => (
-                <div key={f.id} className={lib.moveFolderItem} onClick={() => { moveDeckToFolder(moveDeckId!, f.id); setMoveDeckId(null); }}>
+                <div key={f.id} className={lib.moveFolderItem} onClick={async () => { 
+                  if (isProcessing) return;
+                  setIsProcessing(true);
+                  try {
+                    await moveDeckToFolder(moveDeckId!, f.id);
+                    setMoveDeckId(null);
+                    toast.success('Đã di chuyển đề thi');
+                  } finally {
+                    setIsProcessing(false);
+                  }
+                }}>
                   {f.icon} {f.name}
                 </div>
               ))}
@@ -542,13 +581,14 @@ export default function QuizLibrary() {
 
       {editDeck && <EditQuizModal deckId={editDeck === 'new' ? null : editDeck} initialFolderId={currentFolderId} onClose={() => setEditDeck(null)} />}
       {importOpen && <ImportQuizModal deckId={null} allDecks={quizDecks} onClose={() => setImportOpen(false)} />}
-      <DeleteConfirmModal isOpen={!!deleteDeckId} deckName={deleteName} onConfirm={confirmDelete} onCancel={() => setDeleteDeckId(null)} />
+      <DeleteConfirmModal isOpen={!!deleteDeckId} deckName={deleteName} isLoading={isProcessing} onConfirm={confirmDelete} onCancel={() => setDeleteDeckId(null)} />
       <ConfirmModal
         isOpen={!!resetDeckId}
         title="Xoá lịch sử thi?"
         message="Toàn bộ kết quả các lần thi trước và điểm cao nhất của bộ đề này sẽ bị xoá vĩnh viễn."
         confirmLabel="Xoá lịch sử"
         variant="warning"
+        isLoading={isProcessing}
         onConfirm={() => confirmReset(resetDeckId!)}
         onCancel={() => setResetDeckId(null)}
       />

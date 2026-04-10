@@ -5,7 +5,7 @@ import { useStore } from '@/lib/store';
 import { Deck } from '@/lib/mockData';
 import styles from './ImportModal.module.css';
 import qStyles from './EditQuizModal.module.css';
-import { X, Upload, FileText, ChevronRight, Check, AlertCircle, Eye } from 'lucide-react';
+import { X, Upload, FileText, ChevronRight, Check, AlertCircle, Eye, RefreshCcw } from 'lucide-react';
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
 
@@ -86,6 +86,7 @@ export default function ImportQuizModal({ deckId, allDecks, onClose }: Props) {
   const [showPreview, setShowPreview] = useState(false);
   const [imported, setImported] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const EXAMPLE = `Thủ đô của Việt Nam là gì? | Hà Nội | TP. Hồ Chí Minh | Đà Nẵng | Huế | A
@@ -114,19 +115,24 @@ Sông dài nhất Việt Nam? | Sông Hồng | Sông Mê Kông | Sông Đà | S�
   };
 
   const handleImport = async () => {
-    if (!selectedDeckId || preview.length === 0) return;
+    if (!selectedDeckId || preview.length === 0 || isImporting) return;
     
-    const cardsToImport = preview.map(q => ({
-      deckId: selectedDeckId,
-      front: q.question,
-      back: q.options[q.correct],
-      options: [...q.options],
-      correctOptionIndex: q.correct,
-    }));
+    setIsImporting(true);
+    try {
+      const cardsToImport = preview.map(q => ({
+        deckId: selectedDeckId,
+        front: q.question,
+        back: q.options[q.correct],
+        options: [...q.options],
+        correctOptionIndex: q.correct,
+      }));
 
-    const count = await importCards(selectedDeckId, cardsToImport as any);
-    setImported(count);
-    setTimeout(onClose, 1800);
+      const count = await importCards(selectedDeckId, cardsToImport as any);
+      setImported(count);
+      setTimeout(onClose, 1800);
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   return (
@@ -268,9 +274,19 @@ Sông dài nhất Việt Nam? | Sông Hồng | Sông Mê Kông | Sông Đà | S�
 
         {imported === null && (
           <div className={styles.footer}>
-            <button className={styles.btnCancel} onClick={onClose}>Huỷ</button>
-            <button className={styles.btnImport} disabled={preview.length === 0 || !selectedDeckId} onClick={handleImport}>
-              <Check size={14}/> Import {preview.length > 0 ? `${preview.length} câu` : ''}
+            <button className={styles.btnCancel} onClick={onClose} disabled={isImporting}>Huỷ</button>
+            <button 
+              className={styles.btnImport} 
+              disabled={preview.length === 0 || !selectedDeckId || isImporting} 
+              onClick={handleImport}
+              style={{ gap: '0.4rem' }}
+            >
+              {isImporting ? (
+                <RefreshCcw size={14} style={{ animation: 'spin 1.2s linear infinite' }} />
+              ) : (
+                <Check size={14} />
+              )}
+              {isImporting ? 'Đang import...' : `Import ${preview.length > 0 ? `${preview.length} câu` : ''}`}
             </button>
           </div>
         )}

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import styles from './EditDeckModal.module.css';
 import qStyles from './EditQuizModal.module.css';
-import { X, Plus, Trash2, Save, Edit3, Check } from 'lucide-react';
+import { X, Plus, Trash2, Save, Edit3, Check, RefreshCcw } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
 
 const GRADIENT_PRESETS = [
@@ -55,6 +55,7 @@ const QuestionForm = ({ q, setQ, onSave, onCancel, saveLabel }: {
   onSave: () => void;
   onCancel: () => void;
   saveLabel: string;
+  isSaving?: boolean;
 }) => (
   <div className={qStyles.qForm}>
     <div className={qStyles.qFormGroup}>
@@ -66,6 +67,7 @@ const QuestionForm = ({ q, setQ, onSave, onCancel, saveLabel }: {
         placeholder="Nhập nội dung câu hỏi..."
         rows={2}
         autoFocus
+        disabled={isSaving}
       />
     </div>
 
@@ -77,6 +79,7 @@ const QuestionForm = ({ q, setQ, onSave, onCancel, saveLabel }: {
             className={`${qStyles.optionBadge} ${q.correct === i ? qStyles.optionCorrect : ''}`}
             onClick={() => setQ({ ...q, correct: i as 0|1|2|3 })}
             title="Đặt làm đáp án đúng"
+            disabled={isSaving}
           >
             {q.correct === i ? <Check size={12}/> : letter}
           </button>
@@ -85,6 +88,7 @@ const QuestionForm = ({ q, setQ, onSave, onCancel, saveLabel }: {
             value={q.options[i]}
             onChange={e => setQ(setOpt(q, i, e.target.value))}
             placeholder={`Đáp án ${letter}...`}
+            disabled={isSaving}
           />
         </div>
       ))}
@@ -95,13 +99,14 @@ const QuestionForm = ({ q, setQ, onSave, onCancel, saveLabel }: {
     </div>
 
     <div className={qStyles.qActions}>
-      <button className={qStyles.btnGhost} onClick={onCancel}><X size={13}/> Huỷ</button>
+      <button className={qStyles.btnGhost} onClick={onCancel} disabled={isSaving}><X size={13}/> Huỷ</button>
       <button 
         className={qStyles.btnSave} 
-        disabled={!q.question.trim() || q.options.some(o => !o.trim())} 
+        disabled={!q.question.trim() || q.options.some(o => !o.trim()) || isSaving} 
         onClick={onSave}
       >
-        <Save size={13}/> {saveLabel}
+        {isSaving ? <RefreshCcw size={13} style={{ animation: 'spin 1.2s linear infinite' }} /> : <Save size={13}/>}
+        {isSaving ? 'Đang lưu...' : saveLabel}
       </button>
     </div>
   </div>
@@ -124,6 +129,7 @@ export default function EditQuizModal({ deckId, initialFolderId, onClose }: Prop
   const [section, setSection] = useState<'info' | 'questions'>('info');
   const [currentDeckId, setCurrentDeckId] = useState<string | null>(deckId);
   const [saved, setSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Questions draft (only populated this session for new questions)
   // For existing: load from cards
@@ -137,16 +143,21 @@ export default function EditQuizModal({ deckId, initialFolderId, onClose }: Prop
   const [newQ, setNewQ] = useState<QuizQuestion>(emptyQuestion());
 
   const handleSaveDeck = async () => {
-    if (!deckForm.name.trim()) return;
-    if (isNew && !currentDeckId) {
-      const id = await addDeck({ name: deckForm.name, description: deckForm.description, color: deckForm.color, timeLimitSec: deckForm.timeLimitSec, folderId: initialFolderId ?? undefined, type: 'QUIZ' });
-      setCurrentDeckId(id as string);
-      setSection('questions');
-    } else if (currentDeckId) {
-      updateDeck(currentDeckId, { name: deckForm.name, description: deckForm.description, color: deckForm.color, timeLimitSec: deckForm.timeLimitSec });
+    if (!deckForm.name.trim() || isSaving) return;
+    setIsSaving(true);
+    try {
+      if (isNew && !currentDeckId) {
+        const id = await addDeck({ name: deckForm.name, description: deckForm.description, color: deckForm.color, timeLimitSec: deckForm.timeLimitSec, folderId: initialFolderId ?? undefined, type: 'QUIZ' });
+        setCurrentDeckId(id as string);
+        setSection('questions');
+      } else if (currentDeckId) {
+        await updateDeck(currentDeckId, { name: deckForm.name, description: deckForm.description, color: deckForm.color, timeLimitSec: deckForm.timeLimitSec });
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } finally {
+      setIsSaving(false);
     }
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
   };
 
   const handleStartEdit = (cardId: string) => {
@@ -165,29 +176,39 @@ export default function EditQuizModal({ deckId, initialFolderId, onClose }: Prop
   };
 
   const handleSaveEdit = async () => {
-    if (!editingId || !editForm.question.trim() || editForm.options.some(o => !o.trim())) return;
-    const correctBack = editForm.options[editForm.correct];
-    await updateCard(editingId, {
-      front: editForm.question,
-      back: correctBack,
-      options: [...editForm.options],
-      correctOptionIndex: editForm.correct,
-    });
-    setEditingId(null);
+    if (!editingId || !editForm.question.trim() || editForm.options.some(o => !o.trim()) || isSaving) return;
+    setIsSaving(true);
+    try {
+      const correctBack = editForm.options[editForm.correct];
+      await updateCard(editingId, {
+        front: editForm.question,
+        back: correctBack,
+        options: [...editForm.options],
+        correctOptionIndex: editForm.correct,
+      });
+      setEditingId(null);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAddNew = async () => {
-    if (!newQ.question.trim() || !currentDeckId || newQ.options.some(o => !o.trim())) return;
-    const correctBack = newQ.options[newQ.correct];
-    await addCard({
-      deckId: currentDeckId,
-      front: newQ.question,
-      back: correctBack,
-      options: [...newQ.options],
-      correctOptionIndex: newQ.correct,
-    });
-    setNewQ(emptyQuestion());
-    setAddingNew(false);
+    if (!newQ.question.trim() || !currentDeckId || newQ.options.some(o => !o.trim()) || isSaving) return;
+    setIsSaving(true);
+    try {
+      const correctBack = newQ.options[newQ.correct];
+      await addCard({
+        deckId: currentDeckId,
+        front: newQ.question,
+        back: correctBack,
+        options: [...newQ.options],
+        correctOptionIndex: newQ.correct,
+      });
+      setNewQ(emptyQuestion());
+      setAddingNew(false);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -279,8 +300,9 @@ export default function EditQuizModal({ deckId, initialFolderId, onClose }: Prop
 
               <div className={styles.formActions}>
                 <button className={styles.btnCancel} onClick={onClose}>Huỷ</button>
-                <button className={styles.btnSave} disabled={!deckForm.name.trim()} onClick={handleSaveDeck}>
-                  <Save size={14}/> {isNew && !currentDeckId ? 'Tạo & soạn câu hỏi →' : 'Lưu thay đổi'}
+                <button className={styles.btnSave} disabled={!deckForm.name.trim() || isSaving} onClick={handleSaveDeck}>
+                  {isSaving ? <RefreshCcw size={14} style={{ animation: 'spin 1.2s linear infinite' }} /> : <Save size={14}/>}
+                  {isSaving ? 'Đang lưu...' : (isNew && !currentDeckId ? 'Tạo & soạn câu hỏi →' : 'Lưu thay đổi')}
                 </button>
               </div>
             </div>
@@ -304,6 +326,7 @@ export default function EditQuizModal({ deckId, initialFolderId, onClose }: Prop
                     onSave={handleAddNew}
                     onCancel={() => setAddingNew(false)}
                     saveLabel="Thêm câu hỏi"
+                    isSaving={isSaving}
                   />
                 </div>
               )}
@@ -327,6 +350,7 @@ export default function EditQuizModal({ deckId, initialFolderId, onClose }: Prop
                           onSave={handleSaveEdit}
                           onCancel={() => setEditingId(null)}
                           saveLabel="Lưu câu hỏi"
+                          isSaving={isSaving}
                         />
                       </div>
                     ) : (
@@ -361,6 +385,7 @@ export default function EditQuizModal({ deckId, initialFolderId, onClose }: Prop
         message="Nội dung câu hỏi này sẽ bị xoá vĩnh viễn khỏi bộ đề thi."
         confirmLabel="Xoá câu hỏi"
         variant="danger"
+        isLoading={isSaving}
         onConfirm={confirmDeleteQuestion}
         onCancel={() => setQuestionToDeleteId(null)}
       />
