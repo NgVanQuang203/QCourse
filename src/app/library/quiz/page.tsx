@@ -286,14 +286,15 @@ export default function QuizLibrary() {
           </div>
 
           <button
-            className={`${lib.fcFolderBtn} ${currentFolderId === 'all' ? lib.fcFolderBtnActive : ''} ${dragOverSidebarId === 'all' ? lib.fcFolderBtnDragOver : ''}`}
+            className={`${lib.quizFolderBtn} ${currentFolderId === 'all' ? lib.quizFolderBtnActive : ''} ${dragOverSidebarId === 'all' ? lib.fcFolderBtnDragOver : ''}`}
             onClick={() => setCurrentFolderId('all')}
             onDragOver={(e) => { e.preventDefault(); setDragOverSidebarId('all'); }}
             onDragLeave={() => setDragOverSidebarId(null)}
             onDrop={(e) => { handleDropOnFolder(e, 'all'); setDragOverSidebarId(null); }}
           >
-            <LayoutGrid size={15} /> Tất cả
-            <span className={lib.fcFolderBtnCount}>{quizFolders.length + quizDecks.filter(d => !d.folderId).length}</span>
+            <LayoutGrid size={16} /> 
+            <span className={lib.sidebarFolderName}>Tất cả</span>
+            <span className={lib.quizFolderBtnCount}>{quizDecks.length}</span>
           </button>
 
           {sidebarFolders.map(f => {
@@ -313,8 +314,9 @@ export default function QuizLibrary() {
                   onDrop={(e) => { handleDropOnFolder(e, f.id); setDragOverSidebarId(null); }}
                   style={{ paddingRight: '2.6rem' }}
                 >
-                  {f.icon} {f.name}
-                  {f.isPinned && <Pin size={10} className={lib.pinIcon} style={{ marginLeft: '4px' }} fill="currentColor" />}
+                  <span style={{ fontSize: '1.1rem' }}>{f.icon || '📁'}</span>
+                  <span className={lib.sidebarFolderName}>{f.name}</span>
+                  {f.isPinned && <Pin size={10} className={lib.pinSidebarIcon} fill="currentColor" />}
                   <span className={lib.quizFolderBtnCount}>{count}</span>
                 </button>
                 <div
@@ -342,11 +344,12 @@ export default function QuizLibrary() {
           {/* Uncategorized if any */}
           {quizDecks.filter(d => !d.folderId).length > 0 && (
             <button
-              className={`${lib.fcFolderBtn} ${currentFolderId === 'uncategorized' ? lib.fcFolderBtnActive : ''}`}
+              className={`${lib.quizFolderBtn} ${currentFolderId === 'uncategorized' ? lib.quizFolderBtnActive : ''}`}
               onClick={() => setCurrentFolderId('uncategorized')}
             >
-              🗂️ Chưa phân loại
-              <span className={lib.fcFolderBtnCount}>{quizDecks.filter(d => !d.folderId).length}</span>
+              <span style={{ fontSize: '1.1rem' }}>🗂️</span>
+              <span className={lib.sidebarFolderName}>Chưa phân loại</span>
+              <span className={lib.quizFolderBtnCount}>{quizDecks.filter(d => !d.folderId).length}</span>
             </button>
           )}
 

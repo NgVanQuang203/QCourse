@@ -306,11 +306,47 @@ html.dark .modal {
   letter-spacing: 0.3px;
 }
 
+.previewPopupOverlay {
+  position: absolute;
+  inset: 0;
+  background: var(--surface);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.previewPopupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.previewPopupTitle {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.previewPopupBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem 1.75rem;
+}
+
+.previewPopupFooter {
+  padding: 1rem 1.75rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+
 .previewList {
   display: flex;
   flex-direction: column;
-  max-height: 400px;
-  overflow-y: auto;
+  gap: 0;
 }
 
 .previewRow {

@@ -258,8 +258,9 @@ export default function FlashcardLibrary() {
         onDragLeave={() => setDragOverSidebarId(null)}
         onDrop={(e) => { handleDropOnFolder(e, 'all'); setDragOverSidebarId(null); }}
       >
-        <LayoutGrid size={15} /> Tất cả
-        <span className={lib.fcFolderBtnCount}>{flashFolders.length + flashDecks.filter(d => !d.folderId).length}</span>
+        <LayoutGrid size={16} /> 
+        <span className={lib.sidebarFolderName}>Tất cả</span>
+        <span className={lib.fcFolderBtnCount}>{flashDecks.length}</span>
       </button>
 
       {/* Folder list */}
@@ -275,15 +276,9 @@ export default function FlashcardLibrary() {
               onDrop={(e) => { handleDropOnFolder(e, f.id); setDragOverSidebarId(null); }}
               style={{ paddingRight: '2.6rem' }}
             >
-              <div className={lib.pinSidebarWrap}>
-                {f.icon}
-                {f.isPinned && (
-                  <div className={lib.pinSidebarIcon}>
-                    <Pin size={10} className={lib.pinIcon} fill="currentColor" />
-                  </div>
-                )}
-              </div>
-              <span style={{ marginLeft: '8px' }}>{f.name}</span>
+              <span style={{ fontSize: '1.1rem' }}>{f.icon || '📁'}</span>
+              <span className={lib.sidebarFolderName}>{f.name}</span>
+              {f.isPinned && <Pin size={10} className={lib.pinSidebarIcon} fill="currentColor" />}
               <span className={lib.fcFolderBtnCount}>{countForFolder(f.id)}</span>
             </button>
             {/* Folder kebab */}
@@ -325,7 +320,8 @@ export default function FlashcardLibrary() {
           className={`${lib.fcFolderBtn} ${activeFolderId === null ? lib.fcFolderBtnActive : ''}`}
           onClick={() => setActiveFolderId(null)}
         >
-          🗂️ Chưa phân loại
+          <span style={{ fontSize: '1.1rem' }}>🗂️</span>
+          <span className={lib.sidebarFolderName}>Chưa phân loại</span>
           <span className={lib.fcFolderBtnCount}>{uncategorizedCount}</span>
         </button>
       )}

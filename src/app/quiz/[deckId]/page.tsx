@@ -7,7 +7,8 @@ import styles from './quiz.module.css';
 import {
   ArrowLeft, Clock, CheckCircle2, XCircle,
   Send, Trophy, RotateCcw, Home, Check, X, Flag,
-  BookOpen, AlertTriangle, Loader2
+  BookOpen, AlertTriangle, Loader2, Play, History,
+  RotateCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -38,22 +39,15 @@ export default function QuizMode() {
   const [quizCards, setQuizCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Helper to generate a freshly shuffled quiz from raw cards
   const generateQuizCards = useCallback((rawCards: any[]) => {
     if (!rawCards.length) return [];
-    
-    // 1. Shuffle questions order
     const shuffledQuestions = shuffle([...rawCards]);
-
-    // 2. Shuffle options for each question
     return shuffledQuestions.map(c => {
       if (c.options && Array.isArray(c.options) && c.options.length > 0) {
-        // Explicit quiz options
         const correctText = c.options[c.correctOptionIndex];
         const finalOptions = shuffle([...c.options]);
         return { ...c, options: finalOptions, correctOptionIndex: finalOptions.indexOf(correctText) };
       }
-      // Fallback for flashcard-style quiz (generate 3 random distractors)
       const otherAnswers = rawCards.filter(o => o.id !== c.id).map(o => o.back);
       const optionsStr = [c.back, ...shuffle(otherAnswers).slice(0, 3)];
       const finalOptions = shuffle(optionsStr);
@@ -61,7 +55,6 @@ export default function QuizMode() {
     });
   }, []);
 
-  // Lobby States
   const [isLobby, setIsLobby] = useState(true);
   const [history, setHistory] = useState<any[]>([]);
   const [highScore, setHighScore] = useState(0);
@@ -97,7 +90,6 @@ export default function QuizMode() {
     }
   }, [deckId]);
 
-
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [timeLeft, setTimeLeft] = useState(0);
   const [timerStarted, setTimerStarted] = useState(false);
@@ -107,10 +99,9 @@ export default function QuizMode() {
   const [highlightedIdx, setHighlightedIdx] = useState<number | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
-  // Initialize timer when quizCards become available
   useEffect(() => {
     if (quizCards.length > 0 && !timerStarted) {
-      const totalSec = (deck as any)?.timeLimitSec || 600; // Default 10 mins
+      const totalSec = (deck as any)?.timeLimitSec || 600;
       setTimeLeft(totalSec);
       setTimerStarted(true);
     }
@@ -171,7 +162,6 @@ export default function QuizMode() {
     }
   };
 
-  // Back button: confirm exit if quiz is in progress
   const handleRestart = () => {
     setAnswers({});
     setIsSubmitted(false);
@@ -181,7 +171,6 @@ export default function QuizMode() {
     setQuizCards(newQuiz);
     setTimeLeft(totalSec);
     setTimerStarted(true);
-    // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -206,21 +195,12 @@ export default function QuizMode() {
 
   if (!deck) {
     return (
-      <div className={styles.pageWrapper} style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <div className={styles.lobbyContainer} style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', background: 'var(--quiz-bg)', zIndex: 10 }}>
         <div style={{ textAlign: 'center', maxWidth: 400, padding: '2rem' }}>
           <div style={{ fontSize: '4rem', marginBottom: '1rem', filter: 'grayscale(1)', opacity: 0.5 }}>📭</div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '0.5rem' }}>Không tìm thấy đề thi</h2>
-          <p style={{ opacity: 0.5, marginBottom: '2.5rem', lineHeight: 1.5 }}>
-            Đề thi trắc nghiệm này không tồn tại hoặc có thể đã bị xóa. Vui lòng kiểm tra lại đường dẫn.
-          </p>
-          <button
-            onClick={handleBackToLibrary}
-            style={{ 
-              background: 'var(--primary)', color: 'white', padding: '0.85rem 1.5rem', 
-              borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer',
-              display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 14px rgba(37,99,235,0.3)'
-            }}
-          >
+          <p style={{ opacity: 0.5, marginBottom: '2.5rem', lineHeight: 1.5 }}>Đề thi trắc nghiệm này không tồn tại hoặc có thể đã bị xóa.</p>
+          <button onClick={handleBackToLibrary} style={{ background: 'var(--primary)', color: 'white', padding: '0.85rem 1.5rem', borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 14px rgba(37,99,235,0.3)' }}>
             <ArrowLeft size={16} /> Quay lại thư viện
           </button>
         </div>
@@ -228,265 +208,76 @@ export default function QuizMode() {
     );
   }
 
-  // ── BEAUTIFUL EMPTY STATE ──
   if (quizCards.length === 0) {
     return (
       <div className={styles.pageWrapper}>
         <div className={styles.quizHeader}>
-          <button className={styles.backBtn} onClick={handleBackToLibrary}>
-            <ArrowLeft size={16} />
-            <span className={styles.backLabel}>Quay lại</span>
-          </button>
-          <div className={styles.quizHeaderCenter}>
-            <div className={styles.quizHeaderTitle}>{deck.name}</div>
-          </div>
+          <button className={styles.backBtn} onClick={handleBackToLibrary}><ArrowLeft size={16} /><span>Quay lại</span></button>
+          <div className={styles.quizHeaderCenter}><div className={styles.quizHeaderTitle}>{deck.name}</div></div>
         </div>
-
         <div className={styles.emptyState}>
           <div className={styles.emptyOrb} />
-          <motion.div
-            className={styles.emptyContent}
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <div className={styles.emptyIconWrap}>
-              <BookOpen size={40} strokeWidth={1.5} />
-            </div>
+          <motion.div className={styles.emptyContent} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
+            <div className={styles.emptyIconWrap}><BookOpen size={40} /></div>
             <h2 className={styles.emptyTitle}>Bộ bài chưa có câu hỏi</h2>
-            <p className={styles.emptyDesc}>
-              Bộ bài <strong>"{deck.name}"</strong> hiện chưa có thẻ nào được thêm vào.
-              Hãy thêm thẻ vào bộ bài để bắt đầu làm trắc nghiệm.
-            </p>
-            <div className={styles.emptyActions}>
-              <button
-                className={styles.emptyBtnPrimary}
-                onClick={handleBackToLibrary}
-              >
-                <ArrowLeft size={15} /> Quay lại thư viện
-              </button>
-              <button
-                className={styles.emptyBtnSecondary}
-                onClick={handleBackToLibrary}
-              >
-                <BookOpen size={15} /> Thư viện trắc nghiệm
-              </button>
-            </div>
+            <p className={styles.emptyDesc}>Bộ bài hiện chưa có thẻ nào được thêm vào.</p>
+            <button className={styles.emptyBtnPrimary} onClick={handleBackToLibrary}><ArrowLeft size={15} /> Quay lại thư viện</button>
           </motion.div>
         </div>
       </div>
     );
   }
 
-  // ── LOBBY STATE (START SCREEN) ──
   if (isLobby) {
     return (
       <div className={styles.pageWrapper}>
-        <div className={styles.quizHeader}>
-          <button className={styles.backBtn} onClick={handleBackToLibrary}>
-            <ArrowLeft size={16} />
-            <span className={styles.backLabel}>Quay lại</span>
-          </button>
-        </div>
         <div className={styles.lobbyContainer}>
-          <motion.div 
-            className={styles.lobbyCard}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
+          <motion.div className={styles.lobbyCard} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
             <div className={styles.lobbyIcon}>⏱️</div>
             <h1 className={styles.lobbyTitle}>{deck.name}</h1>
-            {deck.description && <p className={styles.lobbyDesc}>{deck.description}</p>}
-            
             <div className={styles.lobbyMetaGrid}>
-              <div className={styles.lobbyMetaItem}>
-                <span className={styles.lobbyMetaLabel}>Số câu hỏi</span>
-                <span className={styles.lobbyMetaVal}>{quizCards.length}</span>
-              </div>
-              <div className={styles.lobbyMetaItem}>
-                <span className={styles.lobbyMetaLabel}>Thời gian</span>
-                <span className={styles.lobbyMetaVal}>{(deck as any)?.timeLimitSec ? Math.floor((deck as any).timeLimitSec / 60) + ' phút' : 'Không giới hạn'}</span>
-              </div>
-              <div className={styles.lobbyMetaItem}>
-                <span className={styles.lobbyMetaLabel}>Kỷ lục cao nhất</span>
-                <span className={styles.lobbyMetaVal} style={{ color: 'var(--primary)' }}>
-                  {quizCards.length > 0 ? ((highScore / quizCards.length) * 10).toFixed(1) + ' điểm' : '0 điểm'}
-                </span>
-              </div>
+              <div className={styles.lobbyMetaItem}><span className={styles.lobbyMetaLabel}>Số câu hỏi</span><span className={styles.lobbyMetaVal}>{quizCards.length}</span></div>
+              <div className={styles.lobbyMetaItem}><span className={styles.lobbyMetaLabel}>Thời gian</span><span className={styles.lobbyMetaVal}>{(deck as any)?.timeLimitSec ? Math.floor((deck as any).timeLimitSec / 60) + ' phút' : 'Không giới hạn'}</span></div>
+              <div className={styles.lobbyMetaItem}><span className={styles.lobbyMetaLabel}>Kỷ lục</span><span className={styles.lobbyMetaVal} style={{ color: 'var(--primary)' }}>{((highScore / quizCards.length) * 10).toFixed(1)} điểm</span></div>
             </div>
-
             <div className={styles.lobbyButtons}>
-              <button 
-                className={styles.btnHistoryTrigger}
-                onClick={() => setShowHistoryList(true)}
-              >
-                📜 Xem lịch sử thi (5 lần gần nhất)
-              </button>
-
-              <button 
-                className={styles.btnStartQuiz} 
-                onClick={() => {
-                  const newQuiz = generateQuizCards(cards);
-                  setQuizCards(newQuiz);
-                  const totalSec = (deck as any)?.timeLimitSec || 600;
-                  setTimeLeft(totalSec);
-                  setIsLobby(false);
-                  setTimerStarted(true);
-                }}
-              >
-                🚀 BẮT ĐẦU LÀM BÀI
-              </button>
+              <button className={styles.btnHistoryTrigger} onClick={() => setShowHistoryList(true)}><History size={18} /> Lịch sử thi</button>
+              <button className={styles.btnStartQuiz} onClick={() => { setIsLobby(false); setTimerStarted(true); }}><Play size={18} fill="currentColor" /> BẮT ĐẦU</button>
             </div>
           </motion.div>
         </div>
-        {/* ── DANH SÁCH LỊCH SỬ THI (MODAL) ── */}
         <AnimatePresence>
           {showHistoryList && (
-            <motion.div 
-              className={styles.modalOverlay}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowHistoryList(false)}
-            >
-              <motion.div 
-                className={styles.historyListCard}
-                initial={{ y: 50, opacity: 0, scale: 0.95 }}
-                animate={{ y: 0, opacity: 1, scale: 1 }}
-                exit={{ y: 20, opacity: 0, scale: 0.95 }}
-                onClick={e => e.stopPropagation()}
-              >
-                <div className={styles.historyDetailHeader}>
-                  <h2>Lịch sử 5 lần gần nhất</h2>
-                  <button className={styles.closeBtn} onClick={() => setShowHistoryList(false)}><X size={20} /></button>
-                </div>
-                
+            <motion.div className={styles.modalOverlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowHistoryList(false)}>
+              <motion.div className={styles.historyListCard} initial={{ y: 50 }} animate={{ y: 0 }} exit={{ y: 20 }} onClick={e => e.stopPropagation()}>
+                <div className={styles.historyDetailHeader}><h2 className={styles.resultTitle}>Lịch sử gần đây</h2><button onClick={() => setShowHistoryList(false)} style={{ background: 'none', border: 'none', color: '#fff' }}><X size={24} /></button></div>
                 <div className={styles.historyListBody}>
-                  {histLoading ? (
-                    <div className={styles.loadingHistory}>
-                      <Loader2 size={24} className={styles.spinner} />
-                      <p>Đang tải lịch sử...</p>
-                    </div>
-                  ) : history.length > 0 ? (
+                  {histLoading ? <Loader2 className={styles.spinner} /> : history.length > 0 ? (
                     <div className={styles.historyListPopup}>
-                      {history.slice(0, 5).map((h, i) => {
-                        const dateStr = new Date(h.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                        return (
-                          <div 
-                            key={i} 
-                            className={styles.historyItemPopup}
-                            onClick={() => {
-                              setSelectedAttempt(h);
-                              // Keep list open or close it? Let's keep it open for easy back-and-forth
-                              // or close it to focus. I'll keep it open but detail will be on top.
-                            }}
-                          >
-                            <div className={styles.historyItemInfo}>
-                              <div className={styles.historyItemDate}>{dateStr}</div>
-                              <div className={styles.historyItemScore}>{h.score}/{h.totalQuestions} câu đúng</div>
-                            </div>
-                            <div className={`${styles.historyItemGradePopup} ${styles['grade' + h.grade]}`}>
-                              {h.grade}
-                            </div>
-                          </div>
-                        );
-                      })}
+                      {history.slice(0, 5).map((h, i) => (
+                        <div key={i} className={styles.historyItemPopup} onClick={() => setSelectedAttempt(h)}>
+                          <div>{new Date(h.createdAt).toLocaleDateString()}</div>
+                          <div>{h.score}/{h.totalQuestions} - {h.grade}</div>
+                        </div>
+                      ))}
                     </div>
-                  ) : (
-                    <div className={styles.historyEmptyPopup}>
-                      <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📜</div>
-                      <p>Bạn chưa thi bài này lần nào.</p>
-                    </div>
-                  )}
+                  ) : <p>Chưa có dữ liệu.</p>}
                 </div>
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* ── CHI TIẾT LỊCH SỬ THI (MODAL) ── */}
         <AnimatePresence>
           {selectedAttempt && (
-            <motion.div 
-              className={styles.modalOverlay}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedAttempt(null)}
-            >
-              <motion.div 
-                className={styles.historyDetailCard}
-                initial={{ y: 50, opacity: 0, scale: 0.95 }}
-                animate={{ y: 0, opacity: 1, scale: 1 }}
-                exit={{ y: 20, opacity: 0, scale: 0.95 }}
-                onClick={e => e.stopPropagation()}
-              >
-                <div className={styles.historyDetailHeader}>
-                  <h2>Lịch sử chi tiết</h2>
-                  <button className={styles.closeBtn} onClick={() => setSelectedAttempt(null)}><X size={20} /></button>
+            <motion.div className={styles.modalOverlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedAttempt(null)}>
+              <motion.div className={styles.historyDetailCard} initial={{ y: 50 }} animate={{ y: 0 }} exit={{ y: 20 }} onClick={e => e.stopPropagation()}>
+                <div className={styles.historyDetailHeader}><h2 className={styles.resultTitle}>Chi tiết kết quả</h2><button onClick={() => setSelectedAttempt(null)} style={{ background: 'none', border: 'none', color: '#fff' }}><X size={24} /></button></div>
+                <div className={styles.statRow}>
+                  <div className={styles.statBox}><span className={styles.statBoxNum}>{selectedAttempt.score}/{selectedAttempt.totalQuestions}</span><span>ĐÚNG</span></div>
+                  <div className={styles.statBox}><span className={styles.statBoxNum}>{selectedAttempt.grade}</span><span>HẠNG</span></div>
                 </div>
-                
-                <div className={styles.statRow} style={{ marginTop: '0.5rem' }}>
-                  <div className={styles.statBox} style={{ background: 'var(--primary-light)' }}>
-                    <span className={styles.statBoxNum} style={{ color: 'var(--primary)' }}>{selectedAttempt.score}/{selectedAttempt.totalQuestions}</span>
-                    <span className={styles.statBoxText} style={{ color: 'var(--primary)' }}>SỐ CÂU ĐÚNG</span>
-                  </div>
-                  <div className={`${styles.statBox} ${styles.correct}`}>
-                    <span className={styles.statBoxNum}>{Math.round((selectedAttempt.score / selectedAttempt.totalQuestions) * 100)}%</span>
-                    <span className={styles.statBoxText}>TỶ LỆ ĐÚNG</span>
-                  </div>
-                  <div className={styles.statBox} style={{ background: 'var(--surface-hover)' }}>
-                    <span className={styles.statBoxNum} style={{ color: 'var(--foreground)' }}>{selectedAttempt.grade}</span>
-                    <span className={styles.statBoxText}>XẾP LOẠI</span>
-                  </div>
-                </div>
-
-                <div className={styles.historyDetailBody}>
-                  {selectedAttempt.answers && selectedAttempt.answers.length > 0 ? (
-                    selectedAttempt.answers.map((ans: any, idx: number) => {
-                      if (!ans.front) {
-                        return (
-                          <div key={idx} className={styles.legacyReviewItem}>
-                            <strong>Câu {idx + 1}:</strong> Dữ liệu phiên bản cũ không lưu bộ câu hỏi chi tiết. 
-                            <span style={{color: ans.chosenIndex === ans.correctIndex ? 'var(--success)' : 'var(--danger)', fontWeight: 'bold' }}>
-                              {ans.chosenIndex === ans.correctIndex ? ' (Đúng)' : ' (Sai)'}
-                            </span>
-                          </div>
-                        );
-                      }
-
-                      const isCorrect = ans.chosenIndex === ans.correctIndex;
-                      return (
-                        <div key={idx} className={`${styles.reviewCard} ${isCorrect ? styles.reviewCorrectBd : styles.reviewWrongBd}`}>
-                          <div className={styles.questionHeader} style={{ marginBottom: '0.75rem' }}>
-                            <span className={styles.questionBadge}>Câu {idx + 1}</span>
-                            <span className={styles.questionStatus} style={{ color: isCorrect ? 'var(--success)' : 'var(--danger)' }}>
-                              {isCorrect ? <><CheckCircle2 size={13} /> Chính xác</> : <><XCircle size={13} /> Sai</>}
-                            </span>
-                          </div>
-                          <p className={styles.questionText} style={{ marginBottom: '1rem', fontSize: '1rem' }}>{ans.front}</p>
-                          <div className={styles.optionsList} style={{ gap: '0.4rem' }}>
-                            {ans.options?.map((opt: string, oIdx: number) => {
-                              const isChosen = ans.chosenIndex === oIdx;
-                              const isRightOne = ans.correctIndex === oIdx;
-                              let cls = styles.reviewOpt;
-                              if (isRightOne) cls += ` ${styles.reviewOptCorrect}`;
-                              else if (isChosen && !isRightOne) cls += ` ${styles.reviewOptWrong}`;
-                              
-                              return (
-                                <div key={oIdx} className={cls}>
-                                  <div className={styles.optionMarker} style={{ width: '24px', height: '24px', fontSize: '0.75rem' }}>{String.fromCharCode(65 + oIdx)}</div>
-                                  <span style={{ fontSize: '0.9rem' }}>{opt}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className={styles.legacyReviewItem}>Không có dữ liệu câu trả lời (Có thể đã chọn bỏ qua hết).</div>
-                  )}
+                <div className={styles.historyDetailBody} style={{ padding: '1rem', overflowY: 'auto' }}>
+                   <p>Xem lại các câu hỏi trong lịch sử chưa hỗ trợ đầy đủ giao diện mới.</p>
                 </div>
               </motion.div>
             </motion.div>
@@ -496,15 +287,12 @@ export default function QuizMode() {
     );
   }
 
-  const formatTime = (s: number) =>
-    `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  const formatTime = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
   const handleSelectOption = (cardId: string, optIdx: number, questionIdx: number) => {
     if (isSubmitted) return;
     setAnswers(prev => ({ ...prev, [cardId]: optIdx }));
-    if (questionIdx < quizCards.length - 1) {
-      setTimeout(() => scrollToQuestion(questionIdx + 1), 500);
-    }
+    if (questionIdx < quizCards.length - 1) setTimeout(() => scrollToQuestion(questionIdx + 1), 500);
   };
 
   const calculateScore = () => {
@@ -523,263 +311,99 @@ export default function QuizMode() {
   const isWarning = timeLeft <= 60 && !isSubmitted;
 
   return (
-    <div className={styles.pageWrapper}>
-      {/* ── TOP HEADER BAR ── */}
+    <>
+      <div className={styles.pageWrapper}>
       <div className={styles.quizHeader}>
-        <button className={styles.backBtn} onClick={handleBack}>
-          <ArrowLeft size={16} />
-          <span className={styles.backLabel}>Quay lại</span>
-        </button>
-
-        <div className={styles.quizHeaderCenter}>
-          <div className={styles.quizHeaderTitle}>{deck.name}</div>
-          <div className={styles.quizHeaderSub}>
-            {answeredCount}/{quizCards.length} câu đã trả lời · {progressPct}%
-          </div>
-        </div>
-
-        <div className={`${styles.timerChip} ${isWarning ? styles.timerWarning : ''}`}>
-          <Clock size={16} />
-          {isSubmitted ? '✅' : formatTime(timeLeft)}
-        </div>
+        <button className={styles.backBtn} onClick={handleBack}><ArrowLeft size={20} /><span>Thoát</span></button>
+        <div className={styles.quizHeaderCenter}><div className={styles.quizHeaderTitle}>{deck.name}</div><div className={styles.quizHeaderSub}>{answeredCount} / {quizCards.length} CÂU</div></div>
+        <div className={`${styles.timerChip} ${isWarning ? styles.timerWarning : ''}`}><Clock size={20} /><span>{isSubmitted ? 'X' : formatTime(timeLeft)}</span></div>
+        <div className={styles.progressContainer}><div className={styles.progressTrack} style={{ width: `${progressPct}%` }} /></div>
       </div>
 
-      {/* ── BODY ── */}
       <div className={styles.container}>
-        {/* Left: scrollable questions */}
         <main className={styles.mainContent}>
           <div className={styles.quizArea}>
-            {quizCards.map((card, idx) => {
-              const isAnswered = answers[card.id] !== undefined;
-              return (
-                <div
-                  key={card.id}
-                  id={`q-${idx}`}
-                  className={`${styles.questionCard} ${highlightedIdx === idx ? styles.questionCardHighlight : ''}`}
-                >
-                  <div className={styles.questionHeader}>
-                    <span className={styles.questionBadge}>Câu {idx + 1}</span>
-                    {isAnswered && !isSubmitted && (
-                      <span className={styles.questionStatus} style={{ color: 'var(--success)' }}>
-                        <CheckCircle2 size={13} /> Đã trả lời
-                      </span>
-                    )}
-                    {!isAnswered && !isSubmitted && (
-                      <span className={styles.questionStatus} style={{ opacity: 0.4 }}>
-                        Chưa trả lời
-                      </span>
-                    )}
-                    {isSubmitted && (
-                      <span
-                        className={styles.questionStatus}
-                        style={{ color: answers[card.id] === card.correctOptionIndex ? 'var(--success)' : 'var(--danger)' }}
-                      >
-                        {answers[card.id] === card.correctOptionIndex
-                          ? <><CheckCircle2 size={13} /> Đúng</>
-                          : <><XCircle size={13} /> Sai</>
-                        }
-                      </span>
-                    )}
-                  </div>
-
-                  <p className={styles.questionText}>{card.front}</p>
-
-                  <div className={styles.optionsList}>
-                    {card.options?.map((opt: string, optIdx: number) => {
-                      const isSelected = answers[card.id] === optIdx;
-                      const isCorrect = card.correctOptionIndex === optIdx;
-                      let cls = styles.optionBtn;
-                      if (isSelected) cls += ` ${styles.selected}`;
-                      if (isSubmitted && isCorrect) cls += ` ${styles.correctOption}`;
-                      else if (isSubmitted && isSelected && !isCorrect) cls += ` ${styles.wrongOption}`;
-
-                      return (
-                        <button
-                          key={optIdx}
-                          className={cls}
-                          onClick={() => handleSelectOption(card.id, optIdx, idx)}
-                          disabled={isSubmitted}
-                        >
-                          <div className={styles.optionMarker}>{String.fromCharCode(65 + optIdx)}</div>
-                          {opt}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {isSubmitted && (
-                    <div className={`${styles.reviewFeedback} ${answers[card.id] === card.correctOptionIndex ? styles.isCorrect : styles.isIncorrect}`}>
-                      {answers[card.id] === card.correctOptionIndex
-                        ? <><Check size={16} /> Chính xác! Bạn đã trả lời đúng.</>
-                        : <><X size={16} /> Đáp án đúng là: <strong>{String.fromCharCode(65 + (card.correctOptionIndex ?? 0))}. {card.options?.[card.correctOptionIndex ?? 0]}</strong></>
-                      }
-                    </div>
-                  )}
+            {quizCards.map((card, idx) => (
+              <motion.div key={card.id} id={`q-${idx}`} className={`${styles.questionCard} ${highlightedIdx === idx ? styles.questionCardHighlight : ''}`}>
+                <div className={styles.questionHeader}><span className={styles.questionBadge}>Câu {idx + 1}</span></div>
+                <p className={styles.questionText}>{card.front}</p>
+                <div className={styles.optionsList}>
+                  {card.options?.map((opt: string, optIdx: number) => {
+                    const isSelected = answers[card.id] === optIdx;
+                    const isCorrect = card.correctOptionIndex === optIdx;
+                    let cls = styles.optionBtn;
+                    if (isSelected) cls += ` ${styles.selected}`;
+                    if (isSubmitted && isCorrect) cls += ` ${styles.correctOption}`;
+                    else if (isSubmitted && isSelected && !isCorrect) cls += ` ${styles.wrongOption}`;
+                    return (
+                      <button key={optIdx} className={cls} onClick={() => handleSelectOption(card.id, optIdx, idx)} disabled={isSubmitted}>
+                        <div className={styles.optionMarker}>{String.fromCharCode(65 + optIdx)}</div>
+                        <span>{opt}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </motion.div>
+            ))}
           </div>
         </main>
-
-        {/* ── RIGHT PANEL ── */}
         <aside className={styles.navPanel}>
-          {/* Progress strip */}
-          <div className={styles.panelProgress}>
-            <div className={styles.panelProgressFill} style={{ width: `${progressPct}%` }} />
-          </div>
-
-          <div className={styles.panelBody}>
-            {/* Stats */}
-            <div className={styles.panelStat}>
-              <span>Tiến độ</span>
-              <span className={styles.panelStatVal}>{answeredCount}/{quizCards.length}</span>
-            </div>
-
-            <div>
-              <div className={styles.gridTitle}>Bảng điều hướng</div>
-              <div className={styles.grid}>
-                {quizCards.map((c, i) => {
-                  let cls = styles.navBtn;
-                  if (answers[c.id] !== undefined && !isSubmitted) cls += ` ${styles.answered}`;
-                  if (isSubmitted) {
-                    cls += answers[c.id] === c.correctOptionIndex ? ` ${styles.reviewCorrect}` : ` ${styles.reviewIncorrect}`;
-                  }
-                  return (
-                    <motion.button
-                      key={c.id}
-                      className={cls}
-                      onClick={() => scrollToQuestion(i)}
-                      whileTap={{ scale: 0.82 }}
-                      whileHover={{ scale: 1.1 }}
-                      transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                    >
-                      {i + 1}
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.panelFooter}>
-            {!isSubmitted ? (
-              <button className={styles.submitBtn} onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className={styles.spinner} size={18} /> : <><Flag size={15} /> Nộp bài thi</>}
-              </button>
-            ) : (
-              <button className={styles.submitBtn} onClick={() => setShowResultModal(true)}>
-                <Trophy size={15} /> Xem lại điểm
-              </button>
-            )}
-          </div>
+           <div className={styles.panelBody}>
+              <div className={styles.panelStatItem}><span>Tiến độ</span><span>{progressPct}%</span></div>
+              <div className={styles.gridContainer}><div className={styles.grid}>{quizCards.map((c, i) => <button key={c.id} className={`${styles.navBtn} ${answers[c.id] !== undefined ? styles.answered : ''}`} onClick={() => scrollToQuestion(i)}>{i + 1}</button>)}</div></div>
+           </div>
+           <div className={styles.panelFooter}>
+                {!isSubmitted ? <button className={styles.submitBtn} onClick={handleSubmit} disabled={isSubmitting}>{isSubmitting ? <Loader2 className={styles.spinner} /> : 'Nộp bài'}</button> : <button className={styles.submitBtn} onClick={() => setShowResultModal(true)}>Kết quả</button>}
+           </div>
         </aside>
       </div>
+      </div>
 
-      {/* ── EXIT CONFIRM MODAL ── */}
       <AnimatePresence>
         {showExitConfirm && (
-          <motion.div
-            className={styles.modalOverlay}
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={e => { if (e.target === e.currentTarget) setShowExitConfirm(false); }}
-          >
-            <motion.div
-              className={styles.confirmCard}
-              initial={{ scale: 0.88, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.88, y: 20 }}
-              transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-            >
-              <div className={styles.confirmIcon}>
-                <AlertTriangle size={28} />
-              </div>
-              <h3 className={styles.confirmTitle}>Bạn muốn thoát bài thi?</h3>
-              <p className={styles.confirmDesc}>
-                Tiến độ làm bài sẽ bị mất. Bạn đã trả lời <strong>{answeredCount}/{quizCards.length}</strong> câu hỏi.
-              </p>
-              <div className={styles.confirmBtns}>
-                <button
-                  className={styles.confirmBtnCancel}
-                  onClick={() => setShowExitConfirm(false)}
-                >
-                  Tiếp tục làm bài
-                </button>
-                <button
-                  className={styles.confirmBtnExit}
-                  onClick={handleBackToLibrary}
-                >
-                  <ArrowLeft size={14} /> Thoát bài thi
-                </button>
-              </div>
+          <motion.div className={styles.modalOverlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowExitConfirm(false)}>
+            <motion.div className={styles.confirmCard} onClick={e => e.stopPropagation()}>
+              <h3 className={styles.confirmTitle}>Thoát bài thi?</h3>
+              <p className={styles.confirmDesc}>Tiến độ sẽ không được lưu.</p>
+              <div className={styles.confirmBtns}><button onClick={() => setShowExitConfirm(false)}>Tiếp tục</button><button onClick={handleBackToLibrary}>Thoát</button></div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── REDESIGNED RESULT MODAL ── */}
       <AnimatePresence>
         {showResultModal && (() => {
           const score = calculateScore();
-          const scoreColor = score.pct >= 80 ? 'var(--success)' : score.pct >= 50 ? 'var(--warning)' : 'var(--danger)';
-          const scoreLabel = score.pct >= 80 ? 'Xuất sắc!' : score.pct >= 50 ? 'Khá tốt!' : 'Cần cố gắng!';
-          const scoreEmoji = score.pct >= 80 ? '🏆' : score.pct >= 50 ? '✨' : '📝';
+          const p10 = Number(score.point10);
+          const tierColor = p10 >= 8 ? '#10b981' : p10 >= 5 ? '#f59e0b' : '#ef4444';
+          const scoreLabel = p10 >= 8 ? 'Xuất sắc!' : p10 >= 5 ? 'Khá tốt!' : 'Cần cố gắng!';
+          const statusIcon = p10 >= 8 ? <Trophy size={36} color="#fbbf24" /> : p10 >= 5 ? <Check size={36} color="#10b981" /> : <AlertTriangle size={36} color="#ef4444" />;
 
           return (
-            <motion.div
-              className={styles.modalOverlay}
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            >
-              <motion.div
-                className={styles.resultCard}
-                initial={{ scale: 0.9, y: 30, opacity: 0 }}
-                animate={{ scale: 1, y: 0, opacity: 1 }}
-                exit={{ scale: 0.9, y: 30, opacity: 0 }}
-                transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-              >
+            <motion.div className={styles.resultOverlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <motion.div className={styles.orb} style={{ background: `radial-gradient(circle, ${tierColor} 0%, transparent 70%)`, opacity: 0.4 }} />
+              <motion.div className={styles.resultCard} initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }}>
                 <div className={styles.resultHeader}>
-                  <span className={styles.resultEmoji}>{scoreEmoji}</span>
-                  <h2 className={styles.resultTitle}>{scoreLabel}</h2>
-                  <p className={styles.resultDeckName}>{deck?.name}</p>
+                   <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>{statusIcon}</div>
+                   <h2 className={styles.resultTitle} style={{ color: tierColor }}>{scoreLabel}</h2>
+                   <p className={styles.resultDeckName}>{deck.name}</p>
                 </div>
-
-                <div className={styles.scoreLarge}>
-                  {score.point10}
-                </div>
-                <div className={styles.scoreLabel}>Điểm bài thi</div>
-
+                <div className={styles.scoreLarge} style={{ color: tierColor, textShadow: `0 0 30px ${tierColor}44` }}>{score.point10}</div>
+                <div className={styles.scoreLabel} style={{ color: tierColor, opacity: 0.7 }}>ĐIỂM SỐ</div>
                 <div className={styles.statsGrid}>
-                  <div className={styles.statItem} style={{ color: 'var(--success)' }}>
-                    <div className={styles.statVal}>{score.correct}</div>
-                    <div className={styles.statLbl}>Câu đúng</div>
-                  </div>
-                  <div className={styles.statItem} style={{ color: 'var(--danger)' }}>
-                    <div className={styles.statVal}>{score.wrong}</div>
-                    <div className={styles.statLbl}>Câu sai</div>
-                  </div>
-                  <div className={styles.statItem} style={{ color: scoreColor }}>
-                    <div className={styles.statVal}>{score.pct}%</div>
-                    <div className={styles.statLbl}>Tỉ lệ</div>
-                  </div>
+                   <div className={styles.statItem}><div className={styles.statVal} style={{ color: '#10b981' }}>{score.correct}</div><div className={styles.statLbl}>Đúng</div></div>
+                   <div className={styles.statItem}><div className={styles.statVal} style={{ color: '#ef4444' }}>{score.wrong}</div><div className={styles.statLbl}>Sai</div></div>
+                   <div className={styles.statItem}><div className={styles.statVal} style={{ color: tierColor }}>{score.pct}%</div><div className={styles.statLbl}>Tỉ lệ</div></div>
                 </div>
-
                 <div className={styles.modalBtns}>
-                  <button className={styles.btnPrimary} onClick={handleRestart}>
-                    <RotateCcw size={18} /> Thi lại ngay
-                  </button>
-                  <div className={styles.btnRow}>
-                    <button className={styles.btnSecondary} onClick={() => setShowResultModal(false)}>
-                      <Flag size={16} /> Xem lỗi
-                    </button>
-                    <button className={styles.btnSecondary} onClick={handleBackToLibrary}>
-                      <BookOpen size={16} /> Thư viện
-                    </button>
-                  </div>
+                  <button className={styles.btnPrimary} onClick={handleRestart}><RotateCcw size={20} /> Thi lại</button>
+                  <div className={styles.btnRow}><button className={styles.btnSecondary} onClick={() => setShowResultModal(false)}><Flag size={18} /> Xem lỗi</button><button className={styles.btnSecondary} onClick={handleBackToLibrary}><BookOpen size={18} /> Thư viện</button></div>
                 </div>
               </motion.div>
             </motion.div>
           );
         })()}
       </AnimatePresence>
-    </div>
+    </>
   );
 }

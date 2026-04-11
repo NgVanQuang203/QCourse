@@ -61,6 +61,7 @@ export default function ImportModal({ deckId, allDecks, initialFolderId, onClose
   const [imported, setImported] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [showPreviewPopup, setShowPreviewPopup] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleParse = (text: string) => {
@@ -82,8 +83,11 @@ export default function ImportModal({ deckId, allDecks, initialFolderId, onClose
     reader.onload = (e) => {
       const text = (e.target?.result as string) ?? '';
       setRawText(text);
-      handleParse(text);
-      setShowPreview(true);
+      let pairs = parseBetterJSON(text);
+      if (!pairs) pairs = parseText(text);
+      const results = pairs || [];
+      setPreview(results);
+      if (results.length > 0) setShowPreviewPopup(true);
     };
     reader.readAsText(file);
   };
@@ -196,10 +200,10 @@ export default function ImportModal({ deckId, allDecks, initialFolderId, onClose
                   />
                   <div className={styles.textActions}>
                     <button className={styles.btnGhost} onClick={() => onTextChange(tab === 'json' ? EXAMPLE_JSON : exampleText)}>Dùng mẫu</button>
-                    <button className={styles.btnPreview} onClick={() => handleParse(rawText)} disabled={!rawText.trim()}>
-                      <Eye size={14} /> Xem trước
+                    <button className={styles.btnPreview} onClick={() => { handleParse(rawText); if (preview.length > 0) setShowPreviewPopup(true); }} disabled={!rawText.trim()}>
+                      <Eye size={14} /> Xem trước & Duyệt
                     </button>
-                    <span className={styles.countInfo}>Đã nhận diện: <strong>{preview.length}</strong> thẻ</span>
+                    {preview.length > 0 && <span className={styles.countInfo}>Đã nhận diện: <strong>{preview.length}</strong> thẻ</span>}
                   </div>
                 </div>
               )}
@@ -228,24 +232,32 @@ export default function ImportModal({ deckId, allDecks, initialFolderId, onClose
                 </div>
               )}
 
-              {/* Preview */}
-              {preview.length > 0 && (
-                <div className={styles.previewSection}>
-                  <div className={styles.previewHeader}>
-                    <span className={styles.previewTitle}>✨ Dữ liệu đã nhận diện ({preview.length})</span>
+              {/* Dedicated Preview Popup */}
+              {showPreviewPopup && preview.length > 0 && (
+                <div className={styles.previewPopupOverlay}>
+                  <div className={styles.previewPopupHeader}>
+                    <div>
+                      <div className={styles.previewPopupTitle}>✨ Xem trước thẻ ({preview.length} thẻ)</div>
+                      <p className={styles.subtitle}>Kiểm tra nội dung mặt trước/sau trước khi Import</p>
+                    </div>
+                    <button className={styles.closeBtn} onClick={() => setShowPreviewPopup(false)}><X size={18}/></button>
                   </div>
-                  <div className={styles.previewList}>
-                    {preview.slice(0, 10).map((p, i) => (
-                      <div key={i} className={styles.previewRow}>
-                        <div className={styles.previewNum}>{i + 1}</div>
-                        <div className={styles.previewFront}>{p.front || <span style={{color:'red'}}>Chưa có mặt trước</span>}</div>
-                        <ChevronRight size={12} style={{ opacity: 0.3, flexShrink: 0 }} />
-                        <div className={styles.previewBack}>{p.back}</div>
-                      </div>
-                    ))}
-                    {preview.length > 10 && (
-                      <div className={styles.previewMore}>...và {preview.length - 10} thẻ khác</div>
-                    )}
+                  <div className={styles.previewPopupBody}>
+                    <div className={styles.previewList}>
+                      {preview.map((p, i) => (
+                        <div key={i} className={styles.previewRow}>
+                          <div className={styles.previewNum}>{i + 1}</div>
+                          <div className={styles.previewFront}>{p.front || <span style={{color:'red'}}>Chưa có mặt trước</span>}</div>
+                          <ChevronRight size={12} style={{ opacity: 0.3, flexShrink: 0 }} />
+                          <div className={styles.previewBack}>{p.back}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className={styles.previewPopupFooter}>
+                    <button className={styles.btnImport} onClick={() => setShowPreviewPopup(false)}>
+                      <Check size={14} /> Xong, tiếp tục Import
+                    </button>
                   </div>
                 </div>
               )}

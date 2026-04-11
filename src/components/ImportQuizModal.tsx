@@ -159,6 +159,7 @@ export default function ImportQuizModal({ deckId, allDecks, initialFolderId, onC
   const [imported, setImported] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [showPreviewPopup, setShowPreviewPopup] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const EXAMPLE = `Thủ đô của Việt Nam là gì? | Hà Nội | TP. Hồ Chí Minh | Đà Nẵng | Huế | A
@@ -185,8 +186,11 @@ Năm độc lập của Việt Nam? | 1945 | 1954 | 1975 | 1986 | A`;
     r.onload = e => {
       const text = (e.target?.result as string) ?? '';
       setRawText(text);
-      handleParse(text);
-      setShowPreview(true);
+      let q = parseBetterQuizJSON(text);
+      if (!q) q = parseQuiz(text);
+      const results = q || [];
+      setPreview(results);
+      if (results.length > 0) setShowPreviewPopup(true);
     };
     r.readAsText(file, 'utf-8');
   };
@@ -299,10 +303,10 @@ Năm độc lập của Việt Nam? | 1945 | 1954 | 1975 | 1986 | A`;
                     onChange={e => onTextChange(e.target.value)} />
                   <div className={styles.textActions}>
                     <button className={styles.btnGhost} onClick={() => onTextChange(tab === 'json' ? EXAMPLE_JSON : EXAMPLE)}>Dùng mẫu</button>
-                    <button className={styles.btnPreview} onClick={() => handleParse(rawText)} disabled={!rawText.trim()}>
-                      <Eye size={14} /> Xem trước
+                    <button className={styles.btnPreview} onClick={() => { handleParse(rawText); if (preview.length > 0) setShowPreviewPopup(true); }} disabled={!rawText.trim()}>
+                      <Eye size={14} /> Xem trước & Duyệt
                     </button>
-                    <span className={styles.countInfo}>Đã nhận diện: <strong>{preview.length}</strong> câu</span>
+                    {preview.length > 0 && <span className={styles.countInfo}>Đã nhận diện: <strong>{preview.length}</strong> câu</span>}
                   </div>
                 </div>
               )}
@@ -326,31 +330,39 @@ Năm độc lập của Việt Nam? | 1945 | 1954 | 1975 | 1986 | A`;
                 </div>
               )}
 
-              {/* Preview - Show whenever data is detected */}
-              {preview.length > 0 && (
-                <div className={styles.previewSection}>
-                  <div className={styles.previewHeader}>
-                    <span className={styles.previewTitle}>✨ Dữ liệu đã nhận diện ({preview.length})</span>
+              {/* Dedicated Preview Popup */}
+              {showPreviewPopup && preview.length > 0 && (
+                <div className={styles.previewPopupOverlay}>
+                  <div className={styles.previewPopupHeader}>
+                    <div>
+                      <div className={styles.previewPopupTitle}>✨ Xem trước dữ liệu ({preview.length} câu)</div>
+                      <p className={styles.subtitle}>Kiểm tra kỹ nội dung trước khi thực hiện Import</p>
+                    </div>
+                    <button className={styles.closeBtn} onClick={() => setShowPreviewPopup(false)}><X size={18}/></button>
                   </div>
-                  <div className={styles.previewList}>
-                    {preview.slice(0, 10).map((q, i) => (
-                      <div key={i} className={styles.previewRow} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.3rem' }}>
-                        <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
-                          <div className={styles.previewNum}>{i + 1}</div>
-                          <div className={styles.previewFront}>{q.question || <span style={{color:'red'}}>Chưa có câu hỏi</span>}</div>
+                  <div className={styles.previewPopupBody}>
+                    <div className={styles.previewList}>
+                      {preview.map((q, i) => (
+                        <div key={i} className={styles.previewRow} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.3rem' }}>
+                          <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+                            <div className={styles.previewNum}>{i + 1}</div>
+                            <div className={styles.previewFront}>{q.question || <span style={{color:'red'}}>Chưa có câu hỏi</span>}</div>
+                          </div>
+                          <div className={qStyles.optionPreview} style={{ paddingLeft: '1.5rem', opacity: 0.7 }}>
+                            {q.options.map((opt, oi) => (
+                              <span key={oi} className={`${qStyles.optPrev} ${oi === q.correct ? qStyles.optPrevCorrect : ''}`}>
+                                {OPTION_LETTERS[oi]}. {opt}
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                        <div className={qStyles.optionPreview} style={{ paddingLeft: '1.5rem', opacity: 0.7 }}>
-                          {q.options.map((opt, oi) => (
-                            <span key={oi} className={`${qStyles.optPrev} ${oi === q.correct ? qStyles.optPrevCorrect : ''}`}>
-                              {OPTION_LETTERS[oi]}. {opt}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                    {preview.length > 10 && (
-                      <div className={styles.previewMore}>...và {preview.length - 10} câu hỏi khác</div>
-                    )}
+                      ))}
+                    </div>
+                  </div>
+                  <div className={styles.previewPopupFooter}>
+                    <button className={styles.btnImport} onClick={() => setShowPreviewPopup(false)}>
+                      <Check size={14} /> Xong, tiếp tục Import
+                    </button>
                   </div>
                 </div>
               )}
