@@ -7,7 +7,7 @@ import loadingStyles from '@/app/loading.module.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore, Folder } from '@/lib/store';
 import { toast } from '@/lib/toast';
-import { Plus, MoreVertical, Edit2, Trash2, FolderInput, RefreshCcw, ChevronRight, Copy, MoreHorizontal, FolderPlus, LayoutGrid, Upload, Check, Pin } from 'lucide-react';
+import { Plus, MoreVertical, Edit2, Trash2, FolderInput, RefreshCcw, ChevronRight, Copy, MoreHorizontal, FolderPlus, LayoutGrid, Upload, Check, Pin, FileText, Clock, Trophy } from 'lucide-react';
 import EditQuizModal from '@/components/EditQuizModal';
 import ImportQuizModal from '@/components/ImportQuizModal';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
@@ -527,6 +527,9 @@ export default function QuizLibrary() {
                   const timeLimitStr = deck.timeLimitSec
                     ? `${Math.floor(deck.timeLimitSec / 60)}:${(deck.timeLimitSec % 60).toString().padStart(2, '0')}`
                     : '--:--';
+                  const hScore = (deck as any).highestScore ?? 0;
+                  const statusClass = hScore >= 8 ? lib.badgeSuccess : hScore >= 5 ? lib.badgeWarning : hScore > 0 ? lib.badgeDanger : '';
+                  const textClass = hScore >= 8 ? lib.textSuccess : hScore >= 5 ? lib.textWarning : hScore > 0 ? lib.textDanger : '';
                   const isMenuOpen = menuOpenId === deck.id;
 
                   return (
@@ -545,31 +548,13 @@ export default function QuizLibrary() {
                         rotate: [0, -0.8, 0.8, -0.8, 0],
                         transition: { rotate: { repeat: Infinity, duration: 0.22 } }
                       }}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setContextMenu({
-                          x: e.clientX,
-                          y: e.clientY,
-                          items: [
-                            { label: deck.isPinned ? 'Bỏ ghim bài' : 'Ghim bài', icon: <span>📌</span>, onClick: () => togglePinDeck(deck.id) },
-                            { label: 'Bắt đầu thi', icon: <Plus size={14} />, onClick: () => router.push(`/quiz/${deck.id}`) },
-                            { label: 'Chỉnh sửa', icon: <Edit2 size={14} />, onClick: () => setEditDeck(deck.id) },
-                            { label: 'Chuyển danh mục', icon: <FolderInput size={14} />, onClick: () => setMoveDeckId(deck.id) },
-                            { label: 'Nhân bản', icon: <RefreshCcw size={14} />, onClick: () => duplicateQuiz(deck.id) },
-                            { label: 'Sao chép liên kết', icon: <Copy size={14} />, onClick: () => copyQuizLink(deck.id) },
-                            { divider: true, label: '', onClick: () => { } },
-                            { label: 'Xoá lịch sử thi', icon: <RefreshCcw size={14} />, onClick: () => setResetDeckId(deck.id) },
-                            { label: 'Xóa đề thi', icon: <Trash2 size={14} />, variant: 'danger', onClick: () => setDeleteDeckId(deck.id) },
-                          ]
-                        });
-                      }}
                     >
                       {deck.isPinned && (
                         <div className={lib.pinBadge}>
                           <Pin size={12} className={lib.pinIcon} fill="currentColor" />
                         </div>
                       )}
+                      
                       <div className={lib.quizBannerIcon}>
                         {selectionMode ? (
                           <div
@@ -579,56 +564,75 @@ export default function QuizLibrary() {
                             {selectedIds.has(deck.id) && <Check size={14} />}
                           </div>
                         ) : (
-                          '⏱️'
+                          <img src="/3d-clock-vibrant.png" alt="Clock" className={lib.icon3D} />
                         )}
                       </div>
+
                       <div className={lib.quizBannerMain}>
-                        <div className={lib.quizBannerTitle}>
-                          {deck.name}
-                        </div>
+                        <div className={lib.quizBannerTitle}>{deck.name}</div>
                         {deck.description && <div className={lib.quizBannerDesc}>{deck.description}</div>}
-                        <div className={lib.quizBannerMeta}>{totalCards} câu · {timeLimitStr} phút</div>
-                      </div>
-                      <div className={lib.quizBannerSep} />
-                      <div className={lib.quizBannerScore}>
-                        <div className={lib.quizBannerScoreLbl}>Cao nhất</div>
-                        <div className={lib.quizBannerScoreVal} style={{ color: (deck as any).highestScore >= 8 ? 'var(--success)' : (deck as any).highestScore >= 5 ? 'var(--warning)' : 'var(--foreground)' }}>
-                          {(deck as any).highestScore > 0 ? `${(deck as any).highestScore}/10` : '—'}
+                        <div className={lib.quizBannerMeta}>
+                          <div className={`${lib.metaItem} ${lib.metaCount}`}>
+                            <FileText size={14} />
+                            <span>{totalCards} câu hỏi</span>
+                          </div>
+                          <div className={`${lib.metaItem} ${lib.metaTime}`}>
+                            <Clock size={14} />
+                            <span>{timeLimitStr} phút</span>
+                          </div>
                         </div>
                       </div>
 
-                      <div
-                        className={lib.kebabWrap}
-                        onClick={e => e.stopPropagation()}
-                        style={{ zIndex: isMenuOpen ? 9999 : undefined }}
-                      >
-                        <button className={lib.kebabBtn} onClick={() => setMenuOpenId(isMenuOpen ? null : deck.id)} title="Tùy chọn">
-                          <MoreVertical size={16} />
-                        </button>
-                        {isMenuOpen && (
-                          <div className={lib.menuDropdown} style={{ right: 0 }}>
-                            <button className={lib.menuItem} onClick={() => { togglePinDeck(deck.id); setMenuOpenId(null); }}>
-                              {deck.isPinned ? 'Bỏ ghim' : 'Ghim bài'}
-                            </button>
-                            <button className={lib.menuItem} onClick={() => { setEditDeck(deck.id); setMenuOpenId(null); }}>
-                              <Edit2 size={13} /> Chỉnh sửa
-                            </button>
-                            <button className={lib.menuItem} onClick={() => { setMoveDeckId(deck.id); setMenuOpenId(null); }}>
-                              <FolderInput size={13} /> Chuyển danh mục
-                            </button>
-                            <div className={lib.menuDivider} />
-                            <button className={lib.menuItem} onClick={() => { setResetDeckId(deck.id); setMenuOpenId(null); }}>
-                              <RefreshCcw size={13} /> Xoá lịch sử thi
-                            </button>
-                            <button className={`${lib.menuItem} ${lib.menuItemDanger}`} onClick={() => { setDeleteDeckId(deck.id); setMenuOpenId(null); }}>
-                              <Trash2 size={13} /> Xóa đề thi
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                      <div className={lib.quizBannerSep} />
 
-                      <div className={lib.quizBannerArrow}>
-                        <ChevronRight size={18} />
+                      <div className={lib.quizActions}>
+                        <div className={lib.quizBannerScore}>
+                          <div className={`${lib.scoreBadge} ${statusClass}`}>
+                            <div className={`${lib.scoreBadgeVal} ${textClass}`}>
+                              {hScore > 0 ? `${hScore}/10` : '—'}
+                            </div>
+                            <div className={lib.scoreBadgeLbl}>ĐIỂM CAO</div>
+                            {hScore >= 8 && (
+                              <div className={lib.trophyBadge}>
+                                <Trophy size={11} color="#fff" fill="#fff" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div
+                          className={lib.kebabWrap}
+                          onClick={e => e.stopPropagation()}
+                          style={{ zIndex: isMenuOpen ? 9999 : undefined }}
+                        >
+                          <button className={lib.kebabBtn} onClick={() => setMenuOpenId(isMenuOpen ? null : deck.id)} title="Tùy chọn">
+                            <MoreVertical size={16} />
+                          </button>
+                          {isMenuOpen && (
+                            <div className={lib.menuDropdown} style={{ right: 0 }}>
+                              <button className={lib.menuItem} onClick={() => { togglePinDeck(deck.id); setMenuOpenId(null); }}>
+                                {deck.isPinned ? 'Bỏ ghim' : 'Ghim bài'}
+                              </button>
+                              <button className={lib.menuItem} onClick={() => { setEditDeck(deck.id); setMenuOpenId(null); }}>
+                                <Edit2 size={13} /> Chỉnh sửa
+                              </button>
+                              <button className={lib.menuItem} onClick={() => { setMoveDeckId(deck.id); setMenuOpenId(null); }}>
+                                <FolderInput size={13} /> Chuyển danh mục
+                              </button>
+                              <div className={lib.menuDivider} />
+                              <button className={lib.menuItem} onClick={() => { setResetDeckId(deck.id); setMenuOpenId(null); }}>
+                                <RefreshCcw size={13} /> Xoá lịch sử thi
+                              </button>
+                              <button className={`${lib.menuItem} ${lib.menuItemDanger}`} onClick={() => { setDeleteDeckId(deck.id); setMenuOpenId(null); }}>
+                                <Trash2 size={13} /> Xóa đề thi
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className={lib.quizBannerArrow}>
+                          <ChevronRight size={20} />
+                        </div>
                       </div>
                     </motion.div>
                   );

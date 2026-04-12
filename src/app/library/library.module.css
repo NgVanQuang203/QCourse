@@ -504,20 +504,19 @@
   background-color: hsla(var(--folder-hue, 0), 40%, 18%, 1);
 }
 
-.kebabWrap {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  z-index: 100;
+.quizActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
 }
 
-/* Specific override for card footer to keep it in flow */
-.fcCardFooter .kebabWrap {
+.kebabWrap {
   position: relative;
-  top: auto;
-  right: auto;
-  margin: 0;
-  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
 }
 
 .kebabBtn {
@@ -1119,58 +1118,59 @@
 .quizBanner {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1.5rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1.1rem 1.25rem;
+  border-radius: 20px;
+  padding: 1.25rem 1.75rem;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   z-index: 1;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+:global(html.dark) .quizBanner {
+  background: rgba(var(--surface-rgb, 255, 255, 255), 0.03);
+  backdrop-filter: blur(15px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .quizBanner:hover {
+  background: rgba(var(--surface-rgb, 255, 255, 255), 0.06);
   border-color: var(--primary);
-  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.1);
-  transform: translateX(3px);
-  z-index: 50;
-}
-
-.quizFolderBanner {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  background-color: rgba(255, 255, 255, 0.02);
-  border: 1px dashed var(--border);
-  border-radius: 14px;
-  padding: 1.1rem 1.25rem;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  z-index: 1;
-}
-
-.quizFolderBanner:hover {
-  background-color: var(--surface);
-  border-color: var(--primary);
-  border-style: solid;
-  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.08);
-  transform: translateX(4px);
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.2), 0 0 20px rgba(99, 102, 241, 0.1);
+  transform: translateY(-4px) scale(1.005);
   z-index: 50;
 }
 
 .quizBannerIcon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: var(--foreground);
-  color: var(--background);
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: rgba(37, 99, 235, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.3rem;
   flex-shrink: 0;
+  border: 1px solid rgba(var(--primary-rgb), 0.2);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  overflow: hidden;
+  padding: 6px;
+}
+
+.icon3D {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.4));
+}
+
+.quizBanner:hover .quizBannerIcon {
+  transform: translateY(-5px) scale(1.1) rotate(5deg);
+  background: rgba(37, 99, 235, 0.2);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
 }
 
 .quizBannerMain {
@@ -1179,79 +1179,183 @@
 }
 
 .quizBannerTitle {
-  font-size: 1rem;
-  font-weight: 800;
+  font-size: 1.05rem;
+  font-weight: 850;
   color: var(--foreground);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 0.2rem;
+  letter-spacing: -0.2px;
+  margin-bottom: 0.25rem;
+  transition: all 0.2s;
+}
+
+:global(html.dark) .quizBannerTitle {
+  color: #fff;
+}
+
+.quizBanner:hover .quizBannerTitle {
+  color: var(--primary);
 }
 
 .quizBannerDesc {
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   color: var(--foreground);
-  opacity: 0.6;
-  margin-bottom: 0.35rem;
+  opacity: 0.5;
+  margin-bottom: 0.75rem;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  line-height: 1.4;
 }
 
 .quizBannerMeta {
-  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--foreground);
-  opacity: 0.55;
+  opacity: 0.55; /* Slightly higher for light mode */
+  letter-spacing: 0.2px;
+  transition: all 0.2s;
+}
+
+:global(html.dark) .metaItem {
+  opacity: 0.7;
+}
+
+.metaCount {
+  color: #0891b2; /* Darker Cyan for light mode */
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+:global(html.dark) .metaCount {
+  color: #22d3ee;
+}
+
+.metaTime {
+  color: #4f46e5; /* Darker Indigo for light mode */
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+:global(html.dark) .metaTime {
+  color: #818cf8;
+}
+
+.quizBanner:hover .metaItem {
+  opacity: 1;
 }
 
 .quizBannerSep {
   width: 1px;
-  height: 32px;
-  background: var(--border);
+  height: 48px;
+  background: linear-gradient(to bottom, transparent, var(--border), transparent);
   flex-shrink: 0;
+  opacity: 0.5;
 }
 
 .quizBannerScore {
-  text-align: right;
-  flex-shrink: 0;
-  min-width: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  min-width: 80px;
 }
 
-.quizBannerScoreVal {
-  font-size: 1.4rem;
+.scoreBadge {
+  background: var(--surface-hover);
+  padding: 0.4rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.scoreBadgeVal {
+  font-size: 1.15rem;
   font-weight: 900;
-  color: var(--foreground);
   line-height: 1;
-  font-family: monospace;
+  letter-spacing: -0.3px;
 }
 
-.quizBannerScoreLbl {
-  font-size: 0.62rem;
+.scoreBadgeLbl {
+  font-size: 0.55rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: var(--foreground);
-  opacity: 0.4;
+  letter-spacing: 1px;
+  opacity: 0.5;
+}
+
+:global(html.dark) .scoreBadgeLbl {
+  opacity: 0.45;
+}
+
+.trophyBadge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #fbbf24;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(251, 191, 36, 0.4);
+  border: 1.5px solid var(--surface); /* Use surface instead of background for better visibility */
+  flex-shrink: 0;
 }
 
 .quizBannerArrow {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--primary);
-  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--surface-hover);
+  color: var(--foreground);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: transform 0.2s;
+  border: 1px solid var(--border);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .quizBanner:hover .quizBannerArrow {
-  transform: translateX(3px);
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  transform: translateX(5px) scale(1.1);
+  box-shadow: 0 5px 15px rgba(var(--primary-rgb), 0.3);
 }
+
+/* Status Semantic Colors */
+.textSuccess { color: #059669; }
+.textWarning { color: #d97706; }
+.textDanger { color: #dc2626; }
+
+:global(html.dark) .textSuccess { color: #10b981; }
+:global(html.dark) .textWarning { color: #f59e0b; }
+:global(html.dark) .textDanger { color: #ef4444; }
+
+.badgeSuccess { border-color: rgba(16, 185, 129, 0.3) !important; }
+.badgeWarning { border-color: rgba(245, 158, 11, 0.3) !important; }
+.badgeDanger  { border-color: rgba(239, 68, 68, 0.3) !important; }
+
+:global(html.dark) .badgeSuccess { border-color: rgba(16, 185, 129, 0.15) !important; }
+:global(html.dark) .badgeWarning { border-color: rgba(245, 158, 11, 0.15) !important; }
+:global(html.dark) .badgeDanger  { border-color: rgba(239, 68, 68, 0.15) !important; }
 
 /* ===========================================
    SHARED: Buttons, Dropdowns, Modals
@@ -1776,15 +1880,27 @@
   }
 
   .quizPanelHeader {
-    padding: 1rem;
+    padding: 1rem 0.75rem;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 1rem;
+    width: 100%;
+    box-sizing: border-box;
   }
 
-  .quizPanelHeader>button {
+  .quizPanelHeader > div:last-child {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
     width: 100%;
+  }
+
+  .quizPanelHeader > div:last-child > button {
+    flex: 1;
+    min-width: calc(50% - 0.5rem);
     justify-content: center;
+    padding: 0.6rem 0.5rem;
+    font-size: 0.85rem;
   }
 
   /* Add test button full width on mobile */
@@ -1812,8 +1928,18 @@
     height: 45px;
   }
 
+  .quizBannerMain {
+    flex: 1;
+    min-width: 0;
+  }
+
   .quizBannerTitle {
-    font-size: 1rem;
+    font-size: 0.95rem;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   /* Standard Dropdown on Mobile (Absolute) - escaped from transform traps */
