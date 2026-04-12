@@ -18,12 +18,14 @@ export interface Deck {
   color: string;
   timeLimitSec?: number;
   type?: 'FLASHCARD' | 'QUIZ';
+  updatedAt?: string;
 }
 
 export interface Folder {
   id: string;
   name: string;
   icon: string; // Tên icon Lucide
+  updatedAt?: string;
 }
 
 export const mockFolders: Folder[] = [

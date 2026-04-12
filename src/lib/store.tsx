@@ -18,6 +18,7 @@ export interface Folder {
   icon: string;
   type: 'FLASHCARD' | 'QUIZ';
   isPinned: boolean;
+  updatedAt?: string;
   _count?: { decks: number };
 }
 
