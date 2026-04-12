@@ -177,12 +177,12 @@ export default function QuizLibrary() {
     }
   };
 
-  const handleDragStart = (e: React.DragEvent, deckId: string) => {
+  const handleDragStart = (e: any, deckId: string) => {
     e.dataTransfer.setData('deckId', deckId);
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDropOnFolder = async (e: React.DragEvent, folderId: string | null | 'all') => {
+  const handleDropOnFolder = async (e: any, folderId: string | null | 'all') => {
     e.preventDefault();
     if (isProcessing) return;
     setDragOverFolderId(null);
@@ -446,7 +446,7 @@ export default function QuizLibrary() {
                           onClick={() => setCurrentFolderId(f.id)}
                           onDragOver={(e) => { e.preventDefault(); setDragOverFolderId(f.id); }}
                           onDragLeave={() => setDragOverFolderId(null)}
-                          onDrop={(e) => handleDropOnFolder(e, f.id)}
+                          onDrop={(e: any) => handleDropOnFolder(e, f.id)}
                           whileDrag={{ 
                             scale: 1.02, 
                             rotate: [0, -1.5, 1.5, -1.5, 0],

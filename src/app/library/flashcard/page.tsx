@@ -214,12 +214,12 @@ export default function FlashcardLibrary() {
       : flashDecks.find(d => d.id === deleteDeckId)?.name ?? 'Bộ bài này'
     : '';
 
-  const handleDragStart = (e: React.DragEvent, deckId: string) => {
+  const handleDragStart = (e: any, deckId: string) => {
     e.dataTransfer.setData('deckId', deckId);
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDropOnFolder = async (e: React.DragEvent, folderId: string | null | 'all') => {
+  const handleDropOnFolder = async (e: any, folderId: string | null | 'all') => {
     e.preventDefault();
     if (isProcessing) return;
     setDragOverFolderId(null);
@@ -371,7 +371,7 @@ export default function FlashcardLibrary() {
         onClick={() => selectionMode ? toggleSelect(deck.id) : router.push(`/flashcard/${deck.id}`)}
         onContextMenu={onRightClick}
         draggable
-        onDragStart={(e) => handleDragStart(e, deck.id)}
+        onDragStart={(e: any) => handleDragStart(e, deck.id)}
         whileDrag={{ 
           scale: 1.02, 
           rotate: [0, -1, 1, -1, 0],
