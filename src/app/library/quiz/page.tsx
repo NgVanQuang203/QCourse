@@ -529,7 +529,7 @@ export default function QuizLibrary() {
                         transform: isMenuOpen ? 'none' : undefined
                       }}
                       draggable
-                      onDragStart={(e) => handleDragStart(e, deck.id)}
+                      onDragStart={(e: any) => handleDragStart(e, deck.id)}
                       whileDrag={{ 
                         scale: 1.01, 
                         rotate: [0, -0.8, 0.8, -0.8, 0],

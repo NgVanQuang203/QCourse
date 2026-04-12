@@ -62,7 +62,7 @@ export interface StoreState {
 }
 
 export interface StoreActions {
-  updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
+  updateProfile: (profile: Partial<UserProfile>) => Promise<boolean>;
   addDeck: (deck: Omit<Deck, 'id'>) => Promise<string | undefined>;
   updateDeck: (id: string, changes: Partial<Deck>) => Promise<void>;
   deleteDeck: (id: string) => Promise<void>;
