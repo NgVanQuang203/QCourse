@@ -112,15 +112,16 @@
 }
 
 .timerWarning {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.3);
-  color: var(--quiz-danger);
-  animation: pulseWarning 1s infinite;
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #ef4444; /* Vivid Red */
+  animation: pulseWarning 0.8s infinite;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
 }
 
 @keyframes pulseWarning {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.02); }
 }
 
 .progressContainer {
@@ -359,25 +360,38 @@
 .confirmBtnCancel {
   background: var(--quiz-glass);
   color: #fff;
-  padding: 1rem;
+  padding: 0.85rem;
   border-radius: 12px;
   border: 1px solid var(--quiz-glass-border);
   font-weight: 700;
   cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.confirmBtnCancel:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .confirmBtnExit {
   background: var(--quiz-danger);
   color: #fff;
-  padding: 1rem;
+  padding: 0.85rem;
   border-radius: 12px;
   border: none;
   font-weight: 800;
   cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+}
+
+.confirmBtnExit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(239, 68, 68, 0.4);
 }
 
 .resultCard {
@@ -529,60 +543,215 @@
 
 /* ── SIDEBAR ─────────────────────────────────── */
 .navPanel {
-  background: rgba(10, 10, 12, 0.5);
+  background: rgba(10, 10, 12, 0.4);
   border-left: 1px solid var(--quiz-glass-border);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(25px);
   display: flex;
   flex-direction: column;
+  box-shadow: -10px 0 50px rgba(0, 0, 0, 0.3);
 }
 
 .panelBody {
-  padding: 2.25rem 1.5rem;
+  padding: 2rem 1.25rem;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start; /* Prevents items from spreading too far */
-  gap: 1.5rem; /* Tight, professional spacing */
+  gap: 2rem;
   flex: 1;
 }
 
-.panelFooter {
+.statCard {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
   padding: 1.5rem;
-  background: transparent; /* Seamless blend with sidebar body */
-}
-
-.panelStatItem {
+  border: 1px solid var(--quiz-glass-border);
   display: flex;
   flex-direction: column;
-  gap: 0.25rem; /* Tightened gap between label and value */
+  align-items: center;
+  gap: 1.25rem;
+  position: relative;
+  overflow: hidden;
 }
 
-.panelStatLabel { 
-  font-size: 0.6rem; 
-  font-weight: 800; 
+.statCard::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.progressCircleWrapper {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progressValue {
+  position: absolute;
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.statInfo {
+  text-align: center;
+}
+
+.statTitle {
+  font-size: 0.65rem;
+  font-weight: 800;
   color: var(--quiz-text-secondary);
-  text-transform: uppercase; 
-  letter-spacing: 1.5px; 
-  opacity: 0.7; /* Subdued for a refined look */
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 0.25rem;
 }
 
-.panelStatValue { 
-  font-size: 1rem; /* Reduced from 1.25rem */
-  font-weight: 800; 
-  color: var(--quiz-text-main); 
+.statMain {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.gridSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.gridHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .gridTitle { 
-  font-size: 0.85rem; 
+  font-size: 0.75rem; 
   font-weight: 800; 
-  margin-top: 1rem; /* Added controlled space before the map */
-  margin-bottom: 0.85rem; 
-  color: var(--quiz-text-secondary); 
+  color: var(--quiz-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.gridCount {
+  font-size: 0.75rem;
+  font-weight: 700;
+  opacity: 0.5;
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 0.6rem; /* Slightly tighter for a control-panel look */
+  gap: 0.5rem;
+}
+
+.navBtn {
+  width: 100%;
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.03); /* Darker default */
+  border: 1px solid var(--quiz-glass-border);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.5); /* Dimmed default text */
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.navBtn:hover {
+  background: rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.3);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+/* Distinct style for answered - solid but translucent green */
+.navBtn.answered {
+  background: #10b981; /* Solid Green */
+  border-color: #059669;
+  color: #fff; /* White text for better contrast on solid background */
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+}
+
+/* Active state - should always be clear and blue */
+.navBtn.active {
+  background: #2563eb;
+  border-color: #3b82f6;
+  color: #fff;
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
+  transform: scale(1.1);
+  z-index: 2;
+}
+
+/* When active AND answered, keep blue bg but keep the indicator */
+.navBtn.active.answered {
+  background: #2563eb;
+  color: #fff;
+}
+
+.navBtn.answered::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(16, 185, 129, 0.5);
+}
+
+.navBtn.active.answered::after {
+  background: #fff; /* White dot on blue background looks cleaner */
+}
+
+.panelFooter {
+  padding: 1.5rem;
+  background: linear-gradient(to top, rgba(0,0,0,0.2), transparent);
+}
+
+.submitBtn {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+  border: none;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  transition: all 0.3s;
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+}
+
+.submitBtn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 35px rgba(37, 99, 235, 0.5);
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+}
+
+.btnPulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6); }
+  70% { box-shadow: 0 0 0 15px rgba(37, 99, 235, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
 }
 
 .navBtn {
@@ -825,37 +994,52 @@
   text-align: center;
 }
 
-.statBoxNum { font-size: 2.25rem; font-weight: 900; display: block; }
-.statBoxText { font-size: 0.65rem; font-weight: 800; opacity: 0.4; text-transform: uppercase; }
+.statBoxNum { font-size: 1.75rem; font-weight: 900; display: block; }
+.statBoxText { font-size: 0.6rem; font-weight: 800; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.5px; }
 
 .historyDetailBody {
   flex: 1;
   overflow-y: auto;
-  padding: 2.5rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
+  min-height: 300px;
 }
 
 .reviewCard {
-  background: var(--quiz-surface);
-  border-radius: 20px;
-  padding: 2rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 16px;
+  padding: 1.25rem;
   border: 1px solid var(--quiz-glass-border);
+  transition: transform 0.2s;
 }
 
-.reviewCorrectBd { border-left: 4px solid var(--quiz-success); }
-.reviewWrongBd { border-left: 4px solid var(--quiz-danger); }
+.reviewCard:hover {
+  transform: scale(1.01);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.reviewCorrectBd { border-left: 3px solid #10b981; }
+.reviewWrongBd { border-left: 3px solid #ef4444; }
+
+.reviewQuestionText {
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.5;
+  margin-bottom: 0.85rem;
+  color: #fff;
+}
 
 .reviewOpt {
-  padding: 0.85rem 1.25rem;
-  border-radius: 12px;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.03);
-  margin-top: 0.5rem;
+  margin-top: 0.35rem;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 1rem;
+  gap: 0.65rem;
+  font-size: 0.85rem;
   font-weight: 600;
   border: 1px solid transparent;
 }

@@ -97,6 +97,7 @@ export default function QuizMode() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
   const [highlightedIdx, setHighlightedIdx] = useState<number | null>(null);
+  const [activeQuestionIdx, setActiveQuestionIdx] = useState(0);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   useEffect(() => {
@@ -158,6 +159,7 @@ export default function QuizMode() {
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setHighlightedIdx(idx);
+      setActiveQuestionIdx(idx);
       setTimeout(() => setHighlightedIdx(null), 1000);
     }
   };
@@ -268,20 +270,90 @@ export default function QuizMode() {
           )}
         </AnimatePresence>
         <AnimatePresence>
-          {selectedAttempt && (
-            <motion.div className={styles.modalOverlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedAttempt(null)}>
-              <motion.div className={styles.historyDetailCard} initial={{ y: 50 }} animate={{ y: 0 }} exit={{ y: 20 }} onClick={e => e.stopPropagation()}>
-                <div className={styles.historyDetailHeader}><h2 className={styles.resultTitle}>Chi tiết kết quả</h2><button onClick={() => setSelectedAttempt(null)} style={{ background: 'none', border: 'none', color: '#fff' }}><X size={24} /></button></div>
-                <div className={styles.statRow}>
-                  <div className={styles.statBox}><span className={styles.statBoxNum}>{selectedAttempt.score}/{selectedAttempt.totalQuestions}</span><span>ĐÚNG</span></div>
-                  <div className={styles.statBox}><span className={styles.statBoxNum}>{selectedAttempt.grade}</span><span>HẠNG</span></div>
-                </div>
-                <div className={styles.historyDetailBody} style={{ padding: '1rem', overflowY: 'auto' }}>
-                   <p>Xem lại các câu hỏi trong lịch sử chưa hỗ trợ đầy đủ giao diện mới.</p>
-                </div>
+          {selectedAttempt && (() => {
+            const grade = selectedAttempt.grade;
+            const tierColor = (grade === 'A' || grade === 'B') ? '#10b981' : (grade === 'C' || grade === 'D') ? '#f59e0b' : '#ef4444';
+            
+            return (
+              <motion.div 
+                className={styles.modalOverlay}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedAttempt(null)}
+              >
+                <motion.div 
+                  className={styles.historyDetailCard}
+                  initial={{ y: 50, opacity: 0, scale: 0.95 }}
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  exit={{ y: 20, opacity: 0, scale: 0.95 }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className={styles.historyDetailHeader}>
+                    <h2 className={styles.resultTitle} style={{ color: tierColor, fontSize: '1.25rem' }}>Chi tiết kết quả</h2>
+                    <button style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }} onClick={() => setSelectedAttempt(null)}><X size={24} /></button>
+                  </div>
+                  
+                  <div className={styles.statRow}>
+                    <div className={styles.statBox}>
+                      <span className={styles.statBoxNum} style={{ color: tierColor }}>{selectedAttempt.score}/{selectedAttempt.totalQuestions}</span>
+                      <span className={styles.statBoxText}>SỐ CÂU ĐÚNG</span>
+                    </div>
+                    <div className={styles.statBox}>
+                      <span className={styles.statBoxNum} style={{ color: tierColor }}>{Math.round((selectedAttempt.score / selectedAttempt.totalQuestions) * 100)}%</span>
+                      <span className={styles.statBoxText}>TỶ LỆ ĐÚNG</span>
+                    </div>
+                    <div className={styles.statBox}>
+                      <span className={styles.statBoxNum} style={{ color: tierColor }}>{selectedAttempt.grade}</span>
+                      <span className={styles.statBoxText}>XẾP LOẠI</span>
+                    </div>
+                  </div>
+
+                  <div className={styles.historyDetailBody}>
+                    {selectedAttempt.answers && selectedAttempt.answers.length > 0 ? (
+                      selectedAttempt.answers.map((ans: any, idx: number) => {
+                        const isCorrect = ans.chosenIndex === ans.correctIndex;
+                        return (
+                          <div key={idx} className={`${styles.reviewCard} ${isCorrect ? styles.reviewCorrectBd : styles.reviewWrongBd}`}>
+                            <div className={styles.questionHeader} style={{ marginBottom: '0.5rem' }}>
+                              <span className={styles.questionBadge} style={{ fontSize: '0.6rem' }}>Câu {idx + 1}</span>
+                              <span className={styles.questionStatus} style={{ color: isCorrect ? '#10b981' : '#ef4444', fontSize: '0.7rem' }}>
+                                {isCorrect ? <Check size={12} /> : <X size={12} />} {isCorrect ? 'CHÍNH XÁC' : 'CHƯA ĐÚNG'}
+                              </span>
+                            </div>
+                            <p className={styles.reviewQuestionText}>{ans.front}</p>
+                            <div className={styles.optionsList} style={{ gap: '0.35rem' }}>
+                              {ans.options?.map((opt: string, oIdx: number) => {
+                                const isChosen = ans.chosenIndex === oIdx;
+                                const isRightOne = ans.correctIndex === oIdx;
+                                return (
+                                  <div 
+                                    key={oIdx} 
+                                    className={styles.reviewOpt}
+                                    style={{
+                                      border: isRightOne ? '1px solid #10b981' : (isChosen ? '1px solid #ef4444' : '1px solid transparent'),
+                                      background: isRightOne ? 'rgba(16, 185, 129, 0.05)' : (isChosen ? 'rgba(239, 68, 68, 0.05)' : 'rgba(255, 255, 255, 0.03)')
+                                    }}
+                                  >
+                                    <div className={styles.optionMarker} style={{ width: '22px', height: '22px', fontSize: '0.7rem' }}>{String.fromCharCode(65 + oIdx)}</div>
+                                    <span style={{ color: isRightOne ? '#10b981' : (isChosen ? '#ef4444' : 'inherit') }}>{opt}</span>
+                                    {isRightOne && <Check size={14} style={{ marginLeft: 'auto' }} />}
+                                    {isChosen && !isRightOne && <X size={14} style={{ marginLeft: 'auto' }} />}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div style={{ textAlign: 'center', opacity: 0.5, padding: '2rem' }}>Không có dữ liệu chi tiết cho lần thi này.</div>
+                    )}
+                  </div>
+                </motion.div>
               </motion.div>
-            </motion.div>
-          )}
+            );
+          })()}
         </AnimatePresence>
       </div>
     );
@@ -349,11 +421,77 @@ export default function QuizMode() {
         </main>
         <aside className={styles.navPanel}>
            <div className={styles.panelBody}>
-              <div className={styles.panelStatItem}><span>Tiến độ</span><span>{progressPct}%</span></div>
-              <div className={styles.gridContainer}><div className={styles.grid}>{quizCards.map((c, i) => <button key={c.id} className={`${styles.navBtn} ${answers[c.id] !== undefined ? styles.answered : ''}`} onClick={() => scrollToQuestion(i)}>{i + 1}</button>)}</div></div>
+              {/* Progress Card */}
+              <div className={styles.statCard}>
+                <div className={styles.progressCircleWrapper}>
+                  <svg width="80" height="80" viewBox="0 0 80 80">
+                    <circle cx="40" cy="40" r="36" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
+                    <motion.circle 
+                      cx="40" cy="40" r="36" fill="none" stroke="var(--quiz-primary)" strokeWidth="8"
+                      strokeDasharray="226.2"
+                      initial={{ strokeDashoffset: 226.2 }}
+                      animate={{ strokeDashoffset: 226.2 - (226.2 * progressPct) / 100 }}
+                      transition={{ duration: 1, ease: "easeOut" }}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span className={styles.progressValue}>{progressPct}%</span>
+                </div>
+                <div className={styles.statInfo}>
+                  <div className={styles.statTitle}>TIẾN ĐỘ</div>
+                  <div className={styles.statMain}>{answeredCount} / {quizCards.length} CÂU</div>
+                </div>
+              </div>
+
+              {/* Question Map */}
+              <div className={styles.gridSection}>
+                <div className={styles.gridHeader}>
+                  <div className={styles.gridTitle}>Bản đồ câu hỏi</div>
+                  <div className={styles.gridCount}>{answeredCount}/{quizCards.length}</div>
+                </div>
+                <div className={styles.grid}>
+                  {quizCards.map((c, i) => {
+                    const isAnswered = answers[c.id] !== undefined;
+                    const isActive = activeQuestionIdx === i;
+                    
+                    let btnClass = styles.navBtn;
+                    if (isActive) btnClass += ` ${styles.active}`;
+                    if (isAnswered) btnClass += ` ${styles.answered}`;
+
+                    return (
+                      <button 
+                        key={c.id} 
+                        className={btnClass} 
+                        onClick={() => scrollToQuestion(i)}
+                      >
+                        {i + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
            </div>
+
            <div className={styles.panelFooter}>
-                {!isSubmitted ? <button className={styles.submitBtn} onClick={handleSubmit} disabled={isSubmitting}>{isSubmitting ? <Loader2 className={styles.spinner} /> : 'Nộp bài'}</button> : <button className={styles.submitBtn} onClick={() => setShowResultModal(true)}>Kết quả</button>}
+                {!isSubmitted ? (
+                  <button 
+                    className={`${styles.submitBtn} ${progressPct === 100 ? styles.btnPulse : ''}`} 
+                    onClick={handleSubmit} 
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? <Loader2 className={styles.spinner} /> : (
+                      <>
+                        <Send size={18} />
+                        <span>Nộp bài thi</span>
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <button className={styles.submitBtn} onClick={() => setShowResultModal(true)}>
+                    <Trophy size={18} />
+                    <span>Xem kết quả</span>
+                  </button>
+                )}
            </div>
         </aside>
       </div>
@@ -362,10 +500,16 @@ export default function QuizMode() {
       <AnimatePresence>
         {showExitConfirm && (
           <motion.div className={styles.modalOverlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowExitConfirm(false)}>
-            <motion.div className={styles.confirmCard} onClick={e => e.stopPropagation()}>
+            <motion.div className={styles.confirmCard} initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }} onClick={e => e.stopPropagation()}>
+              <div className={styles.confirmIcon} style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
+                <AlertTriangle size={32} />
+              </div>
               <h3 className={styles.confirmTitle}>Thoát bài thi?</h3>
-              <p className={styles.confirmDesc}>Tiến độ sẽ không được lưu.</p>
-              <div className={styles.confirmBtns}><button onClick={() => setShowExitConfirm(false)}>Tiếp tục</button><button onClick={handleBackToLibrary}>Thoát</button></div>
+              <p className={styles.confirmDesc}>Tiến độ làm bài hiện tại sẽ bị mất và không được lưu vào lịch sử.</p>
+              <div className={styles.confirmBtns}>
+                <button className={styles.confirmBtnCancel} onClick={() => setShowExitConfirm(false)}>Tiếp tục thi</button>
+                <button className={styles.confirmBtnExit} onClick={handleBackToLibrary}><ArrowLeft size={16} /> Thoát ngay</button>
+              </div>
             </motion.div>
           </motion.div>
         )}
