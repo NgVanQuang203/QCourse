@@ -31,9 +31,9 @@
 :global(html.dark) {
   /* DARK THEME (Midnight Elite) */
   --qz-bg: #09090b;
-  --qz-surface: rgba(18, 18, 23, 0.7);
-  --qz-surface-raised: #1c1c21;
-  --qz-surface-hover: rgba(255, 255, 255, 0.05);
+  --qz-surface: #0f1115; /* Deeper, solid dark background */
+  --qz-surface-raised: #15181e;
+  --qz-surface-hover: rgba(255, 255, 255, 0.08); /* Slightly more visible hover */
   
   --qz-text-main: #cbd5e1; /* Muted Slate-300 instead of bright slate-50/100 */
   --qz-text-secondary: #94a3b8;

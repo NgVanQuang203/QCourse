@@ -274,42 +274,33 @@ export default function FlashcardLibrary() {
               onDragOver={(e) => { e.preventDefault(); setDragOverSidebarId(f.id); }}
               onDragLeave={() => setDragOverSidebarId(null)}
               onDrop={(e) => { handleDropOnFolder(e, f.id); setDragOverSidebarId(null); }}
-              style={{ paddingRight: '2.6rem' }}
+              style={{ paddingRight: '0.75rem' }} // Resetting padding for mobile-friendly pills
             >
               <span style={{ fontSize: '1.1rem' }}>{f.icon || '📁'}</span>
               <span className={lib.sidebarFolderName}>{f.name}</span>
               {f.isPinned && <Pin size={10} className={lib.pinSidebarIcon} fill="currentColor" />}
+              
+              {/* On Mobile, we show a clean More button that triggers the ContextMenu */}
+              <div 
+                className={lib.folderMoreMobile}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setContextMenu({
+                    x: e.clientX,
+                    y: e.clientY,
+                    items: [
+                      { label: f.isPinned ? 'Bỏ ghim' : 'Ghim thư mục', icon: <span>📌</span>, onClick: () => togglePinFolder(f.id) },
+                      { label: 'Sửa thư mục', icon: <Edit2 size={13} />, onClick: () => openEditFolder(e, f) },
+                      { label: 'Xóa thư mục', icon: <Trash2 size={13} />, variant: 'danger', onClick: () => { setDeleteDeckId(`f_${f.id}`); setContextMenu(null); } },
+                    ]
+                  });
+                }}
+              >
+                <MoreHorizontal size={14} />
+              </div>
+
               <span className={lib.fcFolderBtnCount}>{countForFolder(f.id)}</span>
             </button>
-            {/* Folder kebab */}
-            <div
-              style={{
-                position: 'absolute', right: '0.4rem', top: 0, bottom: 0,
-                display: 'flex', alignItems: 'center',
-                zIndex: fMenuOpen ? 9999 : 20,
-              }}
-              onClick={e => e.stopPropagation()}
-            >
-              <button
-                className={lib.kebabBtn}
-                onClick={() => setMenuOpenId(fMenuOpen ? null : `f_${f.id}`)}
-              >
-                <MoreVertical size={14} />
-              </button>
-              {fMenuOpen && (
-                <div className={lib.menuDropdown}>
-                  <button className={lib.menuItem} onClick={() => { togglePinFolder(f.id); setMenuOpenId(null); }}>
-                    {f.isPinned ? 'Bỏ ghim' : 'Ghim thư mục'}
-                  </button>
-                  <button className={lib.menuItem} onClick={e => openEditFolder(e, f)}>
-                    <Edit2 size={13} /> Sửa thư mục
-                  </button>
-                  <button className={`${lib.menuItem} ${lib.menuItemDanger}`} onClick={() => { setDeleteDeckId(`f_${f.id}`); setMenuOpenId(null); }}>
-                    <Trash2 size={13} /> Xóa thư mục
-                  </button>
-                </div>
-              )}
-            </div>
           </motion.div>
         );
       })}

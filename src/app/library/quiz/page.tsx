@@ -16,6 +16,7 @@ import ContextMenu, { ContextMenuItem } from '@/components/ContextMenu';
 
 const EMOJIS = ['📝', '📘', '⚛️', '🌍', '💻', '🏛️', '🧬', '🎵', '🏆', '💼', '🔬', '📐'];
 
+
 export default function QuizLibrary() {
   const router = useRouter();
 
@@ -298,45 +299,41 @@ export default function QuizLibrary() {
           </button>
 
           {sidebarFolders.map(f => {
-            const fMenuId = `qs_${f.id}`;
-            const fMenuOpen = menuOpenId === fMenuId;
-            const count = quizDecks.filter(d => d.folderId === f.id).length;
             return (
-              <div
-                key={f.id}
-                className={lib.sidebarItemWrap}
-              >
+              <div key={f.id} style={{ position: 'relative' }}>
                 <button
                   className={`${lib.quizFolderBtn} ${currentFolderId === f.id ? lib.quizFolderBtnActive : ''} ${dragOverSidebarId === f.id ? lib.fcFolderBtnDragOver : ''}`}
                   onClick={() => setCurrentFolderId(f.id)}
                   onDragOver={(e) => { e.preventDefault(); setDragOverSidebarId(f.id); }}
                   onDragLeave={() => setDragOverSidebarId(null)}
                   onDrop={(e) => { handleDropOnFolder(e, f.id); setDragOverSidebarId(null); }}
-                  style={{ paddingRight: '2.6rem' }}
+                  style={{ paddingRight: '1rem' }}
                 >
-                  <span style={{ fontSize: '1.1rem' }}>{f.icon || '📁'}</span>
+                  <span style={{ fontSize: '1.1rem' }}>{f.icon || '📝'}</span>
                   <span className={lib.sidebarFolderName}>{f.name}</span>
                   {f.isPinned && <Pin size={10} className={lib.pinSidebarIcon} fill="currentColor" />}
-                  <span className={lib.quizFolderBtnCount}>{count}</span>
+                  
+                  {/* Category Options for Mobile Pill Navigation */}
+                  <div 
+                    className={lib.folderMoreMobile}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setContextMenu({
+                        x: e.clientX,
+                        y: e.clientY,
+                        items: [
+                          { label: f.isPinned ? 'Bỏ ghim danh mục' : 'Ghim danh mục', icon: <span>📌</span>, onClick: () => togglePinFolder(f.id) },
+                          { label: 'Sửa danh mục', icon: <Edit2 size={13} />, onClick: () => openEditFolder(e, f) },
+                          { label: 'Xóa danh mục', icon: <Trash2 size={13} />, variant: 'danger', onClick: () => { setDeleteDeckId(`f_${f.id}`); setContextMenu(null); } },
+                        ]
+                      });
+                    }}
+                  >
+                    <MoreHorizontal size={14} />
+                  </div>
+
+                  <span className={lib.quizFolderBtnCount}>{quizDecks.filter(d => d.folderId === f.id).length}</span>
                 </button>
-                <div
-                  style={{ position: 'absolute', right: '0.4rem', top: 0, bottom: 0, display: 'flex', alignItems: 'center', zIndex: fMenuOpen ? 9999 : 20 }}
-                  onClick={e => e.stopPropagation()}
-                >
-                  <button className={lib.kebabBtn} onClick={() => setMenuOpenId(fMenuOpen ? null : fMenuId)}>
-                    <MoreVertical size={14} />
-                  </button>
-                  {fMenuOpen && (
-                    <div className={lib.menuDropdown} style={{ right: 0 }}>
-                      <button className={lib.menuItem} onClick={e => openEditFolder(e, f)}>
-                        <Edit2 size={13} /> Sửa danh mục
-                      </button>
-                      <button className={`${lib.menuItem} ${lib.menuItemDanger}`} onClick={() => { setDeleteDeckId(`f_${f.id}`); setMenuOpenId(null); }}>
-                        <Trash2 size={13} /> Xóa danh mục
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
             );
           })}
@@ -489,33 +486,23 @@ export default function QuizLibrary() {
                             <div className={lib.quizFolderCount}>{deckCount} đề thi</div>
                           </div>
 
-                          {/* Kebab button */}
-                          <div
-                            className={lib.kebabWrap}
-                            style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', zIndex: fMenuOpen ? 9999 : 20 }}
-                            onClick={e => e.stopPropagation()}
-                          >
-                            <button className={lib.kebabBtn} onClick={() => setMenuOpenId(fMenuOpen ? null : fMenuId)}>
-                              <MoreHorizontal size={16} />
-                            </button>
-                            {fMenuOpen && (
-                              <div className={lib.menuDropdown} style={{ right: 0 }}>
-                                <button className={lib.menuItem} onClick={(e) => { e.stopPropagation(); togglePinFolder(f.id); setMenuOpenId(null); }}>
-                                  {f.isPinned ? 'Bỏ ghim' : 'Ghim danh mục'}
-                                </button>
-                                <button className={lib.menuItem} onClick={(e) => { e.stopPropagation(); setCurrentFolderId(f.id); setMenuOpenId(null); }}>
-                                  <LayoutGrid size={13} /> Mở danh mục
-                                </button>
-                                <button className={lib.menuItem} onClick={(e) => { e.stopPropagation(); openEditFolder(e, f); setMenuOpenId(null); }}>
-                                  <Edit2 size={13} /> Sửa danh mục
-                                </button>
-                                <div className={lib.menuDivider} />
-                                <button className={`${lib.menuItem} ${lib.menuItemDanger}`} onClick={(e) => { e.stopPropagation(); setDeleteDeckId(`f_${f.id}`); setMenuOpenId(null); }}>
-                                  <Trash2 size={13} /> Xóa danh mục
-                                </button>
-                              </div>
-                            )}
-                          </div>
+                      <div 
+                        className={lib.quizFolderCardMore}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setContextMenu({
+                            x: e.clientX,
+                            y: e.clientY,
+                            items: [
+                              { label: f.isPinned ? 'Bỏ ghim' : 'Ghim danh mục', icon: <span>📌</span>, onClick: () => togglePinFolder(f.id) },
+                              { label: 'Sửa danh mục', icon: <Edit2 size={13} />, onClick: () => { setEditingFolder(f); setFolderForm({ name: f.name, icon: f.icon }); setIsFolderModalOpen(true); setMenuOpenId(null); } },
+                              { label: 'Xóa danh mục', icon: <Trash2 size={13} />, variant: 'danger', onClick: () => { setDeleteDeckId(`f_${f.id}`); setMenuOpenId(null); } },
+                            ]
+                          });
+                        }}
+                      >
+                        <MoreHorizontal size={16} />
+                      </div>
                         </motion.div>
                       );
                     })}
@@ -603,31 +590,30 @@ export default function QuizLibrary() {
                         <div
                           className={lib.kebabWrap}
                           onClick={e => e.stopPropagation()}
-                          style={{ zIndex: isMenuOpen ? 9999 : undefined }}
+                          style={{ zIndex: 100 }}
                         >
-                          <button className={lib.kebabBtn} onClick={() => setMenuOpenId(isMenuOpen ? null : deck.id)} title="Tùy chọn">
+                          <button 
+                            className={lib.kebabBtn} 
+                            onClick={(e) => {
+                              // On Mobile, use portaled ContextMenu to avoid clipping
+                              e.stopPropagation();
+                              setContextMenu({
+                                x: e.clientX,
+                                y: e.clientY,
+                                items: [
+                                  { label: deck.isPinned ? 'Bỏ ghim' : 'Ghim bài', icon: <span>📌</span>, onClick: () => togglePinDeck(deck.id) },
+                                  { label: 'Chỉnh sửa', icon: <Edit2 size={13} />, onClick: () => setEditDeck(deck.id) },
+                                  { label: 'Chuyển danh mục', icon: <FolderInput size={13} />, onClick: () => setMoveDeckId(deck.id) },
+                                  { divider: true, label: '', onClick: () => {} },
+                                  { label: 'Xoá lịch sử thi', icon: <RefreshCcw size={13} />, onClick: () => setResetDeckId(deck.id) },
+                                  { label: 'Xóa đề thi', icon: <Trash2 size={13} />, variant: 'danger', onClick: () => setDeleteDeckId(deck.id) },
+                                ]
+                              });
+                            }}
+                            title="Tùy chọn"
+                          >
                             <MoreVertical size={16} />
                           </button>
-                          {isMenuOpen && (
-                            <div className={lib.menuDropdown} style={{ right: 0 }}>
-                              <button className={lib.menuItem} onClick={() => { togglePinDeck(deck.id); setMenuOpenId(null); }}>
-                                {deck.isPinned ? 'Bỏ ghim' : 'Ghim bài'}
-                              </button>
-                              <button className={lib.menuItem} onClick={() => { setEditDeck(deck.id); setMenuOpenId(null); }}>
-                                <Edit2 size={13} /> Chỉnh sửa
-                              </button>
-                              <button className={lib.menuItem} onClick={() => { setMoveDeckId(deck.id); setMenuOpenId(null); }}>
-                                <FolderInput size={13} /> Chuyển danh mục
-                              </button>
-                              <div className={lib.menuDivider} />
-                              <button className={lib.menuItem} onClick={() => { setResetDeckId(deck.id); setMenuOpenId(null); }}>
-                                <RefreshCcw size={13} /> Xoá lịch sử thi
-                              </button>
-                              <button className={`${lib.menuItem} ${lib.menuItemDanger}`} onClick={() => { setDeleteDeckId(deck.id); setMenuOpenId(null); }}>
-                                <Trash2 size={13} /> Xóa đề thi
-                              </button>
-                            </div>
-                          )}
                         </div>
 
                         <div className={lib.quizBannerArrow}>

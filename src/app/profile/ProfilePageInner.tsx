@@ -475,7 +475,6 @@ export default function ProfilePageInner() {
         <aside className={styles.sidebar}>
           <div className={styles.sidebarInner}>
             {TABS_ALL.map(t => {
-              if (t.id === 'password' && profile?.hasPassword === false) return null;
               return (
                 <button
                   key={t.id}
@@ -504,10 +503,10 @@ export default function ProfilePageInner() {
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Thông tin cá nhân</h2>
                 {!editing
-                  ? <button className={styles.editBtn} onClick={() => setEditing(true)}>✏️ Chỉnh sửa</button>
+                  ? <button type="button" className={styles.editBtn} onClick={() => setEditing(true)}>✏️ Chỉnh sửa</button>
                   : <div className={styles.editBtns}>
-                      <button className={styles.cancelBtn} onClick={() => { setEditing(false); setForm({...profile}); }}>✕ Huỷ</button>
-                      <button className={styles.saveBtn} onClick={handleSave}><Check size={14}/> Lưu</button>
+                      <button type="button" className={styles.cancelBtn} onClick={() => { setEditing(false); setForm({...profile}); }}>✕ Huỷ</button>
+                      <button type="button" className={styles.saveBtn} onClick={handleSave}><Check size={14}/> Lưu</button>
                     </div>
                 }
               </div>
@@ -606,15 +605,27 @@ export default function ProfilePageInner() {
           )}
 
           {/* ── PASSWORD TAB ── */}
-          {tab === 'password' && profile?.hasPassword && (
+          {tab === 'password' && (
             <div className={styles.card}>
-              <h2 className={styles.cardTitle}>🔐 Đổi mật khẩu</h2>
-              <p className={styles.cardSubtitle}>Mật khẩu mới phải đủ mạnh và khác mật khẩu hiện tại.</p>
+              <h2 className={styles.cardTitle}>
+                {profile?.hasPassword ? '🔐 Đổi mật khẩu' : '🔐 Thiết lập mật khẩu'}
+              </h2>
+              <p className={styles.cardSubtitle}>
+                {profile?.hasPassword 
+                  ? 'Mật khẩu mới phải đủ mạnh và khác mật khẩu hiện tại.'
+                  : 'Tài khoản của bạn chưa có mật khẩu (đăng nhập qua Google). Hãy thiết lập mật khẩu để đăng nhập trực tiếp.'}
+              </p>
 
               {pwSaved && <div className={styles.savedAlert}><Check size={15}/> Đổi mật khẩu thành công!</div>}
 
-              {(['Mật khẩu hiện tại','Mật khẩu mới','Xác nhận mật khẩu mới'] as const).map((label, idx) => {
-                const key = ['current','next','confirm'][idx] as 'current'|'next'|'confirm';
+              {(profile?.hasPassword 
+                ? ['Mật khẩu hiện tại','Mật khẩu mới','Xác nhận mật khẩu mới'] 
+                : ['Mật khẩu mới','Xác nhận mật khẩu mới']
+              ).map((label, idx) => {
+                const isFirstTime = !profile?.hasPassword;
+                const fieldMap = isFirstTime ? ['next', 'confirm'] : ['current', 'next', 'confirm'];
+                const key = fieldMap[idx] as 'current'|'next'|'confirm';
+                
                 return (
                   <div key={idx} className={styles.formGroup}>
                     <label className={styles.formLabel}>{label}</label>
@@ -634,8 +645,8 @@ export default function ProfilePageInner() {
                   </div>
                 );
               })}
-              <button className={styles.saveBtn} style={{ marginTop: '0.5rem' }}
-                disabled={!pw.current || !pw.next || pw.next !== pw.confirm || strength < 2}
+              <button type="button" className={styles.saveBtn} style={{ marginTop: '0.5rem' }}
+                disabled={(profile?.hasPassword && !pw.current) || !pw.next || pw.next !== pw.confirm || strength < 2}
                 onClick={async () => {
                   try {
                     setPwError('');
