@@ -417,11 +417,14 @@ export default function ProfilePageInner() {
 
   const badge = getBadge(streak);
 
-  const handleSave = () => { 
-    updateProfile(form as any); 
-    setEditing(false); 
-    setSaved(true); 
-    setTimeout(() => setSaved(false), 2000); 
+  const handleSave = async () => { 
+    if (isLoading) return;
+    const ok = await updateProfile(form as any); 
+    if (ok) {
+      setEditing(false); 
+      setSaved(true); 
+      setTimeout(() => setSaved(false), 2000); 
+    }
   };
 
   const pwStrength = (p: string) => {

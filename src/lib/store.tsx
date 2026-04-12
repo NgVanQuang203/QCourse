@@ -216,22 +216,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // ── Profile ──────────────────────────────────────────────
-  const updateProfile = useCallback(async (profile: Partial<UserProfile>) => {
+  const updateProfile = useCallback(async (profileChanges: Partial<UserProfile>) => {
     try {
       const res = await fetch('/api/user/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profile),
+        body: JSON.stringify(profileChanges),
       });
-      if (checkAuth(res)) return;
+      if (checkAuth(res)) return false;
+      
       const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Không thể cập nhật hồ sơ');
+        return false;
+      }
+
       if (data.user) {
         setState(s => ({ ...s, profile: { ...s.profile!, ...data.user } }));
+        toast.success('Cập nhật hồ sơ thành công');
+        return true;
       }
+      return false;
     } catch (error) {
       console.error('Update profile failed:', error);
+      toast.error('Lỗi kết nối máy chủ');
+      return false;
     }
-  }, []);
+  }, [checkAuth]);
 
   // ── Decks ────────────────────────────────────────────────
   const addDeck = useCallback(async (deck: Omit<Deck, 'id'>): Promise<string | undefined> => {
